@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 - SkyXing</title>
+<style>
+:root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#111827;--bg2:#1f2937;--bd:rgba(255,255,255,.06);--tx:rgba(255,255,255,.9);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e1b4b)}
+.login-card{background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:400px;backdrop-filter:blur(20px)}
+.login-card h1{text-align:center;font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,var(--p),#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-card .sub{text-align:center;color:var(--t3);font-size:.82rem;margin:.25rem 0 1.5rem}
+.fg{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
+.fg input{width:100%;padding:.65rem .9rem;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:.9rem;font-family:inherit;outline:none}
+.fg input:focus{border-color:var(--p)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1rem;border:none;border-radius:7px;cursor:pointer;font-size:.82rem;font-weight:500;font-family:inherit;transition:.15s}
+.btn-p{background:linear-gradient(135deg,var(--p),var(--s));color:#fff;width:100%;padding:.7rem;font-size:.9rem}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(102,126,234,.35)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-s{background:rgba(67,233,123,.1);color:var(--g);border:1px solid rgba(67,233,123,.2)}
+.btn-s:hover{background:rgba(67,233,123,.2)}
+.btn-d{background:rgba(255,107,107,.1);color:var(--r);border:1px solid rgba(255,107,107,.25)}
+.btn-d:hover{background:rgba(255,107,107,.2)}
+.msg{display:none;padding:.6rem .8rem;border-radius:8px;margin-bottom:.8rem;font-size:.82rem;text-align:center}
+.msg-ok{background:rgba(67,233,123,.1);color:var(--g)}
+.msg-err{background:rgba(255,107,107,.1);color:var(--r)}
+
+.sb{width:230px;position:fixed;top:0;left:0;bottom:0;background:rgba(17,24,39,.97);border-right:1px solid var(--bd);z-index:100;display:flex;flex-direction:column}
+.sb-head{padding:1.25rem 1.25rem 0;font-size:1rem;font-weight:700;background:linear-gradient(135deg,var(--p),var(--s));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-nav{flex:1;padding:.5rem;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sb-nav .tab{display:flex;align-items:center;gap:.5rem;padding:.55rem .75rem;background:transparent;border:none;color:var(--t2);cursor:pointer;border-radius:8px;font-size:.82rem;text-align:left;transition:.15s}
+.sb-nav .tab:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.sb-nav .tab.active{background:linear-gradient(135deg,rgba(102,126,234,.2),rgba(118,75,162,.15));color:var(--p);font-weight:500}
+.sb-foot{padding:.75rem 1rem;border-top:1px solid var(--bd);font-size:.82rem}
+.sb-foot .uname{color:var(--p);font-weight:600}
+.sb-foot .lout{padding:.35rem .6rem;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:var(--r);border-radius:6px;cursor:pointer;font-size:.75rem;width:100%;margin-top:.4rem}
+
+.main{margin-left:230px;padding:1.5rem;min-height:100vh}
+.panel{display:none}
+.panel.on{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1rem;align-items:start}
+.ph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem}
+.ph h2{font-size:1.25rem;font-weight:700}
+.cd{background:rgba(255,255,255,.025);border:1px solid var(--bd);border-radius:12px;padding:1.25rem}
+.cd h3{margin-bottom:.75rem;font-size:.92rem;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{padding:.5rem .6rem;text-align:left;border-bottom:1px solid var(--bd)}
+th{color:var(--t2);font-weight:500}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+.to{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:.6rem 1rem;font-size:.82rem;animation:in .3s ease;max-width:320px}
+.to-err{border-color:rgba(255,107,107,.3);color:var(--r)}
+.to-ok{border-color:rgba(67,233,123,.3);color:var(--g)}
+@keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+input[type=file]{display:none}
+.uz{text-align:center;padding:2rem;border:2px dashed var(--bd);border-radius:12px;cursor:pointer;color:var(--t3);transition:.2s}
+.uz:hover{border-color:var(--p);color:var(--p)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--t3);border-top-color:var(--p);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:.3rem}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div id="loginView" class="login-wrap">
+<div class="login-card">
+<h1>SkyXing 管理后台</h1>
+<div class="sub">请使用管理员账号登录</div>
+<div id="loginMessage" class="msg"></div>
+<form id="loginForm" autocomplete="off"><div class="fg">
+<input type="text" id="username" placeholder="用户名" required>
+<input type="password" id="password" placeholder="密码" required>
+<button type="button" id="adminLoginBtn" class="btn btn-p">登 录</button>
+</div></form></div></div>
+
+<!-- 管理面板 -->
+<div id="adminView" style="display:none">
+<div class="sb" id="sidebar">
+<div class="sb-head">SkyXing Admin</div>
+<nav class="sb-nav">
+<button class="tab active" data-panel="config">⚙ 网站配置</button>
+<button class="tab" data-panel="users">👥 用户管理</button>
+<button class="tab" data-panel="blogs">📝 博客管理</button>
+<button class="tab" data-panel="files">📁 文件管理</button>
+<button class="tab" data-panel="slzx">🏫 双流中学</button>
+<button class="tab" data-panel="notifs">🔔 通知管理</button>
+<button class="tab" data-panel="messages">💬 私信管理</button>
+<button class="tab" data-panel="permissions" id="nav-permissions" style="display:none">🔑 权限管理</button>
+<button class="tab" data-panel="optimization" id="nav-optimization" style="display:none">🛠 系统优化</button>
+</nav>
+<div class="sb-foot">
+<div><span id="currentUser" class="uname">-</span></div>
+<button id="logoutBtn" class="lout">退出登录</button>
+</div></div>
+<div class="main">
+
+<div id="panel-config" class="panel on">
+<div class="ph"><h2>网站配置</h2><button class="btn btn-s" id="saveConfigBtn">💾 保存配置</button></div>
+<div class="cd"><h3>基本设置</h3>
+<div class="fg"><label>站点名称</label><input id="cfgSiteName"></div>
+<div class="fg"><label>站点描述</label><input id="cfgSiteDesc"></div></div>
+<div class="cd"><h3>横幅</h3>
+<div class="fg"><label>标题</label><input id="cfgBannerTitle"></div>
+<div class="fg"><label>副标题</label><input id="cfgBannerSub"></div></div>
+<div class="cd"><h3>关于页面</h3>
+<div class="fg"><label>内容</label><textarea id="cfgAbout" rows="4" style="resize:vertical;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:.65rem;font-family:inherit;font-size:.85rem"></textarea></div></div></div>
+
+<div id="panel-users" class="panel">
+<div class="ph"><h2>用户管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>用户列表</h3>
+<div id="usersTable"></div></div></div>
+
+<div id="panel-blogs" class="panel">
+<div class="ph"><h2>博客管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>文章列表</h3>
+<div id="blogsTable"></div></div></div>
+
+<div id="panel-files" class="panel">
+<div class="ph"><h2>文件管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>文件列表</h3>
+<div id="filesTable"></div></div></div>
+
+<div id="panel-slzx" class="panel">
+<div class="ph"><h2>双流中学 - 操行分</h2><div><button class="btn btn-s" id="slzxImportBtn">📥 导入Excel</button></div></div>
+<div class="cd" style="grid-column:1/-1"><h3>成绩列表</h3>
+<div class="fg" style="flex-direction:row;gap:.5rem"><input id="slzxSearch" placeholder="搜索姓名/班级"><button class="btn btn-s" id="slzxSearchBtn">搜索</button></div>
+<div id="slzxTable" style="margin-top:.5rem"></div></div></div>
+
+<div id="panel-notifs" class="panel">
+<div class="ph"><h2>通知管理</h2><button class="btn btn-s" id="sendNotifBtn">📢 发送通知</button></div>
+<div class="cd" style="grid-column:1/-1"><h3>发送全站通知</h3>
+<div class="fg"><input id="notifTitle" placeholder="通知标题"></div>
+<div class="fg"><textarea id="notifContent" rows="2" placeholder="通知内容" style="resize:vertical;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:.65rem;font-family:inherit;font-size:.85rem"></textarea></div>
+<button class="btn btn-p" id="sendNotifSubmit">发送</button></div></div>
+
+<div id="panel-messages" class="panel">
+<div class="ph"><h2>私信管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>用户私信</h3>
+<div id="adminMsgsTable"></div></div></div>
+
+<div id="panel-permissions" class="panel">
+<div class="ph"><h2>权限管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>功能管理员</h3>
+<div class="fg" style="flex-direction:row;gap:.5rem;margin-bottom:.5rem">
+<input id="permUser" placeholder="用户名">
+<select id="permFeature" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:.5rem;font-family:inherit">
+<option value="config">网站配置</option><option value="users">用户管理</option><option value="blogs">博客管理</option><option value="files">文件管理</option><option value="slzx">双流中学</option><option value="notifs">通知管理</option><option value="messages">私信管理</option>
+</select>
+<button class="btn btn-s" id="permAddBtn">添加权限</button>
+<button class="btn btn-d" id="permRevokeBtn">撤销所有权限</button></div>
+<div id="permTable"></div></div></div>
+
+<div id="panel-optimization" class="panel">
+<div class="ph"><h2>系统优化</h2><button class="btn btn-s" id="optimRunBtn">▶ 运行优化</button></div>
+<div class="cd" style="grid-column:1/-1"><h3>优化日志</h3>
+<div id="optimLog"></div></div></div></div>
+</div>
+
+<div class="toast-wrap" id="toastContainer"></div>
+
+<script>
+(function(){ "use strict";
+console.log("[Admin] init");
+
+var TOKEN_KEY="auth_token", currentUser=null;
+
+function showToast(msg,isError){
+  var c=document.getElementById('toastContainer'), t=document.createElement('div');
+  t.className='to '+(isError?'to-err':'to-ok'); t.textContent=msg; c.appendChild(t);
+  setTimeout(function(){t.remove()},3000);
+}
+
+function getToken(){return localStorage.getItem(TOKEN_KEY)||localStorage.getItem('token')}
+function setToken(t){localStorage.setItem(TOKEN_KEY,t);try{document.cookie="auth_token="+t+";path=/;max-age=604800;SameSite=Strict"}catch(e){}}
+function removeToken(){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem('token');try{document.cookie="auth_token=;path=/;max-age=0"}catch(e){}}
+function authHeader(){var t=getToken();return t?"Bearer "+t:null}
+function showMsg(msg,isErr){var el=document.getElementById("loginMessage");el.style.display="block";el.className="msg "+(isErr?"msg-err":"msg-ok");el.textContent=msg}
+
+var _loginCreds=null;
+
+async function apiCall(path,options){
+  options=options||{}; var headers=options.headers||{}, token=authHeader();
+  if(token) headers["Authorization"]=token;
+  if(!headers["Content-Type"]&&!(options.body instanceof FormData)) headers["Content-Type"]="application/json";
+  options.headers=headers;
+  var r=await fetch(path,options);
+  if(r.status===401){
+    if(_loginCreds){
+      var lr=await fetch("/api/admin/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(_loginCreds)});
+      var ld=await lr.json();
+      if(ld.success){setToken(ld.token);headers["Authorization"]=authHeader();options.headers=headers;r=await fetch(path,options)}
+    }
+    if(r.status===401){removeToken();showLogin();throw new Error("AUTH_FAILED")}
+  }
+  var d=await r.json(); if(!d.success&&r.status!==200&&r.status!==401) throw new Error(d.message);
+  return d;
+}
+
+async function apiFetch(path,options){
+  var headers=options?options.headers||{}:{}, token=authHeader();
+  if(token) headers["Authorization"]=token;
+  return fetch(path,{method:options?options.method:'GET',headers:headers,body:options?options.body:undefined});
+}
+
+// ── 视图切换 ──
+function showAdminView(ud){
+  console.log("[Admin] showAdminView",ud.username,"isGlobalAdmin=",ud.isGlobalAdmin,"role=",ud.role);
+  document.getElementById("loginView").style.display="none";
+  document.getElementById("adminView").style.display="block";
+  document.getElementById("currentUser").textContent=ud.username;
+  currentUser=ud;
+  if(ud.isGlobalAdmin){
+    document.getElementById("nav-permissions").style.display="";
+    document.getElementById("nav-optimization").style.display="";
+  }
+  initApp();
+}
+
+var loginVisible=true;
+function showLogin(){
+  if(!loginVisible)return; loginVisible=false;
+  document.getElementById("loginView").style.display="flex";
+  document.getElementById("adminView").style.display="none";
+  document.getElementById("loginForm").reset();
+}
+
+async function checkAuth(){
+  var t=getToken();if(!t)return;
+  try{
+    var d=await apiCall("/api/user/me");
+    if(d.success&&d.user&&(d.user.role==="admin"||d.user.role==="feature_admin")){
+      showAdminView(d.user);
+    }else if(d.banned){showLogin();showMsg("⛔ "+(d.message||"您的账号已被封禁"),true)}
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("[Admin] checkAuth fail",e)}
+}
+
+// ── 登录 ──
+document.getElementById("adminLoginBtn").addEventListener("click",async function(e){
+  e.preventDefault(); var u=document.getElementById("username").value,p=document.getElementById("password").value;
+  var btn=this;btn.disabled=true;btn.textContent="登录中...";
+  try{
+    var r=await fetch("/api/admin/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});
+    var d=await r.json();
+    if(d.success){
+      setToken(d.token); _loginCreds={username:u,password:p};
+      var md=await apiCall("/api/user/me");
+      loginVisible=true;
+      showAdminView(md.success?md.user:{username:u,role:"admin",isGlobalAdmin:true,permissions:[]});
+    }else{showMsg(d.message||"登录失败",true);btn.disabled=false;btn.textContent="登 录"}
+  }catch(err){if(err.message!=="AUTH_FAILED")showMsg("网络错误",true);btn.disabled=false;btn.textContent="登 录"}
+});
+
+document.getElementById("loginForm").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("adminLoginBtn").click()});
+document.getElementById("logoutBtn").addEventListener("click",function(){removeToken();_loginCreds=null;loginVisible=true;showLogin()});
+
+// ── 导航 ──
+document.querySelectorAll(".sb-nav .tab").forEach(function(tab){tab.addEventListener("click",function(){
+  var p=this.getAttribute("data-panel");
+  document.querySelectorAll(".panel.on").forEach(function(px){px.classList.remove("on")});
+  var panel=document.getElementById("panel-"+p); if(panel) panel.classList.add("on");
+  document.querySelectorAll(".sb-nav .tab.active").forEach(function(tx){tx.classList.remove("active")});
+  this.classList.add("active");
+})});
+
+// ── 初始化 ──
+async function initApp(){
+  loadConfig(); loadUsers(); loadBlogs(); loadFiles(); loadSlzxScores(); loadPermissions(); loadOptimizationLog();
+}
+async function loadConfig(){
+  try{var d=await apiCall("/api/admin/config");if(d.success&&d.config){
+    if(d.config.siteName)document.getElementById("cfgSiteName").value=d.config.siteName;
+    if(d.config.siteDescription)document.getElementById("cfgSiteDesc").value=d.config.siteDescription;
+    if(d.config.bannerTitle)document.getElementById("cfgBannerTitle").value=d.config.bannerTitle;
+    if(d.config.bannerSubtitle)document.getElementById("cfgBannerSub").value=d.config.bannerSubtitle;
+    if(d.config.aboutContent)document.getElementById("cfgAbout").value=d.config.aboutContent;
+  }}catch(e){if(e.message!=="AUTH_FAILED")console.error("loadConfig:",e.message)}
+}
+document.getElementById("saveConfigBtn").addEventListener("click",function(){
+  apiCall("/api/admin/config",{method:"POST",body:JSON.stringify({
+    siteName:document.getElementById("cfgSiteName").value,
+    siteDescription:document.getElementById("cfgSiteDesc").value,
+    bannerTitle:document.getElementById("cfgBannerTitle").value,
+    bannerSubtitle:document.getElementById("cfgBannerSub").value,
+    aboutContent:document.getElementById("cfgAbout").value
+  })}).then(function(d){showToast(d.message||"已保存",!d.success)}).catch(function(e){if(e.message!=="AUTH_FAILED")showToast("保存失败",true)});
+});
+
+async function loadUsers(){
+  try{var d=await apiCall("/api/admin/users");
+    var t='<table><tr><th>用户名</th><th>角色</th><th>注册时间</th><th>操作</th></tr>';
+    (d.users||[]).forEach(function(u){
+      t+='<tr><td>'+u.username+'</td><td>'+u.role+'</td><td>'+new Date(u.createdAt).toLocaleString()+'</td>';
+      t+='<td><button class="btn btn-d" onclick="deleteUser(\''+u.username+'\')" style="font-size:.7rem;padding:.25rem .5rem">删除</button></td></tr>';
+    });
+    document.getElementById("usersTable").innerHTML=t+'</table>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadUsers:",e.message)}
+}
+window.deleteUser=async function(uname){
+  if(!confirm("确定删除用户 "+uname+"？"))return;
+  try{var d=await apiCall("/api/admin/users/delete",{method:"POST",body:JSON.stringify({username:uname})});showToast(d.message||"已删除",!d.success);loadUsers()}catch(e){if(e.message!=="AUTH_FAILED")showToast("删除失败",true)}
+};
+
+async function loadBlogs(){
+  try{var d=await apiCall("/api/admin/blogs");
+    var t='<table><tr><th>标题</th><th>作者</th><th>时间</th><th>操作</th></tr>';
+    (d.blogs||[]).forEach(function(b){
+      t+='<tr><td>'+b.title+'</td><td>'+b.author+'</td><td>'+new Date(b.createdAt).toLocaleString()+'</td>';
+      t+='<td><button class="btn btn-d" onclick="deleteBlog(\''+b.id+'\')" style="font-size:.7rem;padding:.25rem .5rem">删除</button></td></tr>';
+    });
+    document.getElementById("blogsTable").innerHTML=t+'</table>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadBlogs:",e.message)}
+}
+window.deleteBlog=async function(id){
+  if(!confirm("确定删除此文章？"))return;
+  try{var d=await apiCall("/api/admin/blog/delete",{method:"POST",body:JSON.stringify({id:id})});showToast(d.message||"已删除",!d.success);loadBlogs()}catch(e){if(e.message!=="AUTH_FAILED")showToast("删除失败",true)}
+};
+
+async function loadFiles(){
+  try{var d=await apiCall("/api/admin/files");
+    var t='<table><tr><th>文件名</th><th>大小</th><th>上传者</th><th>下载量</th><th>操作</th></tr>';
+    (d.files||[]).forEach(function(f){
+      var sz=f.size<1048576?(f.size/1024).toFixed(1)+' KB':(f.size/1048576).toFixed(1)+' MB';
+      t+='<tr><td>'+f.name+'</td><td>'+sz+'</td><td>'+f.uploader+'</td><td>'+f.downloads+'</td>';
+      t+='<td><button class="btn btn-d" onclick="deleteFile(\''+f.id+'\')" style="font-size:.7rem;padding:.25rem .5rem">删除</button></td></tr>';
+    });
+    document.getElementById("filesTable").innerHTML=t+'</table>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadFiles:",e.message)}
+}
+window.deleteFile=async function(id){
+  if(!confirm("确定删除此文件？"))return;
+  try{var d=await apiCall("/api/admin/file/delete",{method:"POST",body:JSON.stringify({id:id})});showToast(d.message||"已删除",!d.success);loadFiles()}catch(e){if(e.message!=="AUTH_FAILED")showToast("删除失败",true)}
+};
+
+async function loadSlzxScores(){
+  try{var d=await apiCall("/api/slzx/scores?page=1");
+    var t='<table><tr><th>姓名</th><th>班级</th><th>分数</th><th>类型</th><th>原因</th><th>操作</th></tr>';
+    (d.scores||[]).slice(0,50).forEach(function(s){
+      t+='<tr><td>'+s.name+'</td><td>'+s.className+'</td><td>'+s.score+'</td><td>'+s.category+'</td><td>'+(s.reason||'')+'</td>';
+      t+='<td><button class="btn btn-d" onclick="deleteScore(\''+s.id+'\')" style="font-size:.7rem;padding:.25rem .5rem">删除</button></td></tr>';
+    });
+    document.getElementById("slzxTable").innerHTML=t+'</table>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadSlzx:",e.message)}
+}
+window.deleteScore=async function(id){try{var d=await apiCall("/api/slzx/scores/delete",{method:"POST",body:JSON.stringify({id:id})});showToast("已删除");loadSlzxScores()}catch(e){if(e.message!=="AUTH_FAILED")showToast("操作失败",true)}};
+document.getElementById("slzxSearchBtn").addEventListener("click",function(){loadSlzxScores()});
+document.getElementById("slzxImportBtn").addEventListener("click",function(){
+  var d=prompt("请粘贴Excel数据(JSON数组格式):\n[{name:\"姓名\",className:\"班级\",score:分数,category:\"类型\",reason:\"原因\"}]");
+  if(d){try{var data=JSON.parse(d);apiCall("/api/slzx/scores/excel",{method:"POST",body:JSON.stringify({data:data})}).then(function(r){showToast(r.message||"已导入");loadSlzxScores()})}catch(e){showToast("数据格式错误",true)}}
+});
+
+// ── 通知 ──
+document.getElementById("sendNotifSubmit").addEventListener("click",function(){
+  var t=document.getElementById("notifTitle").value;
+  if(!t){showToast("请输入标题",true);return}
+  apiCall("/api/notifications/send",{method:"POST",body:JSON.stringify({target:'all',title:t,content:document.getElementById("notifContent").value})})
+  .then(function(d){showToast(d.message||"已发送");document.getElementById("notifTitle").value="";document.getElementById("notifContent").value=""})
+  .catch(function(e){if(e.message!=="AUTH_FAILED")showToast("发送失败",true)});
+});
+
+// ── 权限 ──
+async function loadPermissions(){
+  try{var d=await apiCall("/api/admin/permissions/list");
+    var t='<table><tr><th>用户名</th><th>权限</th><th>操作</th></tr>';
+    (d.featureAdmins||[]).forEach(function(a){
+      t+='<tr><td>'+a.username+'</td><td>'+(a.permissions||[]).join(', ')+'</td>';
+      t+='<td><button class="btn btn-d" onclick="revokePerm(\''+a.username+'\')" style="font-size:.7rem;padding:.25rem .5rem">撤销</button></td></tr>';
+    });
+    document.getElementById("permTable").innerHTML=(d.featureAdmins||[]).length>0?t+'</table>':'<p style="color:var(--t3)">暂无功能管理员</p>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadPermissions:",e.message)}
+}
+window.revokePerm=async function(u){
+  try{var d=await apiCall("/api/admin/permissions/revoke",{method:"POST",body:JSON.stringify({username:u})});showToast(d.message||"已撤销");loadPermissions()}catch(e){if(e.message!=="AUTH_FAILED")showToast("操作失败",true)}
+};
+document.getElementById("permAddBtn").addEventListener("click",function(){
+  var u=document.getElementById("permUser").value,f=document.getElementById("permFeature").value;
+  if(!u){showToast("请输入用户名",true);return}
+  apiCall("/api/admin/permissions/set",{method:"POST",body:JSON.stringify({username:u,permissions:[f]})})
+  .then(function(d){showToast(d.message||"已设置");loadPermissions()})
+  .catch(function(e){if(e.message!=="AUTH_FAILED")showToast("操作失败",true)});
+});
+document.getElementById("permRevokeBtn").addEventListener("click",function(){
+  var u=document.getElementById("permUser").value;
+  if(!u){showToast("请输入用户名",true);return}
+  apiCall("/api/admin/permissions/revoke",{method:"POST",body:JSON.stringify({username:u})})
+  .then(function(d){showToast(d.message||"已撤销");loadPermissions()})
+  .catch(function(e){if(e.message!=="AUTH_FAILED")showToast("操作失败",true)});
+});
+
+// ── 优化 ──
+async function loadOptimizationLog(){
+  try{var d=await apiCall("/api/admin/optimization/log");
+    var h='<ul style="padding-left:1.2rem;color:var(--t2);font-size:.82rem">';
+    (d.logs||[]).slice(0,20).forEach(function(l){h+='<li>'+new Date(l.time).toLocaleString()+' - '+(l.report?JSON.stringify(l.report):l.action||'')+'</li>'});
+    document.getElementById("optimLog").innerHTML=h+'</ul>';
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadOptimLog:",e.message)}
+}
+document.getElementById("optimRunBtn").addEventListener("click",function(){
+  var btn=this;btn.disabled=true;btn.textContent="运行中...";
+  apiCall("/api/admin/optimization/run",{method:"POST"}).then(function(d){showToast(d.message||"完成");loadOptimizationLog();btn.disabled=false;btn.textContent="▶ 运行优化"}).catch(function(e){btn.disabled=false;btn.textContent="▶ 运行优化";if(e.message!=="AUTH_FAILED")showToast("失败",true)});
+});
+
+// ── 启动 ──
+checkAuth();
+})();
+</script>
+</body>
+</html>
