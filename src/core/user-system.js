@@ -59,8 +59,8 @@ export async function handleRegister(request, env) {
     const { username, password, captchaId, captchaAnswer } = await request.json();
 
     // 验证用户名
-    if (!username || username.length < 3 || username.length > 12)
-        return json({ success: false, message: '用户名需3-12位' });
+    if (!username || username.length < 3 || username.length > 18)
+        return json({ success: false, message: '用户名需3-18位' });
     if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username))
         return json({ success: false, message: '用户名只能包含中英文、数字和下划线' });
     if (await getUser(env, username))
@@ -203,8 +203,8 @@ export async function handleUpdateProfile(request, env) {
     const target = newName || user.username;
 
     if (newName && newName !== user.username) {
-        if (newName.length < 3 || newName.length > 12)
-            return json({ success: false, message: '用户名需3-12位' });
+        if (newName.length < 3 || newName.length > 18)
+            return json({ success: false, message: '用户名需3-18位' });
         if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(newName))
             return json({ success: false, message: '用户名只能包含中英文、数字和下划线' });
         if (await getUser(env, newName))

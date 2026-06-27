@@ -4,10 +4,11 @@
     --bg: #111827; --bg2: #1f2937; --bd: rgba(255,255,255,.06);
     --tx: rgba(255,255,255,.9); --t2: rgba(255,255,255,.55); --t3: rgba(255,255,255,.3);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
+*,*::before,*::after { margin: 0; padding: 0; box-sizing: border-box; }
+html,body {
+    background: #111827 !important; color: rgba(255,255,255,.9);
+    min-height: 100vh; line-height: 1.6;
     font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--bg); color: var(--tx); min-height: 100vh; line-height: 1.6;
 }
 a { color: var(--p); text-decoration: none; }
 a:hover { text-decoration: underline; }

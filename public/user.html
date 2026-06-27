@@ -6,8 +6,9 @@
 <title>SkyXing - 用户中心</title>
 <style>
 ::root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#0f172a;--bg2:#1e293b;--bd:rgba(255,255,255,.08);--tx:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#0f172a!important;color:rgba(255,255,255,.92);min-height:100vh}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:#0a0f1a;border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 1.5rem;z-index:100}
 .topbar .logo{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--p),var(--s));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
 .topbar a{color:var(--t2);text-decoration:none;font-size:.82rem;margin-left:1rem;transition:color .15s}
@@ -95,7 +96,7 @@ body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;backgroun
   <div id="tab-register" class="card hidden">
     <h2>注册</h2>
     <div id="regMsg" class="msg"></div>
-    <div class="fg"><label>用户名（3-12位）</label><input id="regUser" placeholder="支持中英文、数字、下划线" autocomplete="off"></div>
+    <div class="fg"><label>用户名（3-18位）</label><input id="regUser" placeholder="支持中英文、数字、下划线" autocomplete="off"></div>
     <div class="fg"><label>密码（至少6位）</label><input type="password" id="regPass" placeholder="请输入密码" autocomplete="new-password"></div>
     <div class="fg"><label>人机验证</label>
       <div class="captcha-wrap"><div class="captcha-svg" id="regCaptchaSvg" title="点击刷新验证码"><span style="color:var(--t3);font-size:.75rem">加载中...</span></div><input id="regCaptcha" placeholder="输入算术结果"><button class="btn-s" id="regRefreshCaptcha">刷新</button></div>
