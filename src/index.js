@@ -176,7 +176,7 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
 async function checkRateLimit(env, key, window, max) {
     const k = `rl:${key}:${Date.now() - Date.now() % window}`;
     const n = parseInt(await env.SkyXing.get(k) || '0') + 1;
-    await env.SkyXing.put(k, String(n), { expirationTtl: Math.ceil(window / 1000) });
+    await env.SkyXing.put(k, String(n), { expirationTtl: Math.max(60, Math.ceil(window / 1000)) });
     return { allowed: n <= max, retryAfter: n > max ? Math.ceil(window / 1000) : 0 };
 }
 

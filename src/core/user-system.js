@@ -28,7 +28,7 @@ function checkRateLimit(env, key, window, max) {
     return (async () => {
         const k = `rl:${key}:${Date.now() - Date.now() % window}`;
         const n = parseInt(await env.SkyXing.get(k) || '0') + 1;
-        await env.SkyXing.put(k, String(n), { expirationTtl: Math.ceil(window / 1000) });
+        await env.SkyXing.put(k, String(n), { expirationTtl: Math.max(60, Math.ceil(window / 1000)) });
         return { allowed: n <= max, retryAfter: n > max ? Math.ceil(window / 1000) : 0 };
     })();
 }
@@ -41,9 +41,14 @@ function needsSecurityCheck(user) {
 
 // ── 验证码 ──
 export async function handleCaptchaGenerate(request, env) {
-    const { id, svg, answer } = generateCaptcha();
-    await storeCaptcha(env, id, answer);
-    return json({ success: true, captchaId: id, captchaSvg: svg });
+    try {
+        const { id, svg, answer } = generateCaptcha();
+        await storeCaptcha(env, id, answer);
+        return json({ success: true, captchaId: id, captchaSvg: svg });
+    } catch (e) {
+        console.error('Captcha generate error:', e.message, e.stack);
+        return json({ success: false, message: '验证码生成失败: ' + e.message }, 500);
+    }
 }
 
 // ── 注册 ──
