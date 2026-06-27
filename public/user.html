@@ -252,18 +252,14 @@ function showAuth(user){
   load2FAStatus();
 }
 
-// 验证码 - 直接渲染 SVG 到容器中
-function renderCaptchaSVG(containerId, svgDataUri) {
+// 验证码 - 直接渲染 SVG 到容器中（后端返回纯 SVG 文本）
+function renderCaptchaSVG(containerId, svgText) {
   var container = document.getElementById(containerId);
   if (!container) return;
-  // 从 data URI 中提取 base64 并解码为 SVG 字符串
   try {
-    var base64 = svgDataUri.split(',')[1] || svgDataUri;
-    var svgText = atob(base64);
     container.innerHTML = svgText;
   } catch(e) {
-    // 如果解码失败，使用 img 作为后备
-    container.innerHTML = '<img src="' + svgDataUri + '" style="width:100%;height:100%;display:block">';
+    container.innerHTML = '<span style="color:var(--r);font-size:.7rem">渲染失败</span>';
   }
 }
 
@@ -272,8 +268,8 @@ async function loadCaptcha(prefix){
   if (container) container.innerHTML = '<span style="color:var(--t3);font-size:.75rem">加载中...</span>';
   try{
     var d = await api('/api/captcha/generate');
-    if(d.success){
-      renderCaptchaSVG(prefix + 'CaptchaSvg', d.captchaImage);
+    if(d.success && d.captchaSvg){
+      renderCaptchaSVG(prefix + 'CaptchaSvg', d.captchaSvg);
       STATE[prefix+'CaptchaId'] = d.captchaId;
     }
   }catch(e){

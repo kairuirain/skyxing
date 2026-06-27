@@ -43,7 +43,7 @@ function needsSecurityCheck(user) {
 export async function handleCaptchaGenerate(request, env) {
     const { id, svg, answer } = generateCaptcha();
     await storeCaptcha(env, id, answer);
-    return json({ success: true, captchaId: id, captchaImage: svg });
+    return json({ success: true, captchaId: id, captchaSvg: svg });
 }
 
 // ── 注册 ──
