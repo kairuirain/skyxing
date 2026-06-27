@@ -86,6 +86,8 @@ input[type=file]{display:none}
 <button class="tab" data-panel="notifs">🔔 通知管理</button>
 <button class="tab" data-panel="messages">💬 私信管理</button>
 <button class="tab" data-panel="permissions" id="nav-permissions" style="display:none">🔑 权限管理</button>
+<button class="tab" data-panel="monitor">📊 系统监控</button>
+<button class="tab" data-panel="selfheal">🏥 自愈管理</button>
 <button class="tab" data-panel="optimization" id="nav-optimization" style="display:none">🛠 系统优化</button>
 </nav>
 <div class="sb-foot">
@@ -112,6 +114,10 @@ input[type=file]{display:none}
 
 <div id="panel-blogs" class="panel">
 <div class="ph"><h2>博客管理</h2></div>
+<div class="cd" style="grid-column:1/-1"><h3>发布新文章</h3>
+<div class="fg"><input id="newBlogTitle" placeholder="文章标题" style="margin-bottom:.5rem"></div>
+<div class="fg"><textarea id="newBlogContent" rows="6" placeholder="文章内容 (支持 Markdown)" style="resize:vertical;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:.65rem;font-family:inherit;font-size:.85rem;margin-bottom:.5rem"></textarea></div>
+<button class="btn btn-p" id="createBlogBtn" style="margin-bottom:.75rem">发布文章</button></div>
 <div class="cd" style="grid-column:1/-1"><h3>文章列表</h3>
 <div id="blogsTable"></div></div></div>
 
@@ -149,6 +155,22 @@ input[type=file]{display:none}
 <button class="btn btn-s" id="permAddBtn">添加权限</button>
 <button class="btn btn-d" id="permRevokeBtn">撤销所有权限</button></div>
 <div id="permTable"></div></div></div>
+
+<div id="panel-monitor" class="panel">
+<div class="ph"><h2>系统监控</h2><div><button class="btn btn-s" id="monitorRefreshBtn">🔄 刷新</button></div></div>
+<div class="cd"><h3>服务状态</h3><div id="monitorStatus"></div></div>
+<div class="cd"><h3>端点性能</h3><div id="monitorEndpoints"></div></div>
+<div class="cd" style="grid-column:1/-1"><h3>断路器状态</h3><div id="monitorCircuits"></div></div>
+<div class="cd" style="grid-column:1/-1"><h3>最近错误 (20条)</h3><div id="monitorErrors"></div></div>
+<div class="cd" style="grid-column:1/-1"><h3>运行日志</h3><div id="monitorLogs"></div></div></div>
+
+<div id="panel-selfheal" class="panel">
+<div class="ph"><h2>自愈管理</h2><button class="btn btn-s" id="selfhealRunBtn">▶ 执行自愈</button></div>
+<div class="cd" style="grid-column:1/-1"><h3>自愈报告</h3>
+<div class="fg" style="flex-direction:row;gap:.5rem;align-items:center">
+<span style="color:var(--t2);font-size:.82rem">自愈任务会自动清理过期令牌、压缩超长列表。全局管理员可手动触发。</span>
+</div>
+<div id="selfhealReport" style="margin-top:.75rem"></div></div></div>
 
 <div id="panel-optimization" class="panel">
 <div class="ph"><h2>系统优化</h2><button class="btn btn-s" id="optimRunBtn">▶ 运行优化</button></div>
@@ -260,6 +282,7 @@ document.querySelectorAll(".sb-nav .tab").forEach(function(tab){tab.addEventList
   var panel=document.getElementById("panel-"+p); if(panel) panel.classList.add("on");
   document.querySelectorAll(".sb-nav .tab.active").forEach(function(tx){tx.classList.remove("active")});
   this.classList.add("active");
+  if(p==='monitor'){loadMonitor();loadCircuits()}
 })});
 
 // ── 初始化 ──
@@ -310,6 +333,18 @@ async function loadBlogs(){
     document.getElementById("blogsTable").innerHTML=t+'</table>';
   }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadBlogs:",e.message)}
 }
+document.getElementById("createBlogBtn").addEventListener("click",async function(){
+  var t=document.getElementById("newBlogTitle").value,c=document.getElementById("newBlogContent").value;
+  if(!t||!c){showToast("标题和内容不能为空",true);return}
+  var btn=this;btn.disabled=true;btn.textContent="发布中...";
+  try{
+    var d=await apiCall("/api/blog/create",{method:"POST",body:JSON.stringify({title:t,content:c})});
+    showToast(d.message||"发布成功");loadBlogs();
+    document.getElementById("newBlogTitle").value="";document.getElementById("newBlogContent").value="";
+  }catch(e){if(e.message!=="AUTH_FAILED")showToast(e.message||"发布失败",true)}
+  btn.disabled=false;btn.textContent="发布文章";
+});
+
 window.deleteBlog=async function(id){
   if(!confirm("确定删除此文章？"))return;
   try{var d=await apiCall("/api/admin/blog/delete",{method:"POST",body:JSON.stringify({id:id})});showToast(d.message||"已删除",!d.success);loadBlogs()}catch(e){if(e.message!=="AUTH_FAILED")showToast("删除失败",true)}
@@ -397,6 +432,101 @@ async function loadOptimizationLog(){
 document.getElementById("optimRunBtn").addEventListener("click",function(){
   var btn=this;btn.disabled=true;btn.textContent="运行中...";
   apiCall("/api/admin/optimization/run",{method:"POST"}).then(function(d){showToast(d.message||"完成");loadOptimizationLog();btn.disabled=false;btn.textContent="▶ 运行优化"}).catch(function(e){btn.disabled=false;btn.textContent="▶ 运行优化";if(e.message!=="AUTH_FAILED")showToast("失败",true)});
+});
+
+// ── 监控 ──
+async function loadMonitor(){
+  try{var d=await apiCall("/api/admin/monitor/health");
+    if(!d.success)return;
+    var h=d.health;
+    var s='<div style="display:flex;gap:1rem;flex-wrap:wrap">';
+    s+='<div style="background:rgba(67,233,123,.08);border:1px solid rgba(67,233,123,.2);border-radius:8px;padding:.65rem 1rem"><div style="font-size:.7rem;color:var(--t3)">状态</div><div style="font-size:1rem;font-weight:700;color:'+(h.status==='healthy'?'var(--g)':'var(--r)')+'">'+h.status+'</div></div>';
+    s+='<div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.65rem 1rem"><div style="font-size:.7rem;color:var(--t3)">运行时间</div><div style="font-size:1rem;font-weight:700">'+formatUptime(h.uptime)+'</div></div>';
+    s+='<div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.65rem 1rem"><div style="font-size:.7rem;color:var(--t3)">总请求</div><div style="font-size:1rem;font-weight:700">'+h.totalRequests+'</div></div>';
+    s+='<div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.65rem 1rem"><div style="font-size:.7rem;color:var(--t3)">错误率</div><div style="font-size:1rem;font-weight:700;color:'+(parseFloat(h.errorRate)>5?'var(--r)':'var(--g)')+'">'+h.errorRate+'</div></div>';
+    s+='<div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.65rem 1rem"><div style="font-size:.7rem;color:var(--t3)">日志量</div><div style="font-size:1rem;font-weight:700">'+h.logCount+'</div></div>';
+    s+='</div>';
+    document.getElementById("monitorStatus").innerHTML=s;
+
+    var eps=h.endpoints||{};
+    var et='<table><tr><th>端点</th><th>请求数</th><th>成功</th><th>失败</th><th>Avg</th><th>P50</th><th>P95</th><th>P99</th><th>最后访问</th></tr>';
+    var ekeys=Object.keys(eps).sort(function(a,b){return eps[b].total-eps[a].total});
+    ekeys.forEach(function(ep){
+      var e=eps[ep];
+      et+='<tr><td style="word-break:break-all">'+ep+'</td><td>'+e.total+'</td><td style="color:var(--g)">'+e.success+'</td><td style="color:var(--r)">'+e.failure+'</td><td>'+e.avg+'ms</td><td>'+e.p50+'ms</td><td>'+e.p95+'ms</td><td>'+e.p99+'ms</td><td>'+timeAgo(e.lastAccess)+'</td></tr>';
+    });
+    et+='</table>';
+    document.getElementById("monitorEndpoints").innerHTML=ekeys.length?et:'<p style="color:var(--t3)">暂无端点数据</p>';
+
+    var errs=h.recentErrors||[];
+    var er='<table><tr><th>时间</th><th>来源</th><th>消息</th></tr>';
+    errs.forEach(function(er){ er+='<tr><td>'+new Date(er.time).toLocaleString()+'</td><td>'+er.source+'</td><td>'+er.message+'</td></tr>'});
+    er+='</table>';
+    document.getElementById("monitorErrors").innerHTML=errs.length?er:'<p style="color:var(--t3)">✅ 最近无错误</p>';
+
+    var logs=d.logs||[];
+    var lt='<table><tr><th>时间</th><th>级别</th><th>来源</th><th>消息</th></tr>';
+    logs.forEach(function(l){
+      var c=l.level==='ERROR'?'var(--r)':l.level==='WARN'?'var(--y)':'var(--t2)';
+      lt+='<tr><td>'+new Date(l.time).toLocaleString()+'</td><td style="color:'+c+'">'+l.level+'</td><td>'+l.source+'</td><td>'+l.message+'</td></tr>';
+    });
+    lt+='</table>';
+    document.getElementById("monitorLogs").innerHTML=lt;
+    // 日志分页
+    var pg='<div style="display:flex;gap:.35rem;margin-top:.5rem;align-items:center;font-size:.75rem;color:var(--t2)">';
+    pg+='<span>第'+d.logPage+'页 / 共'+Math.ceil(d.logTotal/d.logPageSize)+'页 ('+d.logTotal+'条)</span>';
+    pg+='</div>';
+    document.getElementById("monitorLogs").innerHTML+=pg;
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadMonitor:",e.message)}
+}
+
+async function loadCircuits(){
+  try{var d=await apiCall("/api/admin/monitor/circuits");
+    var cs=d.circuits||{};
+    var ckeys=Object.keys(cs);
+    if(!ckeys.length){document.getElementById("monitorCircuits").innerHTML='<p style="color:var(--t3)">暂无断路器数据</p>';return}
+    var ct='<table><tr><th>断路器</th><th>状态</th><th>失败次数</th><th>最后失败</th><th>最后成功</th></tr>';
+    ckeys.forEach(function(k){
+      var c=cs[k];
+      var icon=c.state==='closed'?'✅':c.state==='half_open'?'⚠':'❌';
+      var color=c.state==='closed'?'var(--g)':c.state==='half_open'?'var(--y)':'var(--r)';
+      ct+='<tr><td>'+k+'</td><td style="color:'+color+'">'+icon+' '+c.state+'</td><td>'+c.failures+'</td><td>'+timeAgo(c.lastFailure)+'</td><td>'+timeAgo(c.lastSuccess)+'</td></tr>';
+    });
+    ct+='</table>';
+    document.getElementById("monitorCircuits").innerHTML=ct;
+  }catch(e){if(e.message!=="AUTH_FAILED")console.error("loadCircuits:",e.message)}
+}
+
+function formatUptime(s){
+  var d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  var p=[];if(d>0)p.push(d+'天');if(h>0)p.push(h+'时');p.push(m+'分');
+  return p.join(' ');
+}
+function timeAgo(ts){
+  if(!ts)return '-';
+  var s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return s+'秒前';
+  if(s<3600)return Math.floor(s/60)+'分钟前';
+  if(s<86400)return Math.floor(s/3600)+'小时前';
+  return new Date(ts).toLocaleDateString();
+}
+document.getElementById("monitorRefreshBtn").addEventListener("click",function(){loadMonitor();loadCircuits()});
+
+// ── 自愈 ──
+document.getElementById("selfhealRunBtn").addEventListener("click",function(){
+  if(!confirm("确定执行自愈任务？将清理过期令牌、压缩列表。"))return;
+  var btn=this;btn.disabled=true;btn.textContent="执行中...";
+  apiCall("/api/admin/selfheal/run",{method:"POST"}).then(function(d){
+    showToast(d.message||"自愈完成");
+    var rp='';
+    if(d.report){
+      if(d.report.fixed&&d.report.fixed.length) rp+='<div style="margin-bottom:.5rem"><strong style="color:var(--g)">✅ 已修复 ('+d.report.fixed.length+'项):</strong><ul style="padding-left:1.2rem;color:var(--t2);font-size:.82rem">'+d.report.fixed.map(function(x){return'<li>'+x+'</li>'}).join('')+'</ul></div>';
+      if(d.report.skipped&&d.report.skipped.length) rp+='<div><strong style="color:var(--y)">⚠ 已跳过 ('+d.report.skipped.length+'项):</strong><ul style="padding-left:1.2rem;color:var(--t2);font-size:.82rem">'+d.report.skipped.map(function(x){return'<li>'+x+'</li>'}).join('')+'</ul></div>';
+      if(!d.report.fixed.length&&!d.report.skipped.length) rp='<p style="color:var(--g)">✅ 系统健康，无需修复</p>';
+    }
+    document.getElementById("selfhealReport").innerHTML=rp;
+    btn.disabled=false;btn.textContent="▶ 执行自愈";
+  }).catch(function(e){btn.disabled=false;btn.textContent="▶ 执行自愈";if(e.message!=="AUTH_FAILED")showToast("执行失败",true)});
 });
 
 // ── 启动 ──

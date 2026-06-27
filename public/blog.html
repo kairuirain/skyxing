@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyXing 博客</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#0f172a;--bg2:#1e293b;--bd:rgba(255,255,255,.08);--tx:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(10,15,26,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 1.5rem;z-index:100}
+.topbar .logo{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--p),var(--s));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;margin-right:1.5rem}
+.topbar nav{display:flex;gap:.25rem;flex:1}
+.topbar nav a{color:var(--t2);text-decoration:none;font-size:.82rem;padding:.4rem .75rem;border-radius:7px;transition:all .15s}
+.topbar nav a:hover,.topbar nav a.on{color:var(--tx);background:rgba(255,255,255,.06)}
+.topbar .actions{display:flex;align-items:center;gap:.75rem}
+.topbar .user-tag{color:var(--p);font-size:.8rem;font-weight:500}
+.topbar .btn-sm{padding:.35rem .7rem;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-size:.75rem;font-family:inherit;transition:.15s}
+.topbar .btn-sm:hover{color:var(--tx);border-color:var(--p)}
+.container{max-width:800px;margin:0 auto;padding:76px 1rem 3rem}
+
+.blog-list{display:flex;flex-direction:column;gap:.85rem}
+.blog-card{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .15s}
+.blog-card:hover{border-color:rgba(102,126,234,.25);transform:translateY(-1px)}
+.blog-card h3{font-size:1.05rem;font-weight:600;margin-bottom:.35rem;color:var(--tx)}
+.blog-card .meta{display:flex;gap:1rem;align-items:center;font-size:.72rem;color:var(--t3)}
+.blog-card .preview{font-size:.82rem;color:var(--t2);margin-top:.5rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.blog-card .tags{display:flex;gap:.35rem;margin-top:.5rem;flex-wrap:wrap}
+.blog-card .tag{font-size:.65rem;padding:.15rem .5rem;border-radius:4px;background:rgba(102,126,234,.12);color:var(--p)}
+
+.empty-state{text-align:center;padding:4rem 0;color:var(--t3)}
+.empty-state svg{width:80px;height:80px;margin-bottom:1rem;opacity:.4}
+.empty-state h3{font-size:1.1rem;margin-bottom:.35rem;color:var(--t2)}
+.empty-state p{font-size:.82rem}
+
+.pagination{display:flex;justify-content:center;gap:.35rem;margin-top:1.5rem}
+.pagination button{width:36px;height:36px;border-radius:8px;border:1px solid var(--bd);background:var(--bg2);color:var(--t2);cursor:pointer;font-size:.8rem;font-family:inherit;transition:.15s}
+.pagination button:hover{color:var(--tx);border-color:var(--p)}
+.pagination button.active{background:rgba(102,126,234,.15);color:var(--p);border-color:var(--p);font-weight:600}
+.pagination button:disabled{opacity:.3;cursor:not-allowed}
+
+.detail-wrap{animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.back-btn{display:inline-flex;align-items:center;gap:.35rem;color:var(--p);cursor:pointer;font-size:.82rem;margin-bottom:1rem;background:none;border:none;font-family:inherit}
+.back-btn:hover{text-decoration:underline}
+.detail-title{font-size:1.6rem;font-weight:700;line-height:1.3;margin-bottom:.5rem}
+.detail-meta{display:flex;gap:1rem;align-items:center;font-size:.75rem;color:var(--t3);margin-bottom:.25rem;flex-wrap:wrap}
+.detail-share{display:flex;gap:.35rem;margin:.75rem 0}
+.detail-share button{padding:.3rem .7rem;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-size:.72rem;font-family:inherit;transition:.15s}
+.detail-share button:hover{border-color:var(--p);color:var(--p)}
+.markdown-body{font-size:.9rem;line-height:1.75;color:var(--tx);padding:1.5rem 0;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);margin:1rem 0}
+.markdown-body h1,.markdown-body h2,.markdown-body h3{margin-top:1.5rem;margin-bottom:.75rem;font-weight:700;color:var(--tx)}
+.markdown-body h1{font-size:1.5rem;border-bottom:1px solid var(--bd);padding-bottom:.4rem}
+.markdown-body h2{font-size:1.25rem}
+.markdown-body h3{font-size:1.1rem}
+.markdown-body p{margin-bottom:.75rem}
+.markdown-body a{color:var(--p);text-decoration:none}
+.markdown-body a:hover{text-decoration:underline}
+.markdown-body code{background:rgba(255,255,255,.08);padding:.1rem .35rem;border-radius:4px;font-size:.85em;font-family:'JetBrains Mono','Fira Code','Courier New',monospace}
+.markdown-body pre{background:rgba(255,255,255,.05);padding:1rem;border-radius:8px;overflow-x:auto;font-size:.82rem;line-height:1.5;border:1px solid var(--bd);margin:.75rem 0}
+.markdown-body pre code{background:none;padding:0}
+.markdown-body blockquote{border-left:3px solid var(--p);padding:.25rem .75rem;margin:.75rem 0;color:var(--t2);background:rgba(102,126,234,.05)}
+.markdown-body ul,.markdown-body ol{padding-left:1.5rem;margin-bottom:.75rem}
+.markdown-body li{margin-bottom:.25rem}
+.markdown-body img{max-width:100%;border-radius:8px}
+.markdown-body table{width:100%;border-collapse:collapse;margin:.75rem 0}
+.markdown-body th,.markdown-body td{padding:.4rem .6rem;border:1px solid var(--bd);text-align:left}
+.markdown-body th{background:rgba(255,255,255,.05)}
+
+.comment-section{margin-top:1.5rem}
+.comment-section h3{font-size:1rem;font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.comment-count{font-size:.75rem;color:var(--t3);font-weight:400}
+.comment-box{display:flex;gap:.5rem;margin-bottom:1rem}
+.comment-box textarea{flex:1;padding:.6rem .8rem;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:.82rem;font-family:inherit;resize:vertical;min-height:44px;outline:none}
+.comment-box textarea:focus{border-color:var(--p)}
+.comment-box button{padding:.5rem 1rem;border:none;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--s));color:#fff;cursor:pointer;font-size:.78rem;font-family:inherit;font-weight:500;white-space:nowrap;transition:.15s}
+.comment-box button:hover{transform:translateY(-1px)}
+.comment-box button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.comment-login-hint{background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.75rem;text-align:center;font-size:.82rem;color:var(--t2);margin-bottom:1rem}
+.comment-login-hint a{color:var(--p);text-decoration:none}
+.comment-item{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:10px;padding:.85rem 1rem;margin-bottom:.5rem}
+.comment-item .c-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem}
+.comment-item .c-author{font-size:.82rem;font-weight:600;color:var(--p)}
+.comment-item .c-time{font-size:.68rem;color:var(--t3)}
+.comment-item .c-body{font-size:.82rem;line-height:1.6;color:var(--tx)}
+.comment-item .c-del{font-size:.65rem;color:var(--t3);cursor:pointer;background:none;border:none}
+.comment-item .c-del:hover{color:var(--r)}
+
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.4rem}
+.toast{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:.55rem 1rem;font-size:.78rem;animation:toastIn .3s;max-width:320px}
+.toast-err{border-color:rgba(255,107,107,.3);color:var(--r)}
+.toast-ok{border-color:rgba(67,233,123,.3);color:var(--g)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.loading{text-align:center;padding:3rem;color:var(--t3)}
+.spinner{display:inline-block;width:28px;height:28px;border:2px solid var(--t3);border-top-color:var(--p);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.blog-card{padding:1rem}.detail-title{font-size:1.3rem}.detail-meta{gap:.5rem}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/blog" class="logo">SkyXing Blog</a>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/blog" class="on">Blog</a>
+  </nav>
+  <div class="actions">
+    <span class="user-tag" id="topUser"></span>
+    <button class="btn-sm" id="btnLogin" onclick="window.location.href='/user'">Login</button>
+    <button class="btn-sm" id="btnLogout" style="display:none" onclick="doLogout()">Logout</button>
+  </div>
+</div>
+
+<div class="container" id="app">
+  <!-- Blog List View -->
+  <div id="listView">
+    <div id="blogList" class="blog-list"></div>
+    <div id="pagination" class="pagination"></div>
+    <div id="blogEmpty" class="empty-state" style="display:none">
+      <svg viewBox="0 0 80 80" fill="none"><rect x="12" y="8" width="56" height="60" rx="4" stroke="currentColor" stroke-width="2"/><line x1="20" y1="22" x2="60" y2="22" stroke="currentColor" stroke-width="1.5"/><line x1="20" y1="32" x2="48" y2="32" stroke="currentColor" stroke-width="1.5"/><line x1="20" y1="42" x2="54" y2="42" stroke="currentColor" stroke-width="1.5"/></svg>
+      <h3>No Posts Yet</h3>
+      <p>Be the first to write something!</p>
+    </div>
+  </div>
+
+  <!-- Blog Detail View -->
+  <div id="detailView" style="display:none">
+    <button class="back-btn" onclick="showList()">← Back to Blog</button>
+    <h1 class="detail-title" id="detailTitle"></h1>
+    <div class="detail-meta">
+      <span id="detailAuthor"></span>
+      <span id="detailTime"></span>
+    </div>
+    <div class="detail-share" id="detailShare">
+      <button onclick="shareBlog('copy')">📋 Copy Link</button>
+      <button onclick="shareBlog('twitter')">𝕏 Twitter</button>
+      <button onclick="shareBlog('weibo')">📱 Weibo</button>
+    </div>
+    <div class="markdown-body" id="detailContent"></div>
+    <div id="detailNotFound" style="display:none;text-align:center;padding:3rem;color:var(--t3)">
+      <h3>Article Not Found</h3>
+      <p>The article may have been deleted or the URL is incorrect.</p>
+    </div>
+
+    <!-- Comment Section -->
+    <div class="comment-section" id="commentSection">
+      <h3>Comments <span class="comment-count" id="commentCount"></span></h3>
+      <div id="commentLoginHint" class="comment-login-hint">
+        <a href="/user">Login</a> to leave a comment
+      </div>
+      <div id="commentForm" class="comment-box" style="display:none">
+        <textarea id="commentInput" placeholder="Share your thoughts..." rows="2"></textarea>
+        <button id="commentSubmit" onclick="submitComment()">Send</button>
+      </div>
+      <div id="commentList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastContainer"></div>
+
+<script>
+(function(){ "use strict";
+var STATE = { token: null, user: null, currentBlog: null, page: 1, total: 0, pageSize: 10 };
+
+function toast(msg, err){
+  var c = document.getElementById('toastContainer');
+  var t = document.createElement('div');
+  t.className = 'toast ' + (err ? 'toast-err' : 'toast-ok');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ t.remove() }, 3000);
+}
+
+function getToken(){ return localStorage.getItem('auth_token'); }
+
+var _cache = {};
+
+async function api(path, options){
+  options = options || {};
+  var headers = options.headers || {};
+  var token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (!headers['Content-Type'] && !(options.body instanceof FormData))
+    headers['Content-Type'] = 'application/json';
+  options.headers = headers;
+  var r = await fetch(path, options);
+  if (r.status === 401) { logout(); throw new Error('AUTH_FAILED'); }
+  var d = await r.json();
+  if (!d.success && r.status >= 400) throw new Error(d.message || 'Request failed');
+  return d;
+}
+
+function logout(){
+  STATE.token = null; STATE.user = null;
+  localStorage.removeItem('auth_token');
+  updateUserUI();
+}
+
+async function checkLogin(){
+  var t = getToken();
+  if (!t) return;
+  try {
+    var d = await api('/api/user/me');
+    if (d.success && d.user) { STATE.user = d.user; STATE.token = t; }
+  } catch(e) {}
+  updateUserUI();
+}
+
+function updateUserUI(){
+  var userTag = document.getElementById('topUser');
+  var btnLogin = document.getElementById('btnLogin');
+  var btnLogout = document.getElementById('btnLogout');
+  if (STATE.user) {
+    userTag.textContent = STATE.user.username;
+    btnLogin.style.display = 'none';
+    btnLogout.style.display = '';
+    document.getElementById('commentLoginHint').style.display = 'none';
+    document.getElementById('commentForm').style.display = 'flex';
+  } else {
+    userTag.textContent = '';
+    btnLogin.style.display = '';
+    btnLogout.style.display = 'none';
+    document.getElementById('commentLoginHint').style.display = '';
+    document.getElementById('commentForm').style.display = 'none';
+  }
+}
+
+async function doLogout(){
+  try { await api('/api/user/logout', { method: 'POST' }); } catch(e) {}
+  logout();
+  toast('Logged out');
+}
+
+// ── Blog List ──
+async function loadBlogs(page){
+  page = page || 1;
+  STATE.page = page;
+  document.getElementById('blogList').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('pagination').innerHTML = '';
+  try {
+    var d = await api('/api/blog/list?page=' + page);
+    if (d.success) {
+      STATE.total = d.total || 0;
+      STATE.pageSize = d.pageSize || 10;
+      renderBlogs(d.blogs || []);
+      renderPagination();
+    }
+  } catch(e) {
+    document.getElementById('blogList').innerHTML = '<div class="empty-state"><h3>Load Failed</h3><p>' + e.message + '</p></div>';
+  }
+}
+
+function renderBlogs(blogs){
+  var el = document.getElementById('blogList');
+  var emptyEl = document.getElementById('blogEmpty');
+  if (!blogs.length) {
+    el.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  var html = '';
+  blogs.forEach(function(b){
+    var preview = stripMarkdown(b.content || '').substring(0, 200);
+    var time = new Date(b.createdAt).toLocaleDateString('zh-CN', { year:'numeric', month:'short', day:'numeric' });
+    html += '<div class="blog-card" onclick="showDetail(\'' + b.id + '\')">';
+    html += '<h3>' + escapeHtml(b.title) + '</h3>';
+    html += '<div class="meta"><span>👤 ' + escapeHtml(b.author) + '</span><span>🕒 ' + time + '</span></div>';
+    html += '<div class="preview">' + escapeHtml(preview) + '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderPagination(){
+  var totalPages = Math.ceil(STATE.total / STATE.pageSize);
+  if (totalPages <= 1) return;
+  var html = '';
+  html += '<button ' + (STATE.page <= 1 ? 'disabled' : '') + ' onclick="loadBlogs(' + (STATE.page - 1) + ')">‹</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    html += '<button class="' + (i === STATE.page ? 'active' : '') + '" onclick="loadBlogs(' + i + ')">' + i + '</button>';
+  }
+  html += '<button ' + (STATE.page >= totalPages ? 'disabled' : '') + ' onclick="loadBlogs(' + (STATE.page + 1) + ')">›</button>';
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function stripMarkdown(md){
+  return md.replace(/#{1,6}\s/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '').replace(/^>\s/gm, '').replace(/[-*+]\s/g, '')
+    .replace(/\n+/g, ' ').trim();
+}
+
+function escapeHtml(text){
+  if (!text) return '';
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// ── Blog Detail ──
+async function showDetail(id){
+  window.location.hash = '#post-' + id;
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('detailView').style.display = '';
+  document.getElementById('detailNotFound').style.display = 'none';
+  document.getElementById('detailContent').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('commentList').innerHTML = '';
+  document.getElementById('commentCount').textContent = '';
+  window.scrollTo(0, 0);
+
+  try {
+    var d = await api('/api/blog/detail?id=' + id);
+    if (d.success && d.blog) {
+      STATE.currentBlog = d.blog;
+      document.getElementById('detailTitle').textContent = d.blog.title;
+      document.getElementById('detailAuthor').innerHTML = '👤 ' + escapeHtml(d.blog.author);
+      document.getElementById('detailTime').innerHTML = '🕒 ' + new Date(d.blog.createdAt).toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      if (d.blog.updatedAt) {
+        document.getElementById('detailTime').innerHTML += ' (updated: ' + new Date(d.blog.updatedAt).toLocaleDateString('zh-CN', { month:'short', day:'numeric' }) + ')';
+      }
+      document.title = d.blog.title + ' - SkyXing Blog';
+      // Markdown rendering
+      try {
+        document.getElementById('detailContent').innerHTML = marked.parse(d.blog.content || '');
+      } catch(e) {
+        document.getElementById('detailContent').innerHTML = '<pre>' + escapeHtml(d.blog.content || '') + '</pre>';
+      }
+      loadComments(id);
+      updateUserUI();
+    } else {
+      document.getElementById('detailNotFound').style.display = '';
+      document.getElementById('detailContent').innerHTML = '';
+    }
+  } catch(e) {
+    document.getElementById('detailNotFound').style.display = '';
+    document.getElementById('detailContent').innerHTML = '';
+  }
+}
+
+function showList(){
+  window.location.hash = '';
+  document.title = 'SkyXing Blog';
+  document.getElementById('listView').style.display = '';
+  document.getElementById('detailView').style.display = 'none';
+  STATE.currentBlog = null;
+  window.scrollTo(0, 0);
+}
+
+// ── Share ──
+function shareBlog(platform){
+  if (!STATE.currentBlog) return;
+  var url = window.location.origin + '/blog#' + 'post-' + STATE.currentBlog.id;
+  var title = STATE.currentBlog.title;
+  var text = title + ' ' + url;
+
+  if (platform === 'copy') {
+    navigator.clipboard.writeText(url).then(function(){
+      toast('Link copied!');
+    }).catch(function(){
+      prompt('Copy this link:', url);
+    });
+  } else if (platform === 'twitter') {
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(title) + '&url=' + encodeURIComponent(url), '_blank');
+  } else if (platform === 'weibo') {
+    window.open('https://service.weibo.com/share/share.php?title=' + encodeURIComponent(title) + '&url=' + encodeURIComponent(url), '_blank');
+  }
+}
+
+// ── Comments ──
+async function loadComments(blogId){
+  try {
+    var d = await api('/api/blog/comments?id=' + blogId);
+    if (d.success) {
+      var comments = d.comments || [];
+      document.getElementById('commentCount').textContent = '(' + comments.length + ')';
+      renderComments(comments);
+    }
+  } catch(e) { console.error('loadComments:', e.message); }
+}
+
+function renderComments(comments){
+  var el = document.getElementById('commentList');
+  if (!comments.length) {
+    el.innerHTML = '<p style="color:var(--t3);font-size:.82rem;text-align:center;padding:1rem">No comments yet. Be the first!</p>';
+    return;
+  }
+  var html = '';
+  comments.forEach(function(c){
+    var time = new Date(c.createdAt).toLocaleDateString('zh-CN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    html += '<div class="comment-item">';
+    html += '<div class="c-header"><span class="c-author">' + escapeHtml(c.author) + '</span><span class="c-time">' + time + '</span></div>';
+    html += '<div class="c-body">' + escapeHtml(c.content) + '</div>';
+    if (STATE.user && (STATE.user.role === 'admin' || STATE.user.username === c.author)) {
+      html += '<button class="c-del" onclick="deleteComment(\'' + c.id + '\')">Delete</button>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+async function submitComment(){
+  if (!STATE.currentBlog) return;
+  if (!STATE.user) { toast('Please login first', true); return; }
+  var input = document.getElementById('commentInput');
+  var content = input.value.trim();
+  if (!content) { toast('Comment cannot be empty', true); return; }
+
+  var btn = document.getElementById('commentSubmit');
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    var d = await api('/api/blog/comment', { method: 'POST', body: JSON.stringify({ blogId: STATE.currentBlog.id, content: content }) });
+    if (d.success) {
+      input.value = '';
+      toast('Comment posted!');
+      loadComments(STATE.currentBlog.id);
+    }
+  } catch(e) {
+    if (e.message !== 'AUTH_FAILED') toast(e.message, true);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send';
+}
+
+async function deleteComment(commentId){
+  if (!confirm('Delete this comment?')) return;
+  try {
+    await api('/api/blog/comment/delete', { method: 'POST', body: JSON.stringify({ blogId: STATE.currentBlog.id, commentId: commentId }) });
+    toast('Comment deleted');
+    loadComments(STATE.currentBlog.id);
+  } catch(e) {
+    if (e.message !== 'AUTH_FAILED') toast(e.message, true);
+  }
+}
+
+// ── Init ──
+async function init(){
+  await checkLogin();
+  var hash = window.location.hash;
+  if (hash && hash.startsWith('#post-')) {
+    var id = hash.substring(6);
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('detailView').style.display = '';
+    showDetail(id);
+  } else {
+    loadBlogs(1);
+  }
+  // Listen for hash changes
+  window.addEventListener('hashchange', function(){
+    var h = window.location.hash;
+    if (h && h.startsWith('#post-')) {
+      showDetail(h.substring(6));
+    } else {
+      showList();
+      loadBlogs(STATE.page);
+    }
+  });
+}
+
+init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyXing - 用户中心</title>
+<style>
+:root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#0f172a;--bg2:#1e293b;--bd:rgba(255,255,255,.08);--tx:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:#0a0f1a;border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 1.5rem;z-index:100}
+.topbar .logo{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--p),var(--s));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex:1}
+.topbar a{color:var(--t2);text-decoration:none;font-size:.82rem;margin-left:1rem;transition:color .15s}
+.topbar a:hover{color:var(--tx)}
+.topbar .user-info{color:var(--p);margin-left:1rem;font-size:.82rem;font-weight:500}
+.content{max-width:480px;margin:76px auto 0;padding:0 1rem 3rem}
+.tabs{display:flex;gap:1px;margin-bottom:1.5rem;background:var(--bg2);border-radius:12px;overflow:hidden}
+.tab-btn{flex:1;padding:.7rem;border:none;background:transparent;color:var(--t2);cursor:pointer;font-size:.85rem;font-weight:500;font-family:inherit;transition:all .15s}
+.tab-btn:hover{color:var(--tx);background:rgba(255,255,255,.03)}
+.tab-btn.on{color:var(--p);background:rgba(102,126,234,.12)}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:1.75rem}
+.card h2{margin-bottom:1rem;font-size:1.15rem;font-weight:700}
+.card .desc{color:var(--t2);font-size:.78rem;margin-bottom:1rem}
+.fg{display:flex;flex-direction:column;gap:.55rem;margin-bottom:.85rem}
+.fg label{font-size:.75rem;color:var(--t2);font-weight:500}
+.fg input,.fg textarea{width:100%;padding:.6rem .8rem;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:.85rem;font-family:inherit;outline:none;transition:border-color .15s}
+.fg input:focus,.fg textarea:focus{border-color:var(--p)}
+.fg textarea{resize:vertical;min-height:60px}
+.btn-p{display:block;width:100%;padding:.65rem;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:500;font-family:inherit;background:linear-gradient(135deg,var(--p),var(--s));color:#fff;transition:all .15s}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(102,126,234,.3)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{padding:.5rem 1rem;border:1px solid rgba(67,233,123,.2);border-radius:7px;background:rgba(67,233,123,.1);color:var(--g);cursor:pointer;font-size:.8rem;font-weight:500;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-s:hover{background:rgba(67,233,123,.2)}
+.btn-s:disabled{opacity:.5;cursor:not-allowed}
+.btn-d{padding:.5rem 1rem;border:1px solid rgba(255,107,107,.25);border-radius:7px;background:rgba(255,107,107,.1);color:var(--r);cursor:pointer;font-size:.8rem;font-weight:500;font-family:inherit;transition:all .15s}
+.msg{display:none;padding:.55rem .75rem;border-radius:8px;margin-bottom:.7rem;font-size:.78rem}
+.msg-ok{background:rgba(67,233,123,.08);color:var(--g);border:1px solid rgba(67,233,123,.15)}
+.msg-err{background:rgba(255,107,107,.08);color:var(--r);border:1px solid rgba(255,107,107,.15)}
+.captcha-wrap{display:flex;align-items:center;gap:.5rem}
+.captcha-wrap img{border-radius:8px;border:1px solid var(--bd);cursor:pointer;height:50px}
+.captcha-wrap input{flex:1}
+.code-row{display:flex;gap:.5rem}
+.code-row input{flex:1}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.info-box{background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:8px;padding:.6rem .8rem}
+.info-box .lbl{font-size:.68rem;color:var(--t3);margin-bottom:.15rem}
+.info-box .val{font-size:.85rem;font-weight:500}
+.log-list{max-height:200px;overflow-y:auto;font-size:.75rem;color:var(--t2)}
+.log-list li{padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.hidden{display:none!important}
+.code-block{background:rgba(255,255,255,.04);padding:.5rem;border-radius:6px;font-family:'Courier New',monospace;word-break:break-all;font-size:.8rem;margin:.25rem 0}
+.backup-box{background:rgba(254,202,87,.06);border:1px solid rgba(254,202,87,.2);border-radius:8px;padding:.75rem;margin-top:.5rem}
+.backup-box .title{font-size:.75rem;color:var(--y);margin-bottom:.4rem;font-weight:500}
+.backup-box code{display:block;font-size:.78rem;color:var(--tx);font-family:'Courier New',monospace;padding:2px 0}
+.divider{border-top:1px solid var(--bd);margin:1rem 0;padding-top:1rem}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.4rem}
+.toast{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:.55rem 1rem;font-size:.78rem;animation:toastIn .3s;max-width:300px}
+.toast-err{border-color:rgba(255,107,107,.3);color:var(--r)}
+.toast-ok{border-color:rgba(67,233,123,.3);color:var(--g)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">SkyXing</span>
+  <a href="/">首页</a>
+  <a href="/admin">管理</a>
+  <span class="user-info" id="topUser"></span>
+  <a href="#" id="logoutLink" class="hidden">退出</a>
+</div>
+
+<div class="content">
+
+<!-- Guest View -->
+<div id="viewGuest">
+  <div class="tabs">
+    <button class="tab-btn on" data-tab="login">Login</button>
+    <button class="tab-btn" data-tab="register">Register</button>
+  </div>
+
+  <div id="tab-login" class="card">
+    <h2>Login</h2>
+    <div id="loginMsg" class="msg"></div>
+    <div class="fg"><label>Username / Email</label><input id="loginUser" placeholder="username or email" autocomplete="username"></div>
+    <div class="fg"><label>Password</label><input type="password" id="loginPass" placeholder="password" autocomplete="current-password"></div>
+    <div class="fg"><label>Captcha</label>
+      <div class="captcha-wrap"><img id="loginCaptchaImg" src="" alt="captcha" style="display:none"><input id="loginCaptcha" placeholder="math answer"><button class="btn-s" id="loginRefreshCaptcha">Refresh</button></div>
+    </div>
+    <div class="fg" id="login2FAWrap" style="display:none"><label>2FA Code</label><input id="login2FA" placeholder="6-digit or backup code"></div>
+    <button class="btn-p" id="loginBtn">Login</button>
+  </div>
+
+  <div id="tab-register" class="card hidden">
+    <h2>Register</h2>
+    <div id="regMsg" class="msg"></div>
+    <div class="fg"><label>Username (3-12 chars)</label><input id="regUser" placeholder="letters, numbers, Chinese" autocomplete="off"></div>
+    <div class="fg"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com"></div>
+    <div class="fg"><label>Password (min 6 chars)</label><input type="password" id="regPass" placeholder="password" autocomplete="new-password"></div>
+    <div class="fg"><label>Captcha</label>
+      <div class="captcha-wrap"><img id="regCaptchaImg" src="" alt="captcha" style="display:none"><input id="regCaptcha" placeholder="math answer"><button class="btn-s" id="regRefreshCaptcha">Refresh</button></div>
+    </div>
+    <div class="fg" id="regEmailWrap"><label>Email Verification</label>
+      <div class="code-row"><input id="regEmailCode" placeholder="6-digit code"><button class="btn-s" id="regSendEmail">Send Code</button></div>
+    </div>
+    <button class="btn-p" id="regBtn">Register</button>
+  </div>
+</div>
+
+<!-- Auth View -->
+<div id="viewAuth" class="hidden">
+  <div class="tabs">
+    <button class="tab-btn on" data-tab="profile">Profile</button>
+    <button class="tab-btn" data-tab="security">Security</button>
+    <button class="tab-btn" data-tab="twofactor">2FA</button>
+  </div>
+
+  <div id="tab-profile" class="card">
+    <h2>Profile</h2>
+    <div id="profileMsg" class="msg"></div>
+    <div class="fg"><label>Username</label><input id="profUser"></div>
+    <div class="fg"><label>Bio</label><textarea id="profBio" placeholder="About yourself..."></textarea></div>
+    <button class="btn-p" id="profSaveBtn">Save</button>
+  </div>
+
+  <div id="tab-security" class="card hidden">
+    <h2>Security Info</h2>
+    <div id="secMsg" class="msg"></div>
+    <div class="info-grid" id="secInfo" style="margin-bottom:1rem"></div>
+
+    <div class="divider">
+      <h3 style="font-size:.95rem;margin-bottom:.75rem;color:var(--t2)">Security Verification</h3>
+      <div class="desc">Identity verification required before changing security settings. Waived within 5 minutes of login.</div>
+      <button class="btn-s" id="secVerifyBtn" style="margin:.6rem 0">Start Verification</button>
+      <div id="secVerifyForm" class="hidden">
+        <div class="fg"><label>Password</label><input type="password" id="secVerifyPass" placeholder="current password"></div>
+        <div class="fg" id="secVerifyEmailWrap" style="display:none"><label>Full Email</label><input type="email" id="secVerifyEmail" placeholder="enter full email address"></div>
+        <div class="fg" id="secVerify2FAWrap" style="display:none"><label>2FA Code</label><input id="secVerify2FA" placeholder="TOTP code"></div>
+        <button class="btn-p" id="secVerifySubmit">Verify</button>
+      </div>
+      <div id="secEditForm" class="hidden" style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--bd)">
+        <div class="fg"><label>New Password</label><input type="password" id="secNewPass" placeholder="leave empty to keep current"></div>
+        <div class="fg"><label>New Email</label><input type="email" id="secNewEmail" placeholder="new email address"></div>
+        <div class="fg" id="secNewEmailCodeWrap" style="display:none"><label>Verification Code</label>
+          <div class="code-row"><input id="secNewEmailCode" placeholder="6-digit code"><button class="btn-s" id="secSendNewEmailCode">Send Code</button></div>
+        </div>
+        <button class="btn-p" id="secSaveBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-twofactor" class="card hidden">
+    <h2>Two-Factor Auth</h2>
+    <div id="twoMsg" class="msg"></div>
+    <div id="twofaStatus"></div>
+    <div id="twofaSetup" class="hidden">
+      <div class="desc">Scan with authenticator app (Google Authenticator, Authy) or enter key manually.</div>
+      <div class="fg"><label>Secret Key (Base32)</label><div class="code-block" id="twofaSecret"></div></div>
+      <div class="fg"><label>URI (for QR code)</label><div class="code-block" style="font-size:.65rem" id="twofaUri"></div></div>
+      <div class="fg"><label>Verification Code</label><input id="twofaCode" placeholder="6-digit from app"></div>
+      <div id="backupCodesBlock" class="backup-box hidden">
+        <div class="title">Backup Recovery Codes (save these safely):</div>
+        <div id="backupCodesList"></div>
+      </div>
+      <button class="btn-p" id="twofaVerifyBtn">Verify &amp; Enable</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast-wrap" id="toastContainer"></div>
+
+<script>
+(function(){ "use strict";
+var STATE={token:null,user:null,safeToken:null,loginCaptchaId:null,regCaptchaId:null};
+
+function toast(msg,err){
+  var c=document.getElementById('toastContainer');
+  var t=document.createElement('div');
+  t.className='toast '+(err?'toast-err':'toast-ok');
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(function(){t.remove()},3000);
+}
+
+function showMsg(id,msg,err){
+  var el=document.getElementById(id);
+  el.style.display='block';
+  el.className='msg '+(err?'msg-err':'msg-ok');
+  el.textContent=msg;
+}
+
+function hideMsg(id){
+  document.getElementById(id).style.display='none';
+}
+
+function getToken(){ return localStorage.getItem('auth_token'); }
+function setToken(t){
+  STATE.token=t;
+  localStorage.setItem('auth_token',t);
+  try{document.cookie='auth_token='+t+';path=/;max-age=604800;SameSite=Strict'}catch(e){}
+}
+function removeToken(){
+  STATE.token=null;STATE.user=null;STATE.safeToken=null;
+  localStorage.removeItem('auth_token');
+  try{document.cookie='auth_token=;path=/;max-age=0'}catch(e){}
+}
+
+function switchTab(name){
+  ['login','register','profile','security','twofactor'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.add('hidden');
+  });
+  var tab=document.getElementById('tab-'+name);
+  if(tab) tab.classList.remove('hidden');
+  document.querySelectorAll('.tab-btn.on').forEach(function(b){b.classList.remove('on')});
+  var btns=document.querySelectorAll('.tab-btn[data-tab="'+name+'"]');
+  btns.forEach(function(b){b.classList.add('on')});
+}
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    switchTab(this.getAttribute('data-tab'));
+  });
+});
+
+async function api(path,options){
+  options=options||{};
+  var headers=options.headers||{};
+  var token=getToken();
+  if(token) headers['Authorization']='Bearer '+token;
+  if(!headers['Content-Type']&&!(options.body instanceof FormData)) headers['Content-Type']='application/json';
+  options.headers=headers;
+  var r=await fetch(path,options);
+  if(r.status===401){removeToken();showGuest();throw new Error('AUTH_FAILED')}
+  var d=await r.json();
+  if(!d.success&&r.status>=400) throw new Error(d.message||'Request failed');
+  return d;
+}
+
+function showGuest(){
+  document.getElementById('viewGuest').classList.remove('hidden');
+  document.getElementById('viewAuth').classList.add('hidden');
+  document.getElementById('topUser').textContent='';
+  document.getElementById('logoutLink').classList.add('hidden');
+  switchTab('login');
+  loadCaptcha('login');
+}
+
+function showAuth(user){
+  STATE.user=user;
+  document.getElementById('viewGuest').classList.add('hidden');
+  document.getElementById('viewAuth').classList.remove('hidden');
+  document.getElementById('topUser').textContent=user.username;
+  document.getElementById('logoutLink').classList.remove('hidden');
+  switchTab('profile');
+  loadProfile();
+  loadSecurity();
+  load2FAStatus();
+}
+
+// Captcha
+async function loadCaptcha(prefix){
+  try{
+    var d=await api('/api/captcha/generate');
+    if(d.success){
+      var img=document.getElementById(prefix+'CaptchaImg');
+      img.src=d.captchaImage;
+      img.style.display='';
+      STATE[prefix+'CaptchaId']=d.captchaId;
+    }
+  }catch(e){console.error('captcha:',e.message)}
+}
+
+document.getElementById('loginRefreshCaptcha').addEventListener('click',function(){loadCaptcha('login')});
+document.getElementById('regRefreshCaptcha').addEventListener('click',function(){loadCaptcha('reg')});
+
+// Login
+document.getElementById('loginBtn').addEventListener('click',async function(){
+  var u=document.getElementById('loginUser').value;
+  var p=document.getElementById('loginPass').value;
+  var cap=document.getElementById('loginCaptcha').value;
+  var fa=document.getElementById('login2FA').value;
+  if(!u||!p){showMsg('loginMsg','Please fill in all fields',true);return}
+  if(!cap){showMsg('loginMsg','Please complete captcha',true);return}
+  var btn=this;btn.disabled=true;btn.textContent='Logging in...';hideMsg('loginMsg');
+  try{
+    var d=await api('/api/user/login',{method:'POST',
+      body:JSON.stringify({username:u,password:p,captchaId:STATE.loginCaptchaId,captchaAnswer:cap,twoFactorCode:fa||undefined})});
+    if(d.success){
+      setToken(d.token);
+      showAuth(d.user);
+      toast('Login successful');
+      if(d.redirect&&d.redirect!=='/') window.location.href=d.redirect;
+    }else if(d.need2FA){
+      document.getElementById('login2FAWrap').style.display='';
+      showMsg('loginMsg','2FA code required',true);
+      loadCaptcha('login');
+    }else{
+      showMsg('loginMsg',d.message||'Login failed',true);
+      loadCaptcha('login');
+    }
+  }catch(e){if(e.message!=='AUTH_FAILED')showMsg('loginMsg',e.message,true);loadCaptcha('login')}
+  btn.disabled=false;btn.textContent='Login';
+});
+
+// Register
+document.getElementById('regSendEmail').addEventListener('click',async function(){
+  var email=document.getElementById('regEmail').value;
+  if(!email){toast('Enter email first',true);return}
+  var btn=this;btn.disabled=true;btn.textContent='Sending...';
+  try{
+    var d=await api('/api/email/send-code',{method:'POST',body:JSON.stringify({email:email,scene:'register'})});
+    toast(d.message||'Sent');
+    btn.textContent='Sent';
+  }catch(e){toast(e.message,true);btn.disabled=false;btn.textContent='Send Code'}
+});
+
+document.getElementById('regBtn').addEventListener('click',async function(){
+  var u=document.getElementById('regUser').value;
+  var p=document.getElementById('regPass').value;
+  var email=document.getElementById('regEmail').value;
+  var cap=document.getElementById('regCaptcha').value;
+  var ec=document.getElementById('regEmailCode').value;
+  if(!u||!p||!email){showMsg('regMsg','Please fill in all fields',true);return}
+  if(!cap){showMsg('regMsg','Please complete captcha',true);return}
+  var btn=this;btn.disabled=true;btn.textContent='Registering...';hideMsg('regMsg');
+  try{
+    var d=await api('/api/user/register',{method:'POST',
+      body:JSON.stringify({username:u,password:p,email:email,captchaId:STATE.regCaptchaId,captchaAnswer:cap,emailCode:ec||undefined})});
+    if(d.success){
+      setToken(d.token);
+      showAuth(d.user);
+      toast('Registration successful');
+    }else{showMsg('regMsg',d.message||'Registration failed',true);loadCaptcha('reg')}
+  }catch(e){if(e.message!=='AUTH_FAILED')showMsg('regMsg',e.message,true);loadCaptcha('reg')}
+  btn.disabled=false;btn.textContent='Register';
+});
+
+// Profile
+async function loadProfile(){
+  try{
+    var d=await api('/api/user/me');
+    if(d.success&&d.user){
+      document.getElementById('profUser').value=d.user.username||'';
+      document.getElementById('profBio').value=d.user.bio||'';
+    }
+  }catch(e){if(e.message!=='AUTH_FAILED')console.error(e)}
+}
+
+document.getElementById('profSaveBtn').addEventListener('click',async function(){
+  var un=document.getElementById('profUser').value;
+  var bio=document.getElementById('profBio').value;
+  var btn=this;btn.disabled=true;hideMsg('profileMsg');
+  try{
+    var d=await api('/api/user/update',{method:'POST',body:JSON.stringify({username:un,bio:bio})});
+    showMsg('profileMsg',d.message||'Saved');
+    if(d.user){STATE.user=d.user;document.getElementById('topUser').textContent=d.user.username}
+  }catch(e){showMsg('profileMsg',e.message,true)}
+  btn.disabled=false;
+});
+
+// Security
+async function loadSecurity(){
+  try{
+    var d=await api('/api/user/security');
+    if(d.success&&d.security){
+      var s=d.security;
+      var html='';
+      html+='<div class="info-box"><div class="lbl">EMAIL</div><div class="val">'+(s.email||'Not set')+'</div></div>';
+      html+='<div class="info-box"><div class="lbl">2FA</div><div class="val" style="color:'+(s.twoFactorEnabled?'var(--g)':'var(--t2)')+'">'+(s.twoFactorEnabled?'Enabled':'Disabled')+'</div></div>';
+      html+='<div class="info-box"><div class="lbl">LAST LOGIN</div><div class="val">'+new Date(s.lastLogin).toLocaleString()+'</div></div>';
+      html+='<div class="info-box"><div class="lbl">JOINED</div><div class="val">'+new Date(s.createdAt).toLocaleDateString()+'</div></div>';
+      document.getElementById('secInfo').innerHTML=html;
+
+      if(s.securityLog&&s.securityLog.length){
+        var log='<h3 style="font-size:.85rem;margin:1rem 0 .5rem;color:var(--t2)">Recent Activity</h3><ul class="log-list">';
+        s.securityLog.forEach(function(l){
+          var act=l.action==='change_password'?'Password changed':
+            l.action==='change_email'?'Email changed':
+            l.action==='enable_2fa'?'2FA enabled':
+            l.action==='disable_2fa'?'2FA disabled':l.action;
+          log+='<li>'+new Date(l.time).toLocaleString()+' - '+act+'</li>';
+        });
+        log+='</ul>';
+        document.getElementById('secInfo').innerHTML+=log;
+      }
+    }
+  }catch(e){if(e.message!=='AUTH_FAILED')console.error(e)}
+}
+
+document.getElementById('secVerifyBtn').addEventListener('click',function(){
+  document.getElementById('secVerifyForm').classList.remove('hidden');
+  if(STATE.user&&STATE.user.twoFactorEnabled){
+    document.getElementById('secVerify2FAWrap').style.display='';
+    document.getElementById('secVerifyEmailWrap').style.display='none';
+  }else{
+    document.getElementById('secVerify2FAWrap').style.display='none';
+    document.getElementById('secVerifyEmailWrap').style.display='';
+  }
+});
+
+document.getElementById('secVerifySubmit').addEventListener('click',async function(){
+  var pw=document.getElementById('secVerifyPass').value;
+  var fa=document.getElementById('secVerify2FA').value;
+  var em=document.getElementById('secVerifyEmail').value;
+  if(!pw){toast('Enter password',true);return}
+  var btn=this;btn.disabled=true;hideMsg('secMsg');
+  try{
+    var d=await api('/api/user/security-verify',{method:'POST',
+      body:JSON.stringify({password:pw,twoFactorCode:fa||undefined,email:em||undefined})});
+    if(d.success){
+      STATE.safeToken=d.safeToken;
+      document.getElementById('secVerifyForm').classList.add('hidden');
+      document.getElementById('secEditForm').classList.remove('hidden');
+      toast('Verified');
+    }else{showMsg('secMsg',d.message,true)}
+  }catch(e){showMsg('secMsg',e.message,true)}
+  btn.disabled=false;
+});
+
+document.getElementById('secSendNewEmailCode').addEventListener('click',async function(){
+  var em=document.getElementById('secNewEmail').value;
+  if(!em){toast('Enter new email first',true);return}
+  var btn=this;btn.disabled=true;btn.textContent='Sending...';
+  try{
+    var d=await api('/api/email/send-code',{method:'POST',body:JSON.stringify({email:em,scene:'change_email'})});
+    toast('Code sent');
+    btn.textContent='Sent';
+  }catch(e){toast(e.message,true);btn.disabled=false;btn.textContent='Send Code'}
+});
+
+document.getElementById('secNewEmail').addEventListener('input',function(){
+  document.getElementById('secNewEmailCodeWrap').style.display=this.value?'':'none';
+});
+
+document.getElementById('secSaveBtn').addEventListener('click',async function(){
+  var np=document.getElementById('secNewPass').value;
+  var ne=document.getElementById('secNewEmail').value;
+  var nec=document.getElementById('secNewEmailCode').value;
+  var btn=this;btn.disabled=true;hideMsg('secMsg');
+  try{
+    if(np){
+      var d=await api('/api/user/changepassword',{method:'POST',body:JSON.stringify({newPassword:np,safeToken:STATE.safeToken})});
+      if(!d.success){showMsg('secMsg',d.message,true);btn.disabled=false;return}
+      toast('Password updated');
+    }
+    if(ne){
+      var d2=await api('/api/user/changeemail',{method:'POST',body:JSON.stringify({newEmail:ne,emailCode:nec||undefined,safeToken:STATE.safeToken})});
+      if(!d2.success){showMsg('secMsg',d2.message,true);btn.disabled=false;return}
+      toast('Email updated');
+    }
+    if(!np&&!ne){toast('No changes',true);btn.disabled=false;return}
+    STATE.safeToken=null;
+    document.getElementById('secEditForm').classList.add('hidden');
+    document.getElementById('secNewPass').value='';
+    document.getElementById('secNewEmail').value='';
+    document.getElementById('secNewEmailCode').value='';
+    loadSecurity();
+    showMsg('secMsg','Security info updated');
+  }catch(e){showMsg('secMsg',e.message,true)}
+  btn.disabled=false;
+});
+
+// 2FA
+async function load2FAStatus(){
+  try{
+    var d=await api('/api/user/me');
+    if(d.success){
+      var s='';
+      if(d.has2FA){
+        s='<div style="background:rgba(67,233,123,.08);border:1px solid rgba(67,233,123,.15);padding:.75rem;border-radius:8px;margin-bottom:.75rem"><span style="color:var(--g);font-weight:600">[ON] 2FA is enabled</span></div>';
+        s+='<button class="btn-d" id="twofaDisableBtn">Disable 2FA</button>';
+        document.getElementById('twofaSetup').classList.add('hidden');
+      }else{
+        s='<div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);padding:.75rem;border-radius:8px;margin-bottom:.75rem"><span style="color:var(--t2)">2FA is not enabled</span></div>';
+        s+='<button class="btn-s" id="twofaEnableBtn">Setup 2FA</button>';
+        document.getElementById('twofaSetup').classList.add('hidden');
+      }
+      document.getElementById('twofaStatus').innerHTML=s;
+      if(d.has2FA) document.getElementById('twofaDisableBtn').addEventListener('click',disable2FA);
+      else document.getElementById('twofaEnableBtn').addEventListener('click',setup2FA);
+    }
+  }catch(e){if(e.message!=='AUTH_FAILED')console.error(e)}
+}
+
+async function setup2FA(){
+  try{
+    var d=await api('/api/user/2fa/setup',{method:'POST'});
+    if(d.success){
+      document.getElementById('twofaSecret').textContent=d.secret;
+      document.getElementById('twofaUri').textContent=d.uri;
+      document.getElementById('twofaSetup').classList.remove('hidden');
+      if(d.backupCodes){
+        document.getElementById('backupCodesBlock').classList.remove('hidden');
+        document.getElementById('backupCodesList').innerHTML=d.backupCodes.map(function(c){return'<code>'+c+'</code>'}).join('');
+      }
+    }else{toast(d.message,true)}
+  }catch(e){toast(e.message,true)}
+}
+
+document.getElementById('twofaVerifyBtn').addEventListener('click',async function(){
+  var code=document.getElementById('twofaCode').value;
+  if(!code){toast('Enter verification code',true);return}
+  var btn=this;btn.disabled=true;
+  try{
+    var d=await api('/api/user/2fa/verify',{method:'POST',body:JSON.stringify({code:code})});
+    if(d.success){
+      toast('2FA enabled! Save your backup codes.');
+      document.getElementById('twofaSetup').classList.add('hidden');
+      load2FAStatus();
+    }else{toast(d.message,true)}
+  }catch(e){toast(e.message,true)}
+  btn.disabled=false;
+});
+
+async function disable2FA(){
+  if(!confirm('Disable 2FA? This reduces account security.'))return;
+  try{
+    var d=await api('/api/user/2fa/toggle',{method:'POST',body:JSON.stringify({enable:false})});
+    if(d.success){toast('2FA disabled');load2FAStatus()}
+    else toast(d.message||'Operation failed',true)
+  }catch(e){toast(e.message,true)}
+}
+
+// Logout
+document.getElementById('logoutLink').addEventListener('click',function(e){
+  e.preventDefault();
+  api('/api/user/logout',{method:'POST'}).finally(function(){removeToken();showGuest()});
+});
+
+// Init
+async function init(){
+  var t=getToken();
+  if(t){
+    try{
+      var d=await api('/api/user/me');
+      if(d.success&&d.user) showAuth(d.user);
+    }catch(e){removeToken();showGuest()}
+  }else{showGuest()}
+}
+init();
+})();
+</script>
+</body>
+</html>

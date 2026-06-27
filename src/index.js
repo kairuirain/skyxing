@@ -4,6 +4,8 @@
  */
 import { hashPassword, verifyPassword, signToken, createSecureCookie, extractToken, getClientIP, verifyToken } from './utils/auth.js';
 import { getJSON, putJSON, getList, putList, getUser, putUser, prependToList, findInList, removeFromList } from './utils/kv.js';
+import { Monitor, RetryCircuit, SelfHeal } from './core/monitor.js';
+import { handleCaptchaGenerate, handleSendEmailCode, handleVerifyEmailCode, handleRegister, handleLogin, handleGetProfile, handleUpdateProfile, handleGetSecurity, handleSecurityVerify, handleChangePassword, handleChangeEmail, handle2FASetup, handle2FAVerify, handle2FAToggle, handleLogout } from './core/user-system.js';
 
 const ROLE = { ADMIN: 'admin', FEATURE_ADMIN: 'feature_admin', USER: 'user' };
 const FEATURES = { USERS:'users', BLOGS:'blogs', FILES:'files', SLZX:'slzx', NOTIFICATIONS:'notifs', MESSAGES:'messages', CONFIG:'config' };
@@ -32,6 +34,18 @@ export default {
             } catch (e) { return new Response('Not Found', { status: 404 }); }
         }
 
+        if (path === '/user') {
+            try {
+                return await env.assets.fetch(new Request(url.origin + '/user.html'));
+            } catch (e) { return new Response('Not Found', { status: 404 }); }
+        }
+
+        if (path === '/blog') {
+            try {
+                return await env.assets.fetch(new Request(url.origin + '/blog.html'));
+            } catch (e) { return new Response('Not Found', { status: 404 }); }
+        }
+
         if (path.startsWith('/api/')) {
             const rateCheck = await checkRateLimit(env, 'api_global', RATE_LIMITS.api_global.window, RATE_LIMITS.api_global.max);
             if (!rateCheck.allowed) return jsonResponse({ success: false, message: '请求过于频繁' }, 429, { 'Retry-After': String(rateCheck.retryAfter) });
@@ -41,20 +55,15 @@ export default {
     },
 
     async scheduled(controller, env, ctx) {
-        console.log('[Cron] 系统维护开始...');
+        const m = Monitor.instance;
+        m.info('Cron', '系统维护开始');
         try {
-            // 清理过期 token
-            const list = await env.SkyXing.list({ prefix: 'token:' });
-            const now = Date.now(), ttl = 7 * 24 * 60 * 60 * 1000;
-            for (const key of list.keys) {
-                try {
-                    const ts = parseInt(await env.SkyXing.get(`${key.name}:ts`));
-                    if (isNaN(ts) || now - ts > ttl) await env.SkyXing.delete(key.name);
-                } catch (e) { /* skip */ }
-            }
-            // 压缩博客/文件列表
-            await compactOversizedLists(env);
-        } catch (err) { console.error('[Cron] 失败:', err.message); }
+            await m.load(env);
+            const healReport = await SelfHeal.run(env);
+            m.info('Cron', '自愈完成', { fixed: healReport.fixed.length, skipped: healReport.skipped.length });
+            await m.persist(env);
+            m.info('Cron', '系统维护完成');
+        } catch (err) { m.error('Cron', '维护失败: ' + err.message); }
     }
 };
 
@@ -65,13 +74,24 @@ async function handleAPI(request, env, ctx) {
     const method = request.method;
 
     try {
+        // ── 验证码 & 邮箱 ──
+        if (path === '/api/captcha/generate' && method === 'GET') return handleCaptchaGenerate(request, env);
+        if (path === '/api/email/send-code' && method === 'POST') return handleSendEmailCode(request, env);
+        if (path === '/api/email/verify' && method === 'POST') return handleVerifyEmailCode(request, env);
+
         // ── 用户系统 ──
-        if (path === '/api/user/register' && method === 'POST') return registerUser(request, env);
-        if (path === '/api/user/login' && method === 'POST') return loginUser(request, env);
-        if (path === '/api/user/me' && method === 'GET') return getCurrentUser(request, env);
-        if (path === '/api/user/logout' && method === 'POST') return logoutUser(request, env);
-        if (path === '/api/user/update' && method === 'POST') return updateUser(request, env);
-        if (path === '/api/user/changepassword' && method === 'POST') return changePassword(request, env);
+        if (path === '/api/user/register' && method === 'POST') return handleRegister(request, env);
+        if (path === '/api/user/login' && method === 'POST') return handleLogin(request, env);
+        if (path === '/api/user/me' && method === 'GET') return handleGetProfile(request, env);
+        if (path === '/api/user/logout' && method === 'POST') return handleLogout(request, env);
+        if (path === '/api/user/update' && method === 'POST') return handleUpdateProfile(request, env);
+        if (path === '/api/user/security' && method === 'GET') return handleGetSecurity(request, env);
+        if (path === '/api/user/security-verify' && method === 'POST') return handleSecurityVerify(request, env);
+        if (path === '/api/user/changepassword' && method === 'POST') return handleChangePassword(request, env);
+        if (path === '/api/user/changeemail' && method === 'POST') return handleChangeEmail(request, env);
+        if (path === '/api/user/2fa/setup' && method === 'POST') return handle2FASetup(request, env);
+        if (path === '/api/user/2fa/verify' && method === 'POST') return handle2FAVerify(request, env);
+        if (path === '/api/user/2fa/toggle' && method === 'POST') return handle2FAToggle(request, env);
         if (path === '/api/user/delete' && method === 'POST') return deleteUser(request, env);
         if (path === '/api/users/search' && method === 'GET') return searchUsers(request, env);
 
@@ -81,6 +101,11 @@ async function handleAPI(request, env, ctx) {
         if (path === '/api/blog/detail' && method === 'GET') return blogDetail(request, env);
         if (path === '/api/blog/update' && method === 'POST') return updateBlog(request, env);
         if (path === '/api/blog/delete' && method === 'POST') return deleteBlog(request, env);
+
+        // ── 博客评论 ──
+        if (path === '/api/blog/comments' && method === 'GET') return getComments(request, env);
+        if (path === '/api/blog/comment' && method === 'POST') return addComment(request, env);
+        if (path === '/api/blog/comment/delete' && method === 'POST') return deleteComment(request, env);
 
         // ── 文件分享 ──
         if (path === '/api/share/upload' && method === 'POST') return uploadFile(request, env);
@@ -105,6 +130,11 @@ async function handleAPI(request, env, ctx) {
         if (path === '/api/admin/permissions/revoke' && method === 'POST') return adminRevokePermissions(request, env);
         if (path === '/api/admin/optimization/run' && method === 'POST') return adminRunOptimization(request, env);
         if (path === '/api/admin/optimization/log' && method === 'GET') return adminGetOptimizationLog(request, env);
+
+        // ── 监控 & 自愈 ──
+        if (path === '/api/admin/monitor/health' && method === 'GET') return monitorHealth(request, env);
+        if (path === '/api/admin/monitor/circuits' && method === 'GET') return monitorCircuits(request, env);
+        if (path === '/api/admin/selfheal/run' && method === 'POST') return selfHealRun(request, env);
 
         // ── 通知 ──
         if (path === '/api/notifications/list' && method === 'GET') return getNotifications(request, env);
@@ -177,133 +207,8 @@ async function verifyFeatureAccess(request, env, feature) {
     return { authorized: false, message: '需要管理员权限' };
 }
 
-// ==================== 用户系统 ====================
-async function registerUser(request, env) {
-    const rc = await checkRateLimit(env, 'register', RATE_LIMITS.register.window, RATE_LIMITS.register.max);
-    if (!rc.allowed) return jsonResponse({ success: false, message: '注册太频繁，请稍后再试' }, 429);
 
-    const { username, password } = await request.json();
-    if (!username || !password || username.length < 3 || password.length < 6)
-        return jsonResponse({ success: false, message: '用户名至少3位，密码至少6位' });
-
-    if (await getUser(env, username)) return jsonResponse({ success: false, message: '用户名已存在' });
-
-    const { hash, salt } = await hashPassword(password);
-    const user = {
-        username, passwordHash: hash, passwordSalt: salt,
-        role: ROLE.USER, createdAt: Date.now(), lastLogin: Date.now()
-    };
-    await putUser(env, username, user);
-    const token = await signToken(username, Date.now());
-    await env.SkyXing.put(`token:${token}`, username);
-    return jsonResponse({ success: true, message: '注册成功', user: { username, role: user.role }, token });
-}
-
-async function loginUser(request, env) {
-    const rc = await checkRateLimit(env, 'login', RATE_LIMITS.login.window, RATE_LIMITS.login.max);
-    if (!rc.allowed) return jsonResponse({ success: false, message: '登录尝试过多，请稍后再试' }, 429);
-
-    const { username, password } = await request.json();
-    if (!username || !password) return jsonResponse({ success: false, message: '请填写完整信息' });
-
-    const user = await getUser(env, username);
-    if (!user) return jsonResponse({ success: false, message: '用户不存在' });
-
-    // 兼容旧明文密码
-    let valid = false;
-    if (typeof user.password === 'string') {
-        if (user.password === password) {
-            const { hash, salt } = await hashPassword(password);
-            user.passwordHash = hash; user.passwordSalt = salt;
-            delete user.password; valid = true;
-        }
-    } else if (user.passwordHash) {
-        valid = await verifyPassword(password, user.passwordHash, user.passwordSalt);
-    }
-    if (!valid) return jsonResponse({ success: false, message: '密码错误' });
-
-    if (ADMIN_USERS.includes(username) && user.role !== ROLE.ADMIN) user.role = ROLE.ADMIN;
-    user.lastLogin = Date.now();
-    await putUser(env, username, user);
-
-    const token = await signToken(username, Date.now());
-    await env.SkyXing.put(`token:${token}`, username);
-
-    return new Response(JSON.stringify({
-        success: true, message: '登录成功',
-        user: { username: user.username, role: user.role, createdAt: user.createdAt, lastLogin: user.lastLogin },
-        token,
-        redirect: (user.role === ROLE.ADMIN || user.role === ROLE.FEATURE_ADMIN) ? '/admin' : '/'
-    }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': createSecureCookie('auth_token', token) } });
-}
-
-async function getCurrentUser(request, env) {
-    const user = await verifyUser(request, env);
-    if (!user) return jsonResponse({ success: false, message: '未登录' }, 401);
-
-    // 统计
-    const blogList = await getList(env, 'blogs');
-    const fileList = await getList(env, 'files');
-    const notifs = await getJSON(env, `notif:${user.username}`, []);
-    return jsonResponse({
-        success: true,
-        user: {
-            username: user.username, role: user.role,
-            isGlobalAdmin: user.role === ROLE.ADMIN,
-            permissions: user.permissions || [],
-            stats: {
-                blogCount: blogList.filter(b => b.author === user.username).length,
-                fileCount: fileList.filter(f => f.uploader === user.username).length,
-                unreadNotifs: notifs.filter(n => !n.read).length
-            }
-        }
-    });
-}
-
-async function logoutUser(request, env) {
-    const token = extractToken(request);
-    if (token) await env.SkyXing.delete(`token:${token}`);
-    return new Response(JSON.stringify({ success: true }), {
-        headers: { 'Content-Type': 'application/json', 'Set-Cookie': 'auth_token=; Path=/; Max-Age=0' }
-    });
-}
-
-async function updateUser(request, env) {
-    const user = await verifyUser(request, env);
-    if (!user) return jsonResponse({ success: false, message: '未登录' }, 401);
-
-    const { username, bio, avatar } = await request.json();
-    const target = username || user.username;
-    const targetUser = await getUser(env, target);
-    if (!targetUser) return jsonResponse({ success: false, message: '用户不存在' });
-    if (user.role !== ROLE.ADMIN && user.username !== target)
-        return jsonResponse({ success: false, message: '无权限修改其他用户' });
-
-    if (bio !== undefined) targetUser.bio = bio;
-    if (avatar !== undefined) targetUser.avatar = avatar;
-    await putUser(env, target, targetUser);
-    return jsonResponse({ success: true, message: '更新成功', user: targetUser });
-}
-
-async function changePassword(request, env) {
-    const user = await verifyUser(request, env);
-    if (!user) return jsonResponse({ success: false, message: '未登录' }, 401);
-
-    const { oldPassword, newPassword } = await request.json();
-    if (!newPassword || newPassword.length < 6) return jsonResponse({ success: false, message: '新密码至少6位' });
-
-    let valid = false;
-    if (typeof user.password === 'string') { valid = user.password === oldPassword; }
-    else if (user.passwordHash) { valid = await verifyPassword(oldPassword, user.passwordHash, user.passwordSalt); }
-    if (!valid) return jsonResponse({ success: false, message: '旧密码错误' });
-
-    const { hash, salt } = await hashPassword(newPassword);
-    user.passwordHash = hash; user.passwordSalt = salt;
-    delete user.password;
-    await putUser(env, user.username, user);
-    return jsonResponse({ success: true, message: '密码修改成功' });
-}
-
+// ==================== 用户系统 (旧兼容) ====================
 async function deleteUser(request, env) {
     const user = await verifyUser(request, env);
     if (!user) return jsonResponse({ success: false, message: '未登录' }, 401);
@@ -393,6 +298,54 @@ async function deleteBlog(request, env) {
 
     found.list.splice(found.index, 1);
     await putList(env, 'blogs', found.list);
+    return jsonResponse({ success: true, message: '已删除' });
+}
+
+// ==================== 评论系统 ====================
+async function getComments(request, env) {
+    const blogId = new URL(request.url).searchParams.get('id');
+    if (!blogId) return jsonResponse({ success: false, message: '缺少文章ID' });
+    const comments = await getJSON(env, `comments:${blogId}`, []);
+    return jsonResponse({ success: true, comments });
+}
+
+async function addComment(request, env) {
+    const user = await verifyUser(request, env);
+    if (!user) return jsonResponse({ success: false, message: '请先登录' }, 401);
+
+    const { blogId, content } = await request.json();
+    if (!blogId || !content) return jsonResponse({ success: false, message: '缺少参数' });
+    if (content.length > 2000) return jsonResponse({ success: false, message: '评论内容过长' });
+
+    const comment = {
+        id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        blogId, content,
+        author: user.username,
+        createdAt: Date.now()
+    };
+
+    const comments = await getJSON(env, `comments:${blogId}`, []);
+    comments.push(comment);
+    if (comments.length > 500) comments.splice(0, comments.length - 500);
+    await putJSON(env, `comments:${blogId}`, comments);
+
+    return jsonResponse({ success: true, comment });
+}
+
+async function deleteComment(request, env) {
+    const user = await verifyUser(request, env);
+    if (!user) return jsonResponse({ success: false, message: '请先登录' }, 401);
+
+    const { blogId, commentId } = await request.json();
+    const comments = await getJSON(env, `comments:${blogId}`, []);
+    const idx = comments.findIndex(c => c.id === commentId);
+    if (idx === -1) return jsonResponse({ success: false, message: '评论不存在' });
+
+    if (user.role !== ROLE.ADMIN && comments[idx].author !== user.username)
+        return jsonResponse({ success: false, message: '无权限' });
+
+    comments.splice(idx, 1);
+    await putJSON(env, `comments:${blogId}`, comments);
     return jsonResponse({ success: true, message: '已删除' });
 }
 
@@ -896,4 +849,54 @@ async function slzxAddLog(request, env) {
     if (logs.length > 100) logs.length = 100;
     await putJSON(env, 'slzx_logs', logs);
     return jsonResponse({ success: true });
+}
+
+// ==================== 监控 & 自愈 ====================
+async function monitorHealth(request, env) {
+    const user = await verifyUser(request, env);
+    if (!user || (user.role !== ROLE.ADMIN && user.role !== ROLE.FEATURE_ADMIN))
+        return jsonResponse({ success: false, message: '需要管理员权限' }, 403);
+
+    const m = Monitor.instance;
+    await m.load(env);
+    const health = m.getHealth();
+    const page = parseInt(new URL(request.url).searchParams.get('page') || '1');
+    const pSize = 50;
+    const allLogs = m.logs.slice().reverse();
+    const logsPage = allLogs.slice((page - 1) * pSize, page * pSize);
+
+    return jsonResponse({
+        success: true,
+        health,
+        logs: logsPage,
+        logPage: page,
+        logTotal: allLogs.length,
+        logPageSize: pSize
+    });
+}
+
+async function monitorCircuits(request, env) {
+    const user = await verifyUser(request, env);
+    if (!user || (user.role !== ROLE.ADMIN && user.role !== ROLE.FEATURE_ADMIN))
+        return jsonResponse({ success: false, message: '需要管理员权限' }, 403);
+
+    return jsonResponse({
+        success: true,
+        circuits: RetryCircuit.getAllStates(),
+        kvWraps: {} // 预留：KV 包装状态
+    });
+}
+
+async function selfHealRun(request, env) {
+    const user = await verifyUser(request, env);
+    if (!user || user.role !== ROLE.ADMIN)
+        return jsonResponse({ success: false, message: '仅全局管理员可执行' }, 403);
+
+    const m = Monitor.instance;
+    m.info('SelfHeal', '管理员手动触发自愈');
+    const report = await SelfHeal.run(env);
+    await m.persist(env);
+    m.info('SelfHeal', '自愈完成', { fixed: report.fixed.length, skipped: report.skipped.length });
+
+    return jsonResponse({ success: true, report });
 }
