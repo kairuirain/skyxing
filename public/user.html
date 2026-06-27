@@ -227,7 +227,9 @@ async function api(path,options){
   options.headers=headers;
   var r=await fetch(path,options);
   if(r.status===401){removeToken();showGuest();throw new Error('AUTH_FAILED')}
-  var d=await r.json();
+  var d;
+  try{ d = await r.json(); }
+  catch(e){ throw new Error('服务器错误（状态码：' + r.status + '），请稍后重试'); }
   if(!d.success&&r.status>=400) throw new Error(d.message||'请求失败');
   return d;
 }

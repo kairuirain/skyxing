@@ -53,7 +53,7 @@ export async function handleCaptchaGenerate(request, env) {
 
 // ── 注册 ──
 export async function handleRegister(request, env) {
-    const rc = await checkRateLimit(env, 'register', 3600000, 5);
+    const rc = await checkRateLimit(env, 'register', 3600000, 20);
     if (!rc.allowed) return json({ success: false, message: '注册太频繁，请稍后再试' }, 429);
 
     const { username, password, captchaId, captchaAnswer } = await request.json();

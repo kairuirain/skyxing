@@ -11,7 +11,7 @@ const ROLE = { ADMIN: 'admin', FEATURE_ADMIN: 'feature_admin', USER: 'user' };
 const FEATURES = { USERS:'users', BLOGS:'blogs', FILES:'files', SLZX:'slzx', NOTIFICATIONS:'notifs', MESSAGES:'messages', CONFIG:'config' };
 const ADMIN_USERS = ['kairui2011120'];
 const RATE_LIMITS = {
-    login: { window:60000, max:10 }, register: { window:3600000, max:5 },
+    login: { window:60000, max:10 }, register: { window:3600000, max:20 },
     blog_create: { window:60000, max:3 }, file_upload: { window:60000, max:10 },
     message_send: { window:60000, max:20 }, api_global: { window:10000, max:60 }
 };
