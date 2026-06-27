@@ -5,7 +5,7 @@
 import { hashPassword, verifyPassword, signToken, createSecureCookie, extractToken, getClientIP, verifyToken } from './utils/auth.js';
 import { getJSON, putJSON, getList, putList, getUser, putUser, prependToList, findInList, removeFromList } from './utils/kv.js';
 import { Monitor, RetryCircuit, SelfHeal } from './core/monitor.js';
-import { handleCaptchaGenerate, handleSendEmailCode, handleVerifyEmailCode, handleRegister, handleLogin, handleGetProfile, handleUpdateProfile, handleGetSecurity, handleSecurityVerify, handleChangePassword, handleChangeEmail, handle2FASetup, handle2FAVerify, handle2FAToggle, handleLogout } from './core/user-system.js';
+import { handleCaptchaGenerate, handleRegister, handleLogin, handleGetProfile, handleUpdateProfile, handleGetSecurity, handleSecurityVerify, handleChangePassword, handleChangeEmail, handle2FASetup, handle2FAVerify, handle2FAToggle, handleLogout } from './core/user-system.js';
 
 const ROLE = { ADMIN: 'admin', FEATURE_ADMIN: 'feature_admin', USER: 'user' };
 const FEATURES = { USERS:'users', BLOGS:'blogs', FILES:'files', SLZX:'slzx', NOTIFICATIONS:'notifs', MESSAGES:'messages', CONFIG:'config' };
@@ -74,10 +74,8 @@ async function handleAPI(request, env, ctx) {
     const method = request.method;
 
     try {
-        // ── 验证码 & 邮箱 ──
+        // ── 验证码 ──
         if (path === '/api/captcha/generate' && method === 'GET') return handleCaptchaGenerate(request, env);
-        if (path === '/api/email/send-code' && method === 'POST') return handleSendEmailCode(request, env);
-        if (path === '/api/email/verify' && method === 'POST') return handleVerifyEmailCode(request, env);
 
         // ── 用户系统 ──
         if (path === '/api/user/register' && method === 'POST') return handleRegister(request, env);

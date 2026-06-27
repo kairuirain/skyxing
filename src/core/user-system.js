@@ -5,7 +5,6 @@
 import { hashPassword, verifyPassword, signToken, createSecureCookie, extractToken, verifyToken } from '../utils/auth.js';
 import { getJSON, putJSON, getUser, putUser } from '../utils/kv.js';
 import { generateCaptcha, storeCaptcha, verifyCaptcha } from '../../Safety/Human_machine_verification/captcha.js';
-import { EMAIL_ENABLED, generateCode, sendVerificationEmail, storeEmailCode, verifyEmailCode, checkEmailRateLimit } from '../utils/email.js';
 import { generateSecret, generateUri, generateTOTP, verifyTOTP, generateBackupCodes } from '../utils/twofactor.js';
 
 const ROLE = { ADMIN: 'admin', FEATURE_ADMIN: 'feature_admin', USER: 'user' };
@@ -47,39 +46,12 @@ export async function handleCaptchaGenerate(request, env) {
     return json({ success: true, captchaId: id, captchaImage: svg });
 }
 
-// ── 邮箱验证码 ──
-export async function handleSendEmailCode(request, env) {
-    const { email, scene } = await request.json(); // scene: 'register' | 'change_email' | '2fa'
-    if (!email) return json({ success: false, message: '请提供邮箱地址' }, 400);
-
-    const allowed = await checkEmailRateLimit(env, email);
-    if (!allowed) return json({ success: false, message: '发送太频繁，请60秒后再试' }, 429);
-
-    const code = generateCode();
-    await storeEmailCode(env, email, code);
-
-    if (EMAIL_ENABLED) {
-        const result = await sendVerificationEmail(email, code);
-        return json({ success: result.success, message: result.message });
-    }
-
-    // 开发模式：返回验证码（仅本地测试）
-    console.log(`[Email] DEV mode - code for ${email}: ${code}`);
-    return json({ success: true, message: '验证码已发送', _devCode: code });
-}
-
-export async function handleVerifyEmailCode(request, env) {
-    const { email, code } = await request.json();
-    const result = await verifyEmailCode(env, email, code);
-    return json({ success: result.valid, message: result.valid ? '验证通过' : result.reason });
-}
-
 // ── 注册 ──
 export async function handleRegister(request, env) {
     const rc = await checkRateLimit(env, 'register', 3600000, 5);
     if (!rc.allowed) return json({ success: false, message: '注册太频繁，请稍后再试' }, 429);
 
-    const { username, password, email, captchaId, captchaAnswer, emailCode } = await request.json();
+    const { username, password, captchaId, captchaAnswer } = await request.json();
 
     // 验证用户名
     if (!username || username.length < 3 || username.length > 12)
@@ -100,33 +72,13 @@ export async function handleRegister(request, env) {
     if (!captchaResult.valid)
         return json({ success: false, message: captchaResult.reason });
 
-    // 真实性认证（邮箱）
-    if (!email) return json({ success: false, message: '请提供邮箱地址' });
-    // 检查邮箱是否已被使用
-    const userList = await env.SkyXing.list({ prefix: 'user:' });
-    for (const k of userList.keys) {
-        const u = await getUser(env, k.name.substring(5));
-        if (u && u.email === email.toLowerCase())
-            return json({ success: false, message: '此邮箱已被注册' });
-    }
-
-    if (EMAIL_ENABLED) {
-        // 生产模式必须验证邮箱
-        if (!emailCode)
-            return json({ success: false, message: '请输入邮箱验证码' });
-        const emailResult = await verifyEmailCode(env, email, emailCode);
-        if (!emailResult.valid)
-            return json({ success: false, message: emailResult.reason });
-    }
-
     // 创建用户
     const { hash, salt } = await hashPassword(password);
     const now = Date.now();
     const user = {
         username, passwordHash: hash, passwordSalt: salt,
-        email: email.toLowerCase(),
+        email: '', bio: '', avatar: '',
         role: ROLE.USER,
-        bio: '', avatar: '',
         twoFactorEnabled: false,
         createdAt: now, lastLogin: now,
         securityLog: []
@@ -200,11 +152,6 @@ export async function handleLogin(request, env) {
                 user.backupCodes.splice(idx, 1);
                 faValid = true;
             }
-        }
-        // 尝试邮箱验证码
-        if (!faValid && user.email) {
-            const emailResult = await verifyEmailCode(env, user.email, twoFactorCode);
-            faValid = emailResult.valid;
         }
         if (!faValid)
             return json({ success: false, need2FA: true, message: '二次认证验证失败' });
@@ -296,7 +243,7 @@ export async function handleSecurityVerify(request, env) {
     const user = await verifyUserRaw(request, env);
     if (!user) return json({ success: false, message: '未登录' }, 401);
 
-    const { password, twoFactorCode, email } = await request.json();
+    const { password, twoFactorCode } = await request.json();
 
     if (!password) return json({ success: false, message: '请输入密码' });
 
@@ -306,18 +253,17 @@ export async function handleSecurityVerify(request, env) {
     else if (user.passwordHash) valid = await verifyPassword(password, user.passwordHash, user.passwordSalt);
     if (!valid) return json({ success: false, message: '密码错误' });
 
-    // 第二因素：2FA 或 输入完整邮箱
+    // 第二因素：2FA（TOTP 或备用码）
     if (user.twoFactorEnabled && user.totpSecret) {
         if (!twoFactorCode)
             return json({ success: false, message: '请输入二次认证验证码' });
-        const faValid = await verifyTOTP(user.totpSecret, twoFactorCode);
+        let faValid = await verifyTOTP(user.totpSecret, twoFactorCode);
+        if (!faValid && user.backupCodes) {
+            const idx = user.backupCodes.indexOf(twoFactorCode);
+            if (idx >= 0) { user.backupCodes.splice(idx, 1); faValid = true; }
+        }
         if (!faValid)
             return json({ success: false, message: '二次认证验证失败' });
-    } else if (user.email) {
-        if (!email)
-            return json({ success: false, message: '请输入完整邮箱地址' });
-        if (email.toLowerCase() !== user.email.toLowerCase())
-            return json({ success: false, message: '邮箱地址不匹配' });
     }
 
     // 生成临时安全令牌 (5分钟有效)
@@ -371,7 +317,7 @@ export async function handleChangeEmail(request, env) {
     const user = await verifyUserRaw(request, env);
     if (!user) return json({ success: false, message: '未登录' }, 401);
 
-    const { newEmail, emailCode, safeToken } = await request.json();
+    const { newEmail, safeToken } = await request.json();
 
     if (!newEmail) return json({ success: false, message: '请输入新邮箱' });
 
@@ -382,13 +328,6 @@ export async function handleChangeEmail(request, env) {
         if (!safeUser || safeUser !== user.username)
             return json({ success: false, message: '安全认证已过期，请重新验证' }, 403);
         await env.SkyXing.delete(`safe:${safeToken}`);
-    }
-
-    // 真实性认证：新邮箱验证码
-    if (EMAIL_ENABLED) {
-        if (!emailCode) return json({ success: false, message: '请输入新邮箱验证码' });
-        const result = await verifyEmailCode(env, newEmail, emailCode);
-        if (!result.valid) return json({ success: false, message: result.reason });
     }
 
     // 检查新邮箱是否已被使用

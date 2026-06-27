@@ -6,7 +6,7 @@
 <title>SkyXing 博客</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-:root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#0f172a;--bg2:#1e293b;--bd:rgba(255,255,255,.08);--tx:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
+::root{--p:#667eea;--s:#764ba2;--g:#43e97b;--r:#ff6b6b;--y:#feca57;--bg:#0f172a;--bg2:#1e293b;--bd:rgba(255,255,255,.08);--tx:rgba(255,255,255,.92);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.3)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(10,15,26,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 1.5rem;z-index:100}
@@ -101,58 +101,58 @@ body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;backgroun
 <body>
 
 <div class="topbar">
-  <a href="/blog" class="logo">SkyXing Blog</a>
+  <a href="/blog" class="logo">SkyXing 博客</a>
   <nav>
-    <a href="/">Home</a>
-    <a href="/blog" class="on">Blog</a>
+    <a href="/">首页</a>
+    <a href="/blog" class="on">博客</a>
   </nav>
   <div class="actions">
     <span class="user-tag" id="topUser"></span>
-    <button class="btn-sm" id="btnLogin" onclick="window.location.href='/user'">Login</button>
-    <button class="btn-sm" id="btnLogout" style="display:none" onclick="doLogout()">Logout</button>
+    <button class="btn-sm" id="btnLogin" onclick="window.location.href='/user'">登录</button>
+    <button class="btn-sm" id="btnLogout" style="display:none" onclick="doLogout()">退出登录</button>
   </div>
 </div>
 
 <div class="container" id="app">
-  <!-- Blog List View -->
+  <!-- 文章列表 -->
   <div id="listView">
     <div id="blogList" class="blog-list"></div>
     <div id="pagination" class="pagination"></div>
     <div id="blogEmpty" class="empty-state" style="display:none">
       <svg viewBox="0 0 80 80" fill="none"><rect x="12" y="8" width="56" height="60" rx="4" stroke="currentColor" stroke-width="2"/><line x1="20" y1="22" x2="60" y2="22" stroke="currentColor" stroke-width="1.5"/><line x1="20" y1="32" x2="48" y2="32" stroke="currentColor" stroke-width="1.5"/><line x1="20" y1="42" x2="54" y2="42" stroke="currentColor" stroke-width="1.5"/></svg>
-      <h3>No Posts Yet</h3>
-      <p>Be the first to write something!</p>
+      <h3>暂无文章</h3>
+      <p>快来写点东西吧！</p>
     </div>
   </div>
 
-  <!-- Blog Detail View -->
+  <!-- 文章详情 -->
   <div id="detailView" style="display:none">
-    <button class="back-btn" onclick="showList()">← Back to Blog</button>
+    <button class="back-btn" onclick="showList()">← 返回博客列表</button>
     <h1 class="detail-title" id="detailTitle"></h1>
     <div class="detail-meta">
       <span id="detailAuthor"></span>
       <span id="detailTime"></span>
     </div>
     <div class="detail-share" id="detailShare">
-      <button onclick="shareBlog('copy')">📋 Copy Link</button>
-      <button onclick="shareBlog('twitter')">𝕏 Twitter</button>
-      <button onclick="shareBlog('weibo')">📱 Weibo</button>
+      <button onclick="shareBlog('copy')">📋 复制链接</button>
+      <button onclick="shareBlog('twitter')">𝕏 分享到 X</button>
+      <button onclick="shareBlog('weibo')">📱 分享到微博</button>
     </div>
     <div class="markdown-body" id="detailContent"></div>
     <div id="detailNotFound" style="display:none;text-align:center;padding:3rem;color:var(--t3)">
-      <h3>Article Not Found</h3>
-      <p>The article may have been deleted or the URL is incorrect.</p>
+      <h3>文章不存在</h3>
+      <p>文章可能已被删除或链接错误。</p>
     </div>
 
-    <!-- Comment Section -->
+    <!-- 评论区 -->
     <div class="comment-section" id="commentSection">
-      <h3>Comments <span class="comment-count" id="commentCount"></span></h3>
+      <h3>评论 <span class="comment-count" id="commentCount"></span></h3>
       <div id="commentLoginHint" class="comment-login-hint">
-        <a href="/user">Login</a> to leave a comment
+        <a href="/user">登录</a>后发表评论
       </div>
       <div id="commentForm" class="comment-box" style="display:none">
-        <textarea id="commentInput" placeholder="Share your thoughts..." rows="2"></textarea>
-        <button id="commentSubmit" onclick="submitComment()">Send</button>
+        <textarea id="commentInput" placeholder="发表你的看法..." rows="2"></textarea>
+        <button id="commentSubmit" onclick="submitComment()">发送</button>
       </div>
       <div id="commentList"></div>
     </div>
@@ -189,7 +189,7 @@ async function api(path, options){
   var r = await fetch(path, options);
   if (r.status === 401) { logout(); throw new Error('AUTH_FAILED'); }
   var d = await r.json();
-  if (!d.success && r.status >= 400) throw new Error(d.message || 'Request failed');
+  if (!d.success && r.status >= 400) throw new Error(d.message || '请求失败');
   return d;
 }
 
@@ -231,10 +231,10 @@ function updateUserUI(){
 async function doLogout(){
   try { await api('/api/user/logout', { method: 'POST' }); } catch(e) {}
   logout();
-  toast('Logged out');
+  toast('已退出登录');
 }
 
-// ── Blog List ──
+// ── 文章列表 ──
 async function loadBlogs(page){
   page = page || 1;
   STATE.page = page;
@@ -249,7 +249,7 @@ async function loadBlogs(page){
       renderPagination();
     }
   } catch(e) {
-    document.getElementById('blogList').innerHTML = '<div class="empty-state"><h3>Load Failed</h3><p>' + e.message + '</p></div>';
+    document.getElementById('blogList').innerHTML = '<div class="empty-state"><h3>加载失败</h3><p>' + e.message + '</p></div>';
   }
 }
 
@@ -299,7 +299,7 @@ function escapeHtml(text){
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-// ── Blog Detail ──
+// ── 文章详情 ──
 async function showDetail(id){
   window.location.hash = '#post-' + id;
   document.getElementById('listView').style.display = 'none';
@@ -318,10 +318,9 @@ async function showDetail(id){
       document.getElementById('detailAuthor').innerHTML = '👤 ' + escapeHtml(d.blog.author);
       document.getElementById('detailTime').innerHTML = '🕒 ' + new Date(d.blog.createdAt).toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
       if (d.blog.updatedAt) {
-        document.getElementById('detailTime').innerHTML += ' (updated: ' + new Date(d.blog.updatedAt).toLocaleDateString('zh-CN', { month:'short', day:'numeric' }) + ')';
+        document.getElementById('detailTime').innerHTML += '（更新于 ' + new Date(d.blog.updatedAt).toLocaleDateString('zh-CN', { month:'short', day:'numeric' }) + '）';
       }
-      document.title = d.blog.title + ' - SkyXing Blog';
-      // Markdown rendering
+      document.title = d.blog.title + ' - SkyXing 博客';
       try {
         document.getElementById('detailContent').innerHTML = marked.parse(d.blog.content || '');
       } catch(e) {
@@ -341,25 +340,23 @@ async function showDetail(id){
 
 function showList(){
   window.location.hash = '';
-  document.title = 'SkyXing Blog';
+  document.title = 'SkyXing 博客';
   document.getElementById('listView').style.display = '';
   document.getElementById('detailView').style.display = 'none';
   STATE.currentBlog = null;
   window.scrollTo(0, 0);
 }
 
-// ── Share ──
+// ── 分享 ──
 function shareBlog(platform){
   if (!STATE.currentBlog) return;
   var url = window.location.origin + '/blog#' + 'post-' + STATE.currentBlog.id;
   var title = STATE.currentBlog.title;
-  var text = title + ' ' + url;
-
   if (platform === 'copy') {
     navigator.clipboard.writeText(url).then(function(){
-      toast('Link copied!');
+      toast('链接已复制！');
     }).catch(function(){
-      prompt('Copy this link:', url);
+      prompt('复制此链接：', url);
     });
   } else if (platform === 'twitter') {
     window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(title) + '&url=' + encodeURIComponent(url), '_blank');
@@ -368,7 +365,7 @@ function shareBlog(platform){
   }
 }
 
-// ── Comments ──
+// ── 评论 ──
 async function loadComments(blogId){
   try {
     var d = await api('/api/blog/comments?id=' + blogId);
@@ -383,7 +380,7 @@ async function loadComments(blogId){
 function renderComments(comments){
   var el = document.getElementById('commentList');
   if (!comments.length) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:.82rem;text-align:center;padding:1rem">No comments yet. Be the first!</p>';
+    el.innerHTML = '<p style="color:var(--t3);font-size:.82rem;text-align:center;padding:1rem">暂无评论，来说两句吧！</p>';
     return;
   }
   var html = '';
@@ -393,7 +390,7 @@ function renderComments(comments){
     html += '<div class="c-header"><span class="c-author">' + escapeHtml(c.author) + '</span><span class="c-time">' + time + '</span></div>';
     html += '<div class="c-body">' + escapeHtml(c.content) + '</div>';
     if (STATE.user && (STATE.user.role === 'admin' || STATE.user.username === c.author)) {
-      html += '<button class="c-del" onclick="deleteComment(\'' + c.id + '\')">Delete</button>';
+      html += '<button class="c-del" onclick="deleteComment(\'' + c.id + '\')">删除</button>';
     }
     html += '</div>';
   });
@@ -402,10 +399,10 @@ function renderComments(comments){
 
 async function submitComment(){
   if (!STATE.currentBlog) return;
-  if (!STATE.user) { toast('Please login first', true); return; }
+  if (!STATE.user) { toast('请先登录', true); return; }
   var input = document.getElementById('commentInput');
   var content = input.value.trim();
-  if (!content) { toast('Comment cannot be empty', true); return; }
+  if (!content) { toast('评论不能为空', true); return; }
 
   var btn = document.getElementById('commentSubmit');
   btn.disabled = true;
@@ -414,28 +411,28 @@ async function submitComment(){
     var d = await api('/api/blog/comment', { method: 'POST', body: JSON.stringify({ blogId: STATE.currentBlog.id, content: content }) });
     if (d.success) {
       input.value = '';
-      toast('Comment posted!');
+      toast('评论发表成功！');
       loadComments(STATE.currentBlog.id);
     }
   } catch(e) {
     if (e.message !== 'AUTH_FAILED') toast(e.message, true);
   }
   btn.disabled = false;
-  btn.textContent = 'Send';
+  btn.textContent = '发送';
 }
 
 async function deleteComment(commentId){
-  if (!confirm('Delete this comment?')) return;
+  if (!confirm('确定删除此评论？')) return;
   try {
     await api('/api/blog/comment/delete', { method: 'POST', body: JSON.stringify({ blogId: STATE.currentBlog.id, commentId: commentId }) });
-    toast('Comment deleted');
+    toast('评论已删除');
     loadComments(STATE.currentBlog.id);
   } catch(e) {
     if (e.message !== 'AUTH_FAILED') toast(e.message, true);
   }
 }
 
-// ── Init ──
+// ── 初始化 ──
 async function init(){
   await checkLogin();
   var hash = window.location.hash;
@@ -447,7 +444,6 @@ async function init(){
   } else {
     loadBlogs(1);
   }
-  // Listen for hash changes
   window.addEventListener('hashchange', function(){
     var h = window.location.hash;
     if (h && h.startsWith('#post-')) {
