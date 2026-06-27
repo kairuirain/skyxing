@@ -25,6 +25,7 @@ async function serveAsset(request, env) {
 // ==================== 主入口 ====================
 export default {
     async fetch(request, env, ctx) {
+        try {
         const url = new URL(request.url);
         const path = url.pathname;
 
@@ -52,6 +53,11 @@ export default {
             return handleAPI(request, env, ctx);
         }
         return serveAsset(request, env);
+
+        } catch (e) {
+            console.error('[Fatal] Worker error:', e.message, e.stack);
+            return jsonResponse({ success: false, message: '服务器内部错误' }, 500);
+        }
     },
 
     async scheduled(controller, env, ctx) {
