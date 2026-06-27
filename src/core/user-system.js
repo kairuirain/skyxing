@@ -53,6 +53,7 @@ export async function handleCaptchaGenerate(request, env) {
 
 // ── 注册 ──
 export async function handleRegister(request, env) {
+    try {
     const rc = await checkRateLimit(env, 'register', 3600000, 20);
     if (!rc.allowed) return json({ success: false, message: '注册太频繁，请稍后再试' }, 429);
 
@@ -99,10 +100,16 @@ export async function handleRegister(request, env) {
         token,
         redirect: '/'
     }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': createSecureCookie('auth_token', token) } });
+
+    } catch (e) {
+        console.error('Register error:', e.message, e.stack);
+        return json({ success: false, message: '注册失败: ' + e.message }, 500);
+    }
 }
 
 // ── 登录 ──
 export async function handleLogin(request, env) {
+    try {
     const rc = await checkRateLimit(env, 'login', 60000, 10);
     if (!rc.allowed) return json({ success: false, message: '登录尝试过多，请稍后再试' }, 429);
 
@@ -178,6 +185,11 @@ export async function handleLogin(request, env) {
         token,
         redirect: (user.role === ROLE.ADMIN || user.role === ROLE.FEATURE_ADMIN) ? '/admin' : '/'
     }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': createSecureCookie('auth_token', token) } });
+
+    } catch (e) {
+        console.error('Login error:', e.message, e.stack);
+        return json({ success: false, message: '登录失败: ' + e.message }, 500);
+    }
 }
 
 // ── 个人资料 ──
