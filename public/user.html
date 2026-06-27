@@ -37,7 +37,8 @@ body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;backgroun
 .msg-ok{background:rgba(67,233,123,.08);color:var(--g);border:1px solid rgba(67,233,123,.15)}
 .msg-err{background:rgba(255,107,107,.08);color:var(--r);border:1px solid rgba(255,107,107,.15)}
 .captcha-wrap{display:flex;align-items:center;gap:.5rem}
-.captcha-wrap img{border-radius:8px;border:1px solid var(--bd);cursor:pointer;height:50px}
+.captcha-svg{flex-shrink:0;width:180px;height:50px;border-radius:8px;border:1px solid var(--bd);overflow:hidden;cursor:pointer;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;min-width:180px}
+.captcha-svg svg{display:block}
 .captcha-wrap input{flex:1}
 .code-row{display:flex;gap:.5rem}
 .code-row input{flex:1}
@@ -85,7 +86,7 @@ body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;backgroun
     <div class="fg"><label>用户名</label><input id="loginUser" placeholder="请输入用户名" autocomplete="username"></div>
     <div class="fg"><label>密码</label><input type="password" id="loginPass" placeholder="请输入密码" autocomplete="current-password"></div>
     <div class="fg"><label>人机验证</label>
-      <div class="captcha-wrap"><img id="loginCaptchaImg" src="" alt="验证码" style="display:none"><input id="loginCaptcha" placeholder="输入算术结果"><button class="btn-s" id="loginRefreshCaptcha">刷新</button></div>
+      <div class="captcha-wrap"><div class="captcha-svg" id="loginCaptchaSvg" title="点击刷新验证码"><span style="color:var(--t3);font-size:.75rem">加载中...</span></div><input id="loginCaptcha" placeholder="输入算术结果"><button class="btn-s" id="loginRefreshCaptcha">刷新</button></div>
     </div>
     <div class="fg" id="login2FAWrap" style="display:none"><label>二次认证验证码</label><input id="login2FA" placeholder="6位验证码或备用码"></div>
     <button class="btn-p" id="loginBtn">登录</button>
@@ -97,7 +98,7 @@ body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;backgroun
     <div class="fg"><label>用户名（3-12位）</label><input id="regUser" placeholder="支持中英文、数字、下划线" autocomplete="off"></div>
     <div class="fg"><label>密码（至少6位）</label><input type="password" id="regPass" placeholder="请输入密码" autocomplete="new-password"></div>
     <div class="fg"><label>人机验证</label>
-      <div class="captcha-wrap"><img id="regCaptchaImg" src="" alt="验证码" style="display:none"><input id="regCaptcha" placeholder="输入算术结果"><button class="btn-s" id="regRefreshCaptcha">刷新</button></div>
+      <div class="captcha-wrap"><div class="captcha-svg" id="regCaptchaSvg" title="点击刷新验证码"><span style="color:var(--t3);font-size:.75rem">加载中...</span></div><input id="regCaptcha" placeholder="输入算术结果"><button class="btn-s" id="regRefreshCaptcha">刷新</button></div>
     </div>
     <button class="btn-p" id="regBtn">注册</button>
   </div>
@@ -251,19 +252,39 @@ function showAuth(user){
   load2FAStatus();
 }
 
-// 验证码
-async function loadCaptcha(prefix){
-  try{
-    var d=await api('/api/captcha/generate');
-    if(d.success){
-      var img=document.getElementById(prefix+'CaptchaImg');
-      img.src=d.captchaImage;
-      img.style.display='';
-      STATE[prefix+'CaptchaId']=d.captchaId;
-    }
-  }catch(e){console.error('验证码:',e.message)}
+// 验证码 - 直接渲染 SVG 到容器中
+function renderCaptchaSVG(containerId, svgDataUri) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  // 从 data URI 中提取 base64 并解码为 SVG 字符串
+  try {
+    var base64 = svgDataUri.split(',')[1] || svgDataUri;
+    var svgText = atob(base64);
+    container.innerHTML = svgText;
+  } catch(e) {
+    // 如果解码失败，使用 img 作为后备
+    container.innerHTML = '<img src="' + svgDataUri + '" style="width:100%;height:100%;display:block">';
+  }
 }
 
+async function loadCaptcha(prefix){
+  var container = document.getElementById(prefix + 'CaptchaSvg');
+  if (container) container.innerHTML = '<span style="color:var(--t3);font-size:.75rem">加载中...</span>';
+  try{
+    var d = await api('/api/captcha/generate');
+    if(d.success){
+      renderCaptchaSVG(prefix + 'CaptchaSvg', d.captchaImage);
+      STATE[prefix+'CaptchaId'] = d.captchaId;
+    }
+  }catch(e){
+    console.error('验证码加载失败:', e.message);
+    if (container) container.innerHTML = '<span style="color:var(--r);font-size:.7rem">加载失败，点击刷新</span>';
+  }
+}
+
+// 点击验证码图片刷新
+document.getElementById('loginCaptchaSvg').addEventListener('click', function(){ loadCaptcha('login'); });
+document.getElementById('regCaptchaSvg').addEventListener('click', function(){ loadCaptcha('reg'); });
 document.getElementById('loginRefreshCaptcha').addEventListener('click',function(){loadCaptcha('login')});
 document.getElementById('regRefreshCaptcha').addEventListener('click',function(){loadCaptcha('reg')});
 

@@ -43,12 +43,21 @@ function buildSvg(text) {
 }
 
 function svgToDataUri(svg) {
+    // 使用更可靠的 base64 编码，避免 btoa 在某些环境下的问题
     var bytes = new TextEncoder().encode(svg);
-    var binary = '';
-    for (var i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var result = '';
+    var i = 0;
+    while (i < bytes.length) {
+        var a = bytes[i++];
+        var b = i < bytes.length ? bytes[i++] : NaN;
+        var c = i < bytes.length ? bytes[i++] : NaN;
+        result += chars[a >> 2];
+        result += chars[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)];
+        result += isNaN(b) ? '=' : chars[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)];
+        result += isNaN(c) ? '=' : chars[c & 63];
     }
-    return 'data:image/svg+xml;base64,' + btoa(binary);
+    return 'data:image/svg+xml;base64,' + result;
 }
 
 export async function storeCaptcha(env, id, answer) {
