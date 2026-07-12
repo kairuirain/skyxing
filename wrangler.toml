@@ -1,0 +1,14 @@
+name = "skyxing"
+main = "src/index.js"
+compatibility_date = "2025-07-12"
+
+[[kv_namespaces]]
+binding = "SKYXING_KV"
+id = "73f13dd572bc4ee58dc6946933568b9e"
+preview_id = "73f13dd572bc4ee58dc6946933568b9e"
+
+[vars]
+JWT_SECRET = "UlT0luWq90YhcRuwiU5gQ5Roir5zIFcZ0pePgF9Guzg"
+
+[assets]
+directory = "./public"

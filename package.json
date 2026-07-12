@@ -1,0 +1,17 @@
+{
+  "name": "skyxing-server",
+  "version": "1.0.0",
+  "description": "SkyXing Blog - Cloudflare Worker Backend",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "wrangler": "^3.107.2"
+  }
+}
