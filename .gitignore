@@ -27,5 +27,11 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Server directory (managed in separate repo: skyxing)
+server/
+
+# App directory (managed in separate repo: skyxing-app)
+app/
+
 # Wrangler
 .wrangler/
