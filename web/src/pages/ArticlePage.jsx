@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { Calendar, Eye, Tag, User, Send, Trash2, Edit3 } from 'lucide-react';
+import { sanitizeHTML } from '../lib/sanitize.js';
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -183,7 +184,7 @@ export default function ArticlePage() {
       {/* Article content */}
       <div
         className="article-content prose max-w-none mb-12"
-        dangerouslySetInnerHTML={{ __html: article.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHTML(article.content) }}
       />
 
       {/* Author card */}

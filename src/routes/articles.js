@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { verifyToken } from '../utils/auth.js';
 import { kvGet, kvPut, kvDelete, kvList, kvIncrement, generateId, slugify, PREFIX } from '../utils/kv.js';
+import { sanitizeHTML } from '../utils/sanitize.js';
 
 const articles = new Hono();
 
@@ -178,8 +179,8 @@ articles.post('/', authRequired, async (c) => {
       id,
       title,
       slug,
-      content,
-      excerpt: excerpt || content.slice(0, 200).replace(/<[^>]*>/g, ''),
+      content: sanitizeHTML(content),
+      excerpt: excerpt || sanitizeHTML(content).replace(/<[^>]*>/g, '').slice(0, 200),
       tags: tags || [],
       coverImage: coverImage || '',
       authorId: user.userId,
@@ -224,7 +225,7 @@ articles.put('/:id', authRequired, async (c) => {
     const updated = {
       ...article,
       title: title || article.title,
-      content: content || article.content,
+      content: content ? sanitizeHTML(content) : article.content,
       excerpt: excerpt || article.excerpt,
       tags: tags || article.tags,
       coverImage: coverImage !== undefined ? coverImage : article.coverImage,
