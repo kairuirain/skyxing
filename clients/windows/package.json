@@ -1,0 +1,61 @@
+{
+  "name": "skyxing-desktop",
+  "version": "1.1.0",
+  "description": "SkyXing Blog Desktop Client for Windows",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build && electron-builder",
+    "build:win": "vite build && electron-builder --win",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^24.13.0",
+    "concurrently": "^8.2.0",
+    "wait-on": "^7.2.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20"
+  },
+  "build": {
+    "appId": "com.skyxing.desktop",
+    "productName": "SkyXing",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "shortcutName": "SkyXing"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": []
+  }
+}

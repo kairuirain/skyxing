@@ -6,7 +6,8 @@
 
 - **后端**: Cloudflare Worker (Hono.js) + KV 存储
 - **Web 前端**: React + Vite + TailwindCSS
-- **桌面客户端**: Tauri (Rust) + React
+- **Android 客户端**: React Native (Expo) + React Navigation
+- **Windows 桌面客户端**: Electron + React + Vite + TailwindCSS
 - **认证**: JWT (jose)
 
 ## 部署地址
@@ -17,15 +18,33 @@
 ## 项目结构
 
 ```
-server/
-├── src/
-│   ├── index.js          # Worker 入口
-│   ├── routes/           # API 路由 (auth, articles, comments, users, admin)
-│   ├── middleware/        # 中间件 (CORS)
-│   └── utils/            # 工具函数 (JWT, KV helpers)
-├── web/                  # Web 前端源码 (React + Vite + TailwindCSS)
-├── public/               # 构建后的静态文件
-├── wrangler.toml         # Cloudflare Workers 配置
+├── src/                   # 后端源码 (Cloudflare Worker + Hono.js)
+│   ├── index.js           # Worker 入口
+│   ├── routes/            # API 路由 (auth, articles, comments, users, admin)
+│   ├── middleware/         # 中间件 (CORS)
+│   └── utils/             # 工具函数 (JWT, KV helpers, sanitize)
+├── web/                   # Web 前端 (React + Vite + TailwindCSS)
+│   └── src/
+│       ├── components/    # 共享组件 (Layout)
+│       ├── context/       # 状态管理 (AuthContext)
+│       ├── lib/           # API 客户端 / XSS 防护
+│       └── pages/         # 页面组件
+├── clients/               # 客户端应用
+│   ├── shared/            # 跨平台共享逻辑 (API 客户端 / 净化器)
+│   ├── android/           # Android 客户端 (React Native + Expo)
+│   │   ├── App.js
+│   │   └── src/
+│   │       ├── context/   # AuthContext / SettingsContext
+│   │       ├── navigation/# 底部 Tab 导航 + Stack 导航
+│   │       └── screens/   # 主页 / 播客 / 我的 / 文章 / 管理
+│   └── windows/           # Windows 桌面客户端 (Electron + React + Vite)
+│       ├── electron/      # Electron 主进程 (菜单栏 / IPC)
+│       └── src/
+│           ├── components/# Layout / SettingsModal
+│           ├── context/   # AuthContext / SettingsContext
+│           └── pages/     # 所有页面组件
+├── public/                # Web 构建输出
+├── wrangler.toml          # Cloudflare Workers 配置
 └── package.json
 ```
 
@@ -41,6 +60,17 @@ cd web
 npm install
 npm run dev        # 启动 Web 前端开发服务器 (端口 3000)
 npm run build      # 构建到 ../public/
+
+# Android 客户端
+cd clients/android
+npm install
+npx expo start     # 启动 Expo 开发服务器
+
+# Windows 桌面客户端
+cd clients/windows
+npm install
+npm run dev        # 启动 Electron + Vite 开发模式
+npm run build:win  # 构建 Windows 安装包
 ```
 
 ## 部署

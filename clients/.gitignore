@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-electron/
+.expo/
+*.apk
+*.exe
+*.dmg
+.DS_Store
