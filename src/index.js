@@ -7,6 +7,7 @@ import commentsRoutes from './routes/comments.js';
 import usersRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import messagesRoutes from './routes/messages.js';
+import updatesRoutes from './routes/updates.js';
 
 const app = new Hono();
 
@@ -36,6 +37,9 @@ api.route('/admin', adminRoutes);
 
 // Private messaging routes (auth required)
 api.route('/messages', messagesRoutes);
+
+// OTA update routes (public read, admin config)
+api.route('/updates', updatesRoutes);
 
 // Mount API under /server/api
 app.route('/server/api', api);

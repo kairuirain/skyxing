@@ -11,6 +11,7 @@ const PREFIX = {
   TAGS: 'tag:',
   COUNTERS: 'counter:',
   MESSAGES: 'msg:',
+  UPDATES: 'update:',
 };
 
 /**
