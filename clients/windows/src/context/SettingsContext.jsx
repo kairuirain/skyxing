@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 const DEFAULTS = {
   startOnBoot: false,
   autoUpdate: true,
+  updateChannel: 'stable',
   cacheSize: 0,
   lastCleanTime: null,
 };

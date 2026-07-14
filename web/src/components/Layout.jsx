@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { PenSquare, User, LogOut, LogIn, Home, Settings, MessageSquare } from 'lucide-react';
+import { PenSquare, LogIn, Home, Settings, MessageSquare } from 'lucide-react';
 
 export default function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -21,10 +20,6 @@ export default function Layout() {
     return () => { active = false; };
   }, [user]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,28 +54,13 @@ export default function Layout() {
                   )}
                 </Link>
                 <Link
-                  to={`/user/${user.id}`}
+                  to="/settings"
                   className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+                  title="设置"
                 >
-                  <User size={20} />
+                  <Settings size={20} />
                   <span className="hidden sm:inline text-sm">{user.displayName}</span>
                 </Link>
-                {user.role === 'admin' && (
-                  <Link
-                    to="/admin"
-                    className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-                    title="管理后台"
-                  >
-                    <Settings size={20} />
-                  </Link>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 transition-colors"
-                  title="退出登录"
-                >
-                  <LogOut size={20} />
-                </button>
               </>
             ) : (
               <>

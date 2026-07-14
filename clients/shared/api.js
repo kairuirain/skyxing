@@ -178,6 +178,17 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // OTA updates
+  async checkUpdate(platform, current, channel = 'stable') {
+    const q = new URLSearchParams({ platform, current, channel }).toString();
+    return this.request(`/updates/check?${q}`);
+  }
+
+  async getLatest(platform, channel = 'stable') {
+    const q = new URLSearchParams({ platform, channel }).toString();
+    return this.request(`/updates/latest?${q}`);
+  }
 }
 
 export default ApiClient;

@@ -1,14 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, TextInput, Alert, ActivityIndicator, Switch,
+  StyleSheet, TextInput, Alert, ActivityIndicator, Switch, Linking,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
+import api from '../lib/api';
+
+const APP_VERSION = '1.0.0';
+const PLATFORM = 'android';
 
 export default function ProfileScreen({ navigation }) {
   const { user, login, logout, register, updateProfile } = useAuth();
-  const { settings, updateSetting, clearCache, getCacheSize } = useSettings();
+  const { settings, updateSetting, clearCache } = useSettings();
 
   // Auth form state
   const [showLogin, setShowLogin] = useState(false);
@@ -29,6 +33,10 @@ export default function ProfileScreen({ navigation }) {
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
   const [cacheClearing, setCacheClearing] = useState(false);
+
+  // OTA update state
+  const [update, setUpdate] = useState({ checking: false, error: null, hasUpdate: false, latest: null, checked: false });
+  const channel = settings.updateChannel || 'stable';
 
   const handleLogin = async () => {
     if (!username.trim() || !password) {
@@ -128,6 +136,29 @@ export default function ProfileScreen({ navigation }) {
         },
       },
     ]);
+  };
+
+  const checkUpdate = useCallback(async () => {
+    setUpdate((u) => ({ ...u, checking: true, error: null }));
+    try {
+      const data = await api.checkUpdate(PLATFORM, APP_VERSION, channel);
+      setUpdate((u) => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release }));
+    } catch (e) {
+      setUpdate((u) => ({ ...u, checking: false, error: e.message || '检查失败' }));
+    }
+  }, [channel]);
+
+  const handleDownload = () => {
+    const url = update.latest?.download?.recommendedUrl || update.latest?.download?.url;
+    if (!url) return;
+    Alert.alert(
+      '下载更新',
+      `确认下载 SkyXing v${update.latest.version} 安装包？${update.latest.proxyApplied ? '\n（已启用下载加速代理）' : ''}`,
+      [
+        { text: '取消', style: 'cancel' },
+        { text: '下载', onPress: () => Linking.openURL(url).catch(() => Alert.alert('打开失败', '无法打开下载链接')) },
+      ]
+    );
   };
 
   // 未登录状态
@@ -359,10 +390,7 @@ export default function ProfileScreen({ navigation }) {
               numberOfLines={3}
             />
             <View style={styles.editButtons}>
-              <TouchableOpacity
-                style={styles.btnSecondary}
-                onPress={() => setEditing(false)}
-              >
+              <TouchableOpacity style={styles.btnSecondary} onPress={() => setEditing(false)}>
                 <Text style={styles.btnSecondaryText}>取消</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -370,11 +398,7 @@ export default function ProfileScreen({ navigation }) {
                 onPress={saveProfile}
                 disabled={editLoading}
               >
-                {editLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.btnPrimaryText}>保存</Text>
-                )}
+                {editLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>保存</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -397,114 +421,123 @@ export default function ProfileScreen({ navigation }) {
         )}
       </View>
 
-      {/* 快捷入口 */}
+      {/* 调试 */}
       <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('Article', { id: null, title: '写文章' })}
-        >
-          <Text style={styles.menuIcon}>✏️</Text>
-          <Text style={styles.menuLabel}>写文章</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('Messages')}
-        >
-          <Text style={styles.menuIcon}>💬</Text>
-          <Text style={styles.menuLabel}>私信</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-        {user.role === 'admin' && (
-          <TouchableOpacity
-            style={styles.menuRow}
-            onPress={() => navigation.navigate('Admin')}
-          >
-            <Text style={styles.menuIcon}>🔧</Text>
-            <Text style={styles.menuLabel}>管理后台</Text>
+        <Text style={styles.sectionTitle}>调试</Text>
+        <View style={styles.settingsPanel}>
+          <View style={styles.settingItem}>
+            <Text style={styles.settingItemLabel}>字体大小</Text>
+            <View style={styles.fontSizeSelector}>
+              {['small', 'medium', 'large'].map(size => (
+                <TouchableOpacity
+                  key={size}
+                  style={[styles.fontSizeBtn, settings.fontSize === size && styles.fontSizeBtnActive]}
+                  onPress={() => updateSetting('fontSize', size)}
+                >
+                  <Text style={[styles.fontSizeBtnText, settings.fontSize === size && styles.fontSizeBtnTextActive]}>
+                    {{ small: '小', medium: '中', large: '大' }[size]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemRow}>
+              <Text style={styles.settingItemLabel}>离线缓存</Text>
+              <Switch
+                value={settings.offlineCache}
+                onValueChange={(v) => updateSetting('offlineCache', v)}
+                trackColor={{ false: '#e5e7eb', true: '#93c5fd' }}
+                thumbColor={settings.offlineCache ? '#2563eb' : '#d1d5db'}
+              />
+            </View>
+          </View>
+          <TouchableOpacity style={styles.settingItem} onPress={handleClearCache} disabled={cacheClearing}>
+            <View style={styles.settingItemRow}>
+              <Text style={styles.settingItemLabel}>清除缓存</Text>
+              {cacheClearing ? (
+                <ActivityIndicator size="small" color="#2563eb" />
+              ) : (
+                <Text style={styles.settingItemValue}>
+                  {settings.cacheSize > 0 ? `${(settings.cacheSize / 1024).toFixed(1)} KB` : '0 KB'}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+          <View style={styles.settingItem}>
+            <Text style={styles.settingItemLabel}>更新通道</Text>
+            <View style={styles.fontSizeSelector}>
+              {['stable', 'beta'].map(ch => (
+                <TouchableOpacity
+                  key={ch}
+                  style={[styles.fontSizeBtn, channel === ch && styles.fontSizeBtnActive]}
+                  onPress={() => updateSetting('updateChannel', ch)}
+                >
+                  <Text style={[styles.fontSizeBtnText, channel === ch && styles.fontSizeBtnTextActive]}>
+                    {ch === 'stable' ? '稳定版' : '测试版'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* 更新 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>更新</Text>
+        <View style={styles.settingsPanel}>
+          <View style={styles.settingItemRow}>
+            <Text style={styles.settingItemLabel}>当前版本</Text>
+            <Text style={styles.settingItemValue}>v{APP_VERSION} · {channel === 'beta' ? '测试版' : '稳定版'}</Text>
+          </View>
+          <TouchableOpacity style={styles.updateBtn} onPress={checkUpdate} disabled={update.checking}>
+            <Text style={styles.updateBtnText}>{update.checking ? '检查中...' : '检查更新'}</Text>
+          </TouchableOpacity>
+          {update.error && <Text style={styles.errorText}>检查失败：{update.error}</Text>}
+          {update.checked && !update.error && !update.hasUpdate && (
+            <Text style={styles.okText}>已是最新版本</Text>
+          )}
+          {update.hasUpdate && update.latest && (
+            <View style={styles.updateCard}>
+              <Text style={styles.updateTitle}>发现新版本 v{update.latest.version}</Text>
+              <Text style={styles.updateNotes}>{update.latest.notes || '（无更新说明）'}</Text>
+              {update.latest.proxyApplied && <Text style={styles.proxyText}>已启用下载加速代理</Text>}
+              <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload}>
+                <Text style={styles.downloadBtnText}>下载更新</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 关于软件 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>关于软件</Text>
+        <View style={styles.settingsPanel}>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Article', { id: null, title: '写文章' })}>
+            <Text style={styles.menuIcon}>✏️</Text>
+            <Text style={styles.menuLabel}>写文章</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      {/* 设置面板 */}
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.settingRow}
-          onPress={() => setShowSettings(!showSettings)}
-        >
-          <Text style={styles.settingIcon}>⚙️</Text>
-          <Text style={styles.settingLabel}>设置</Text>
-          <Text style={styles.settingArrow}>{showSettings ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
-
-        {showSettings && (
-          <View style={styles.settingsPanel}>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingItemLabel}>字体大小</Text>
-              <View style={styles.fontSizeSelector}>
-                {['small', 'medium', 'large'].map(size => (
-                  <TouchableOpacity
-                    key={size}
-                    style={[
-                      styles.fontSizeBtn,
-                      settings.fontSize === size && styles.fontSizeBtnActive,
-                    ]}
-                    onPress={() => updateSetting('fontSize', size)}
-                  >
-                    <Text style={[
-                      styles.fontSizeBtnText,
-                      settings.fontSize === size && styles.fontSizeBtnTextActive,
-                    ]}>
-                      {{ small: '小', medium: '中', large: '大' }[size]}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingItemRow}>
-                <Text style={styles.settingItemLabel}>离线缓存</Text>
-                <Switch
-                  value={settings.offlineCache}
-                  onValueChange={(v) => updateSetting('offlineCache', v)}
-                  trackColor={{ false: '#e5e7eb', true: '#93c5fd' }}
-                  thumbColor={settings.offlineCache ? '#2563eb' : '#d1d5db'}
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={handleClearCache}
-              disabled={cacheClearing}
-            >
-              <View style={styles.settingItemRow}>
-                <Text style={styles.settingItemLabel}>清除缓存</Text>
-                {cacheClearing ? (
-                  <ActivityIndicator size="small" color="#2563eb" />
-                ) : (
-                  <Text style={styles.settingItemValue}>
-                    {settings.cacheSize > 0
-                      ? `${(settings.cacheSize / 1024).toFixed(1)} KB`
-                      : '0 KB'}
-                  </Text>
-                )}
-              </View>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Messages')}>
+            <Text style={styles.menuIcon}>💬</Text>
+            <Text style={styles.menuLabel}>私信</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          {user.role === 'admin' && (
+            <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Admin')}>
+              <Text style={styles.menuIcon}>🔧</Text>
+              <Text style={styles.menuLabel}>管理后台</Text>
+              <Text style={styles.menuArrow}>›</Text>
             </TouchableOpacity>
-          </View>
-        )}
+          )}
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutBtnText}>退出登录</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.versionText}>SkyXing v{APP_VERSION} · Android</Text>
       </View>
-
-      {/* 退出登录 */}
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutBtnText}>退出登录</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.versionText}>SkyXing v1.0.0</Text>
     </ScrollView>
   );
 }
@@ -528,10 +561,7 @@ const styles = StyleSheet.create({
   username: { fontSize: 14, color: '#6b7280', marginTop: 2 },
   bio: { fontSize: 14, color: '#374151', marginTop: 8, paddingHorizontal: 32, textAlign: 'center' },
   roleRow: { marginTop: 8 },
-  roleBadge: {
-    paddingHorizontal: 12, paddingVertical: 4,
-    borderRadius: 12, backgroundColor: '#eff6ff',
-  },
+  roleBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, backgroundColor: '#eff6ff' },
   roleText: { fontSize: 12, color: '#2563eb', fontWeight: '600' },
   editBtn: {
     marginTop: 16, paddingHorizontal: 24, paddingVertical: 8,
@@ -543,10 +573,7 @@ const styles = StyleSheet.create({
   authButtons: { paddingHorizontal: 24, paddingTop: 16, gap: 12 },
   authForm: { paddingHorizontal: 24, paddingTop: 16 },
   formTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 },
-  errorBox: {
-    marginHorizontal: 24, marginTop: 12, padding: 12,
-    borderRadius: 8, backgroundColor: '#fef2f2',
-  },
+  errorBox: { marginHorizontal: 24, marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#fef2f2' },
   errorText: { fontSize: 13, color: '#dc2626' },
   input: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb',
@@ -554,64 +581,47 @@ const styles = StyleSheet.create({
     fontSize: 15, color: '#1f2937', marginBottom: 12,
   },
   bioInput: { minHeight: 80, textAlignVertical: 'top' },
-  btnPrimary: {
-    backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 14,
-    alignItems: 'center',
-  },
+  btnPrimary: { backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   btnPrimaryText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   btnDisabled: { opacity: 0.6 },
-  btnSecondary: {
-    flex: 1, backgroundColor: '#f3f4f6', borderRadius: 10,
-    paddingVertical: 14, alignItems: 'center',
-  },
+  btnSecondary: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   btnSecondaryText: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  btnOutline: {
-    borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10,
-    paddingVertical: 14, alignItems: 'center',
-  },
+  btnOutline: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   btnOutlineText: { fontSize: 16, fontWeight: '600', color: '#374151' },
   linkText: { textAlign: 'center', marginTop: 16, fontSize: 14, color: '#2563eb' },
-  section: {
-    backgroundColor: '#fff', marginHorizontal: 12, marginVertical: 6,
-    borderRadius: 12, overflow: 'hidden',
-  },
+  section: { backgroundColor: '#fff', marginHorizontal: 12, marginVertical: 6, borderRadius: 12, overflow: 'hidden', padding: 16 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#6b7280', marginBottom: 8, textTransform: 'uppercase' },
   menuRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#f3f4f6',
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#f3f4f6',
   },
   menuIcon: { fontSize: 18, marginRight: 12 },
   menuLabel: { flex: 1, fontSize: 15, color: '#374151' },
   menuArrow: { fontSize: 20, color: '#d1d5db' },
-  settingRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
+  settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   settingIcon: { fontSize: 18, marginRight: 12 },
   settingLabel: { flex: 1, fontSize: 15, color: '#374151' },
   settingArrow: { fontSize: 12, color: '#d1d5db' },
-  settingsPanel: { paddingHorizontal: 16, paddingBottom: 16 },
-  settingItem: {
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#f3f4f6',
-  },
-  settingItemRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
+  settingsPanel: { paddingTop: 4 },
+  settingItem: { paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#f3f4f6' },
+  settingItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   settingItemLabel: { fontSize: 14, color: '#374151' },
   settingItemValue: { fontSize: 13, color: '#6b7280' },
   fontSizeSelector: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  fontSizeBtn: {
-    paddingHorizontal: 16, paddingVertical: 6,
-    borderRadius: 8, backgroundColor: '#f3f4f6',
-  },
+  fontSizeBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f3f4f6' },
   fontSizeBtnActive: { backgroundColor: '#2563eb' },
   fontSizeBtnText: { fontSize: 13, color: '#6b7280' },
   fontSizeBtnTextActive: { color: '#fff' },
-  logoutBtn: {
-    paddingHorizontal: 16, paddingVertical: 14,
-    alignItems: 'center',
-  },
+  updateBtn: { marginTop: 4, backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  updateBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  okText: { marginTop: 8, fontSize: 13, color: '#16a34a' },
+  updateCard: { marginTop: 10, padding: 12, borderRadius: 10, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe' },
+  updateTitle: { fontSize: 14, fontWeight: '700', color: '#1d4ed8' },
+  updateNotes: { fontSize: 12, color: '#374151', marginTop: 6 },
+  proxyText: { fontSize: 12, color: '#2563eb', marginTop: 6 },
+  downloadBtn: { marginTop: 10, backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  downloadBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  logoutBtn: { marginTop: 8, paddingVertical: 14, alignItems: 'center' },
   logoutBtnText: { fontSize: 15, color: '#dc2626', fontWeight: '600' },
-  versionText: { textAlign: 'center', marginTop: 24, fontSize: 12, color: '#d1d5db' },
+  versionText: { textAlign: 'center', marginTop: 12, fontSize: 12, color: '#d1d5db' },
 });

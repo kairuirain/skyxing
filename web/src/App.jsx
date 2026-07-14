@@ -10,6 +10,7 @@ import UserPage from './pages/UserPage';
 import AdminPage from './pages/AdminPage';
 import MessagesPage from './pages/MessagesPage';
 import ConversationPage from './pages/ConversationPage';
+import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/user/:id" element={<UserPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:convId" element={<ConversationPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
