@@ -1,20 +1,8 @@
 import { Hono } from 'hono';
-import { verifyToken } from '../utils/auth.js';
 import { kvGet, kvPut, kvList, PREFIX } from '../utils/kv.js';
+import { authRequired, authOptional } from '../middleware/rbac.js';
 
 const users = new Hono();
-
-async function authOptional(c, next) {
-  const authHeader = c.req.header('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    const payload = await verifyToken(token);
-    if (payload) {
-      c.set('user', payload);
-    }
-  }
-  await next();
-}
 
 /**
  * GET /server/api/users/:id
@@ -53,29 +41,18 @@ users.get('/:id', authOptional, async (c) => {
  * PUT /server/api/users/:id
  * Update user profile (owner or admin only)
  */
-users.put('/:id', async (c) => {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-  const payload = await verifyToken(token);
-
-  if (!payload) {
-    return c.json({ error: 'Invalid or expired token' }, 401);
-  }
-
+users.put('/:id', authRequired, async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id');
 
   // Only allow self-update or admin
-  if (payload.userId !== id && payload.role !== 'admin') {
+  if (user.userId !== id && user.role !== 'admin') {
     return c.json({ error: 'Not authorized' }, 403);
   }
 
   const env = c.env;
-  const user = await kvGet(env, PREFIX.USERS + id);
-  if (!user) {
+  const target = await kvGet(env, PREFIX.USERS + id);
+  if (!target) {
     return c.json({ error: 'User not found' }, 404);
   }
 

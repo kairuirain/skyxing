@@ -6,6 +6,7 @@ import articlesRoutes from './routes/articles.js';
 import commentsRoutes from './routes/comments.js';
 import usersRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
+import messagesRoutes from './routes/messages.js';
 
 const app = new Hono();
 
@@ -32,6 +33,9 @@ api.route('/users', usersRoutes);
 
 // Admin routes (protected)
 api.route('/admin', adminRoutes);
+
+// Private messaging routes (auth required)
+api.route('/messages', messagesRoutes);
 
 // Mount API under /server/api
 app.route('/server/api', api);

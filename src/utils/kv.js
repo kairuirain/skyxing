@@ -10,6 +10,7 @@ const PREFIX = {
   COMMENTS: 'comment:',
   TAGS: 'tag:',
   COUNTERS: 'counter:',
+  MESSAGES: 'msg:',
 };
 
 /**

@@ -1,29 +1,9 @@
 import { Hono } from 'hono';
-import { verifyToken, hashPassword } from '../utils/auth.js';
+import { hashPassword } from '../utils/auth.js';
 import { kvGet, kvPut, kvDelete, kvList, PREFIX } from '../utils/kv.js';
+import { adminRequired } from '../middleware/rbac.js';
 
 const admin = new Hono();
-
-async function adminRequired(c, next) {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-  const payload = await verifyToken(token);
-
-  if (!payload) {
-    return c.json({ error: 'Invalid or expired token' }, 401);
-  }
-
-  if (payload.role !== 'admin') {
-    return c.json({ error: 'Admin access required' }, 403);
-  }
-
-  c.set('user', payload);
-  await next();
-}
 
 /**
  * GET /server/api/admin/stats

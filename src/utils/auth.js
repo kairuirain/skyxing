@@ -28,35 +28,6 @@ export async function verifyToken(token) {
 }
 
 /**
- * Auth middleware - protects routes that require authentication
- */
-export function authMiddleware(requiredRole = null) {
-  return async (c, next) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.slice(7);
-    const payload = await verifyToken(token);
-
-    if (!payload) {
-      return c.json({ error: 'Invalid or expired token' }, 401);
-    }
-
-    // Attach user info to context
-    c.set('user', payload);
-
-    // Check role if required
-    if (requiredRole && payload.role !== requiredRole && payload.role !== 'admin') {
-      return c.json({ error: 'Insufficient permissions' }, 403);
-    }
-
-    await next();
-  };
-}
-
-/**
  * Hash a password using Web Crypto API (SHA-256)
  */
 export async function hashPassword(password) {
