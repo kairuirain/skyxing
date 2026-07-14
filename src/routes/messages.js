@@ -224,7 +224,11 @@ messages.get('/conversations/:convId', authRequired, async (c) => {
 
   await markRead(env, convId, user.userId);
 
-  return c.json({ messages: list });
+  // 顺便返回会话的对方用户与会话本体，前端无需再请求 /conversations 列表
+  const otherId = otherParticipant(conv, user.userId);
+  const otherUser = await getUserPublic(env, otherId);
+
+  return c.json({ messages: list, otherUser, conv });
 });
 
 /**

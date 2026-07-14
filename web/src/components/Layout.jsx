@@ -1,11 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { PenSquare, LogIn, Home, Settings, MessageSquare } from 'lucide-react';
+import {
+  Home, Mic, MessageSquare, Download, User as UserIcon,
+  PenSquare, LogIn, Settings, Bell,
+} from 'lucide-react';
+
+const TABS = [
+  { to: '/', label: '主页', icon: Home, exact: true },
+  { to: '/podcast', label: '播客', icon: Mic },
+  { to: '/messages', label: '私信', icon: MessageSquare, requireAuth: true },
+  { to: '/download', label: '下载', icon: Download },
+  { to: '/me', label: '我的', icon: UserIcon, requireAuth: true },
+];
 
 export default function Layout() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -18,11 +31,22 @@ export default function Layout() {
       setUnread(0);
     }
     return () => { active = false; };
-  }, [user]);
+  }, [user, location.pathname]);
 
+  const isActive = (tab) => {
+    if (tab.exact) return location.pathname === tab.to;
+    return location.pathname === tab.to || location.pathname.startsWith(tab.to + '/');
+  };
+
+  const handleTab = (e, tab) => {
+    if (tab.requireAuth && !user) {
+      e.preventDefault();
+      navigate('/login', { state: { from: location.pathname } });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -31,15 +55,15 @@ export default function Layout() {
             <span>SkyXing</span>
           </Link>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-3">
             {user ? (
               <>
                 <Link
                   to="/write"
-                  className="flex items-center gap-1.5 btn-primary btn-sm"
+                  className="hidden sm:flex items-center gap-1.5 btn-primary btn-sm"
                 >
                   <PenSquare size={16} />
-                  <span className="hidden sm:inline">写文章</span>
+                  <span>写文章</span>
                 </Link>
                 <Link
                   to="/messages"
@@ -59,7 +83,7 @@ export default function Layout() {
                   title="设置"
                 >
                   <Settings size={20} />
-                  <span className="hidden sm:inline text-sm">{user.displayName}</span>
+                  <span className="hidden md:inline text-sm">{user.displayName}</span>
                 </Link>
               </>
             ) : (
@@ -82,12 +106,42 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white mt-auto">
+      {/* Footer (desktop only) */}
+      <footer className="hidden md:block border-t border-gray-200 bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
           <p>SkyXing &copy; {new Date().getFullYear()} - 自由创作，分享你的想法</p>
         </div>
       </footer>
+
+      {/* Bottom Tab Bar (mobile + always visible) */}
+      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 z-50 md:hidden">
+        <div className="max-w-6xl mx-auto flex items-stretch justify-around">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const active = isActive(tab);
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                onClick={(e) => handleTab(e, tab)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 text-[11px] gap-0.5 transition-colors ${
+                  active ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <div className="relative">
+                  <Icon size={20} />
+                  {tab.to === '/messages' && unread > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
+                </div>
+                <span>{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

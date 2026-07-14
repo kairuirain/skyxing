@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert,
@@ -9,30 +9,49 @@ export default function ConversationScreen({ route, navigation }) {
   const { convId } = route.params || {};
   const { user, api } = useAuth();
   const [messages, setMessages] = useState([]);
+  const [otherUser, setOtherUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const scrollRef = useRef(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     try {
       const d = await api.getConversationMessages(convId);
       setMessages(d.messages || []);
+      if (d.otherUser) setOtherUser(d.otherUser);
     } catch (e) {
-      Alert.alert('加载失败', e.message || '无法加载消息');
+      if (!silent) Alert.alert('加载失败', e.message || '无法加载消息');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [api, convId]);
 
   useEffect(() => { load(); }, [load]);
 
+  // 每 4 秒轮询，实时同步对方发来的消息
+  useEffect(() => {
+    const timer = setInterval(() => { load(true); }, 4000);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  // 滚到底部
+  useEffect(() => {
+    if (scrollRef.current && scrollRef.current.scrollToEnd) {
+      scrollRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
   const handleSend = async () => {
     if (!text.trim()) return;
     setSubmitting(true);
     try {
-      await api.sendMessage(convId, text.trim());
+      const data = await api.sendMessage(convId, text.trim());
+      // 乐观更新：立即把消息追加到本地列表
+      if (data.message) {
+        setMessages((list) => [...list, data.message]);
+      }
       setText('');
-      load();
     } catch (e) {
       Alert.alert('发送失败', e.message || '请稍后重试');
     } finally {
@@ -65,9 +84,7 @@ export default function ConversationScreen({ route, navigation }) {
     );
   }
 
-  const peerId = messages[0]
-    ? (messages[0].fromId === user?.id ? messages[0].toId : messages[0].fromId)
-    : '会话';
+  const peerName = otherUser?.displayName || otherUser?.username || '会话';
 
   return (
     <View style={styles.container}>
@@ -75,13 +92,18 @@ export default function ConversationScreen({ route, navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.back}>‹ 返回</Text>
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>{peerId}</Text>
+        <Text style={styles.title} numberOfLines={1}>{peerName}</Text>
         <TouchableOpacity onPress={handleDelete}>
           <Text style={styles.delHeader}>删除</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.msgList} contentContainerStyle={styles.msgContent}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.msgList}
+        contentContainerStyle={styles.msgContent}
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+      >
         {messages.length === 0 && <Text style={styles.empty}>还没有消息，开始聊天吧</Text>}
         {messages.map((m) => {
           const mine = m.fromId === user?.id;
