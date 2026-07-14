@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { generateToken, verifyToken, hashPassword, verifyPassword } from '../utils/auth.js';
-import { kvGet, kvPut, kvList, generateId, PREFIX } from '../utils/kv.js';
+import { kvGet, kvPut, generateId, PREFIX } from '../utils/kv.js';
 
 const auth = new Hono();
 
@@ -39,13 +39,10 @@ auth.post('/register', async (c) => {
       return c.json({ error: 'Username already taken' }, 409);
     }
 
-    // Check if email already exists
-    const allUsers = await kvList(env, PREFIX.USERS);
-    for (const key of allUsers) {
-      const user = await kvGet(env, key.name);
-      if (user && user.email === email) {
-        return c.json({ error: 'Email already registered' }, 409);
-      }
+    // Check if email already exists（O(1) 索引查询，避免全量扫描）
+    const existingEmail = await kvGet(env, PREFIX.EMAIL_INDEX + email.toLowerCase(), false);
+    if (existingEmail) {
+      return c.json({ error: 'Email already registered' }, 409);
     }
 
     const id = generateId();
@@ -69,13 +66,15 @@ auth.post('/register', async (c) => {
     await kvPut(env, PREFIX.USERS + id, user);
     // Index username -> userId
     await kvPut(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), id);
+    // Index email -> userId
+    await kvPut(env, PREFIX.EMAIL_INDEX + email.toLowerCase(), id);
 
     // Generate token
     const token = await generateToken({
       userId: id,
       username: user.username,
       role: user.role,
-    });
+    }, env);
 
     const { passwordHash, ...userWithoutPassword } = user;
 
@@ -122,12 +121,19 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
+    // 登录成功后：若为旧格式密码哈希，自动迁移到 PBKDF2 格式
+    if (!user.passwordHash || !user.passwordHash.startsWith('pbkdf2$')) {
+      user.passwordHash = await hashPassword(password);
+      user.updatedAt = new Date().toISOString();
+      await kvPut(env, PREFIX.USERS + user.id, user);
+    }
+
     // Generate token
     const token = await generateToken({
       userId: user.id,
       username: user.username,
       role: user.role,
-    });
+    }, env);
 
     const { passwordHash, ...userWithoutPassword } = user;
 
@@ -152,7 +158,7 @@ auth.get('/me', async (c) => {
   }
 
   const token = authHeader.slice(7);
-  const payload = await verifyToken(token);
+  const payload = await verifyToken(token, c.env);
 
   if (!payload) {
     return c.json({ error: 'Invalid or expired token' }, 401);

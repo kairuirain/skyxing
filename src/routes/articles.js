@@ -1,29 +1,9 @@
 import { Hono } from 'hono';
-import { verifyToken } from '../utils/auth.js';
 import { kvGet, kvPut, kvDelete, kvList, kvIncrement, generateId, slugify, PREFIX } from '../utils/kv.js';
 import { sanitizeHTML } from '../utils/sanitize.js';
+import { authRequired } from '../middleware/rbac.js';
 
 const articles = new Hono();
-
-/**
- * Auth helper for routes
- */
-async function authRequired(c, next) {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-  const payload = await verifyToken(token);
-
-  if (!payload) {
-    return c.json({ error: 'Invalid or expired token' }, 401);
-  }
-
-  c.set('user', payload);
-  await next();
-}
 
 /**
  * GET /server/api/articles

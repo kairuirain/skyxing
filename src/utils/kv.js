@@ -6,6 +6,7 @@
 const PREFIX = {
   USERS: 'user:',
   USERNAME_INDEX: 'username:',
+  EMAIL_INDEX: 'email:',
   ARTICLES: 'article:',
   COMMENTS: 'comment:',
   TAGS: 'tag:',

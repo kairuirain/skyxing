@@ -35,3 +35,12 @@ app/
 
 # Wrangler
 .wrangler/
+
+# Build artifacts / binaries (installers, APKs)
+install/
+*.apk
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.deb

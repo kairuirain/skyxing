@@ -15,7 +15,7 @@ function extractPayload(c) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
-  return verifyToken(authHeader.slice(7));
+  return verifyToken(authHeader.slice(7), c.env);
 }
 
 /**
