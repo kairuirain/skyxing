@@ -203,7 +203,58 @@ updates.get('/check', async (c) => {
  * GET /server/api/updates/config  （管理员）
  * 查看当前 OTA 配置
  */
-updates.get('/config', adminRequired, async (c) => {
+/**
+ * GET /server/api/updates/tauri?platform=windows&current=v1.2.0&channel=stable
+ * Tauri 内置 Updater 专用端点，返回标准 JSON 格式：
+ * { version, pub_date, url, signature }
+ * {{current}} 由 Tauri 框架自动替换为当前应用版本
+ */
+updates.get('/tauri', async (c) => {
+  try {
+    const config = await getConfig(c.env);
+    const platform = (c.req.query('platform') || 'windows').toLowerCase();
+    const current = c.req.query('current') || 'v0.0.0';
+    const channel = (c.req.query('channel') || 'stable').toLowerCase();
+
+    const platConf = config.platforms[platform];
+    if (!platConf) return c.json({ error: 'Unknown platform' }, 400);
+
+    const releases = await fetchReleases(c.env, platConf.repo, config.cacheTtl);
+    const release = pickRelease(releases, channel);
+    if (!release) return c.json({ error: 'No release' }, 404);
+
+    const tag = release.tag_name;
+    const version = tag.replace(/^v/i, '');
+    const pubDate = release.published_at || new Date().toISOString();
+
+    // 匹配 build 产物：NSIS 压缩包优先（含 updater 签名），回退到常规 exe
+    let url = null;
+    const nsisMatch = release.assets?.find((a) => /\.nsis\.zip$/i.test(a.name));
+    if (nsisMatch) {
+      url = nsisMatch.browser_download_url;
+    } else {
+      const exeMatch = pickAsset(release, platConf.match);
+      if (exeMatch) url = exeMatch.browser_download_url;
+    }
+    if (!url) return c.json({ error: 'No asset' }, 404);
+
+    // 签名：优先从 KV 读取（管理员可通过 PUT /updates/config 写入），
+    // 生产环境中由 `npx tauri signer generate` 生成密钥 + 构建后从 .sig 文件获取
+    const storedSig = await kvGet(c.env, PREFIX.UPDATES + 'signature:' + tag);
+    const signature = storedSig || '';
+
+    return c.json({
+      version,
+      pub_date: pubDate,
+      url,
+      signature,
+      notes: release.body || '',
+    });
+  } catch (e) {
+    return c.json({ error: String(e.message || e) }, 502);
+  }
+});
+
   const config = await getConfig(c.env);
   return c.json({ config });
 });
