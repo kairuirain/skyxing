@@ -1,0 +1,22 @@
+{
+  "_说明": "SkyXing 发布管理器示例配置。可用 --config 指定，配合 --version 覆盖版本号。",
+  "repo": "kairuirain/skyxing-app",
+  "token_env": "GITHUB_TOKEN",
+  "channel": "stable",
+  "tag_prefix": "v",
+  "notes_file": "app/update/RELEASE_NOTES.md",
+  "assets": [
+    {
+      "path": "install/SkyXing/skyxing.exe",
+      "name": "SkyXing_{version}_x64-setup.exe"
+    },
+    {
+      "path": "install/SkyXing/uninstall.exe",
+      "name": "uninstall.exe"
+    },
+    {
+      "path": "build/skyxing-{version}-android.apk",
+      "name": "skyxing-{version}-android.apk"
+    }
+  ]
+}
