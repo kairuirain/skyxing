@@ -255,10 +255,6 @@ updates.get('/tauri', async (c) => {
   }
 });
 
-  const config = await getConfig(c.env);
-  return c.json({ config });
-});
-
 /**
  * PUT /server/api/updates/config  （管理员）
  * 更新 OTA 配置（仓库映射、代理前缀、代理国家、缓存时长）
