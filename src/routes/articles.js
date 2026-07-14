@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { kvGet, kvPut, kvDelete, kvList, kvIncrement, generateId, slugify, PREFIX } from '../utils/kv.js';
+import { kvGet, kvPut, kvDelete, kvList, kvIncrement, kvGetMany, generateId, slugify, PREFIX } from '../utils/kv.js';
 import { sanitizeHTML } from '../utils/sanitize.js';
 import { authRequired } from '../middleware/rbac.js';
 
@@ -17,16 +17,10 @@ articles.get('/', async (c) => {
   const search = c.req.query('search');
   const authorId = c.req.query('authorId');
 
-  // Get all articles
+  // 全量读取后并行批量获取（避免串行 N 次 KV 往返），再于内存中过滤
   const allKeys = await kvList(env, PREFIX.ARTICLES, 1000);
-  let articleList = [];
-
-  for (const key of allKeys) {
-    const article = await kvGet(env, key.name);
-    if (article && article.status === 'published') {
-      articleList.push(article);
-    }
-  }
+  const allArticles = await kvGetMany(env, allKeys.map((k) => k.name));
+  let articleList = allArticles.filter((a) => a && a.status === 'published');
 
   // Filter by tag
   if (tag) {
@@ -71,6 +65,9 @@ articles.get('/', async (c) => {
     })
   );
 
+  // 公开只读接口：边缘缓存 60s，stale-while-revalidate 300s
+  c.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+
   return c.json({
     articles: articlesWithAuthor,
     pagination: {
@@ -90,14 +87,16 @@ articles.get('/', async (c) => {
 articles.get('/tags', async (c) => {
   const env = c.env;
   const allKeys = await kvList(env, PREFIX.ARTICLES, 1000);
+  const allArticles = await kvGetMany(env, allKeys.map((k) => k.name));
   const tagSet = new Set();
 
-  for (const key of allKeys) {
-    const article = await kvGet(env, key.name);
+  for (const article of allArticles) {
     if (article && article.status === 'published' && article.tags) {
-      article.tags.forEach(tag => tagSet.add(tag));
+      article.tags.forEach((tag) => tagSet.add(tag));
     }
   }
+
+  c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
 
   return c.json({ tags: Array.from(tagSet).sort() });
 });

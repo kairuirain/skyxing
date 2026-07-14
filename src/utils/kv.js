@@ -9,6 +9,7 @@ const PREFIX = {
   EMAIL_INDEX: 'email:',
   ARTICLES: 'article:',
   COMMENTS: 'comment:',
+  COMMENT_INDEX: 'comment:idx:',
   TAGS: 'tag:',
   COUNTERS: 'counter:',
   MESSAGES: 'msg:',
@@ -59,6 +60,14 @@ export async function kvIncrement(env, key) {
   const num = current ? parseInt(current) + 1 : 1;
   await env.SKYXING_KV.put(key, num.toString());
   return num;
+}
+
+/**
+ * Batch-get multiple KV values in parallel (O(1) round-trips via Promise.all)
+ * @param {string[]} keys full KV keys
+ */
+export async function kvGetMany(env, keys) {
+  return Promise.all(keys.map((k) => kvGet(env, k)));
 }
 
 /**

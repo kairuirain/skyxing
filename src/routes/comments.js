@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { kvGet, kvPut, kvDelete, kvList, generateId, PREFIX } from '../utils/kv.js';
+import { kvGet, kvPut, kvDelete, kvList, kvGetMany, generateId, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
 
 const comments = new Hono();
@@ -16,13 +16,23 @@ comments.get('/', async (c) => {
     return c.json({ error: 'articleId query parameter is required' }, 400);
   }
 
-  const allKeys = await kvList(env, PREFIX.COMMENTS, 1000);
+  // O(1) 索引定位：直接读取该文章的评论 ID 列表（存为数组，需 JSON 解析）
+  let indexIds = await kvGet(env, PREFIX.COMMENT_INDEX + articleId);
   let commentList = [];
 
-  for (const key of allKeys) {
-    const comment = await kvGet(env, key.name);
-    if (comment && comment.articleId === articleId) {
-      commentList.push(comment);
+  if (indexIds && indexIds.length) {
+    // 命中索引：批量并行获取评论
+    commentList = (await kvGetMany(env, indexIds.map((id) => PREFIX.COMMENTS + id))).filter(Boolean);
+  } else {
+    // 向后兼容旧数据：索引缺失时全量扫描并一次性重建该文章索引
+    const allKeys = await kvList(env, PREFIX.COMMENTS, 1000);
+    const allComments = (await kvGetMany(env, allKeys.map((k) => k.name))).filter(Boolean);
+    const forArticle = allComments.filter((c) => c.articleId === articleId);
+    if (forArticle.length) {
+      const ids = forArticle.map((c) => c.id);
+      await kvPut(env, PREFIX.COMMENT_INDEX + articleId, ids);
+      indexIds = ids;
+      commentList = forArticle;
     }
   }
 
@@ -44,6 +54,9 @@ comments.get('/', async (c) => {
       };
     })
   );
+
+  // 公开只读接口：边缘缓存 30s，stale-while-revalidate 120s
+  c.header('Cache-Control', 'public, max-age=30, stale-while-revalidate=120');
 
   return c.json({ comments: commentsWithUser, total: commentsWithUser.length });
 });
@@ -96,6 +109,12 @@ comments.post('/', authRequired, async (c) => {
     };
 
     await kvPut(env, PREFIX.COMMENTS + id, comment);
+
+    // 维护「按文章」索引，便于 O(1) 列出某文章评论
+    const idxKey = PREFIX.COMMENT_INDEX + articleId;
+    const idx = (await kvGet(env, idxKey)) || [];
+    idx.push(id);
+    await kvPut(env, idxKey, idx);
 
     return c.json({ message: 'Comment created', comment }, 201);
   } catch (e) {
@@ -158,16 +177,28 @@ comments.delete('/:id', authRequired, async (c) => {
     return c.json({ error: 'Not authorized to delete this comment' }, 403);
   }
 
-  // Delete all child comments too
+  // 收集需删除的评论（含直接子评论）
   const allKeys = await kvList(env, PREFIX.COMMENTS, 1000);
+  const toDelete = [id];
   for (const key of allKeys) {
     const childComment = await kvGet(env, key.name);
     if (childComment && childComment.parentId === id) {
-      await kvDelete(env, key.name);
+      toDelete.push(childComment.id);
     }
   }
 
-  await kvDelete(env, PREFIX.COMMENTS + id);
+  // 更新该文章评论索引，移除已删除项
+  const idxKey = PREFIX.COMMENT_INDEX + comment.articleId;
+  const idx = (await kvGet(env, idxKey)) || [];
+  const remaining = idx.filter((cid) => !toDelete.includes(cid));
+  if (remaining.length) {
+    await kvPut(env, idxKey, remaining);
+  } else {
+    await kvDelete(env, idxKey);
+  }
+
+  // 删除评论及其子评论
+  await Promise.all(toDelete.map((cid) => kvDelete(env, PREFIX.COMMENTS + cid)));
 
   return c.json({ message: 'Comment deleted' });
 });
