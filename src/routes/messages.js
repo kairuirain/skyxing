@@ -122,7 +122,7 @@ messages.get('/conversations', authRequired, async (c) => {
 
 /**
  * GET /server/api/messages/unread-count
- * 当前用户全部会话的未读消息总数（用于角标）
+ * 当前用户全部会话的未读消息总数（用于角标）+ 最新活动时间戳（用于前端轻量轮询）
  */
 messages.get('/unread-count', authRequired, async (c) => {
   const env = c.env;
@@ -130,10 +130,15 @@ messages.get('/unread-count', authRequired, async (c) => {
   const ids = await getIndex(env, user.userId);
 
   let total = 0;
+  let latestUpdatedAt = null;
   for (const convId of ids) {
     total += (await kvGet(env, PREFIX.MESSAGES + 'unread:' + convId + ':' + user.userId)) || 0;
+    const conv = await kvGet(env, PREFIX.MESSAGES + 'conv:' + convId);
+    if (conv && (!latestUpdatedAt || conv.updatedAt > latestUpdatedAt)) {
+      latestUpdatedAt = conv.updatedAt;
+    }
   }
-  return c.json({ unreadCount: total });
+  return c.json({ unreadCount: total, latestUpdatedAt });
 });
 
 /**

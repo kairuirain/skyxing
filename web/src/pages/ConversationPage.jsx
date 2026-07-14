@@ -1,44 +1,75 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { Send, Trash2, ArrowLeft } from 'lucide-react';
+import { Send, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
 
 export default function ConversationPage() {
   const { convId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
+  const [otherUser, setOtherUser] = useState(null);
   const [newMsg, setNewMsg] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useRef(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     try {
       const data = await api.getConversationMessages(convId);
       setMessages(data.messages || []);
+      if (data.otherUser) setOtherUser(data.otherUser);
     } catch (e) {
-      console.error(e);
+      if (!silent) console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+      setRefreshing(false);
     }
   }, [convId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 4s 轮询，仅页面可见时运行
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden) load(true);
+    }, 4000);
+    const onVisible = () => { if (!document.hidden) load(true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
     setSubmitting(true);
     try {
-      await api.sendMessage(convId, newMsg.trim());
+      const data = await api.sendMessage(convId, newMsg.trim());
+      if (data.message) {
+        setMessages((list) => [...list, data.message]);
+      }
       setNewMsg('');
-      load();
     } catch (err) {
       alert(err.message || '发送失败');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    load(true);
   };
 
   const handleDelete = async () => {
@@ -55,23 +86,24 @@ export default function ConversationPage() {
     return <div className="max-w-3xl mx-auto animate-pulse h-40 bg-gray-200 rounded-lg" />;
   }
 
+  const peerName = otherUser?.displayName || otherUser?.username || '会话';
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col h-[75vh]">
       <div className="flex items-center gap-2 mb-3">
         <Link to="/messages" className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500">
           <ArrowLeft size={18} />
         </Link>
-        <h1 className="text-lg font-bold text-gray-900 truncate flex-1">
-          {messages[0]
-            ? (messages[0].fromId === user?.id ? messages[0].toId : messages[0].fromId)
-            : '会话'}
-        </h1>
+        <h1 className="text-lg font-bold text-gray-900 truncate flex-1">{peerName}</h1>
+        <button onClick={handleRefresh} disabled={refreshing} className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-primary-600 transition-colors" title="刷新消息">
+          <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+        </button>
         <button onClick={handleDelete} className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-red-600" title="删除会话">
           <Trash2 size={16} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
         {messages.length === 0 && (
           <p className="text-center text-gray-400 text-sm py-10">还没有消息，开始聊天吧</p>
         )}

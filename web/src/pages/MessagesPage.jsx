@@ -1,29 +1,65 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { MessageSquare, Send, Trash2, PenSquare } from 'lucide-react';
+import { MessageSquare, Send, Trash2, PenSquare, RefreshCw } from 'lucide-react';
 
 export default function MessagesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [target, setTarget] = useState('');
   const [starting, setStarting] = useState(false);
+  const latestUpdatedAt = useRef(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     try {
       const data = await api.getConversations();
       setConversations(data.conversations || []);
     } catch (e) {
-      console.error(e);
+      if (!silent) console.error(e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // 轻量轮询：每 3s 检查 unreadCount + latestUpdatedAt，仅在变化时加载全量数据
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    const poll = async () => {
+      if (document.hidden) return;
+      try {
+        const d = await api.getUnreadCount();
+        if (!active) return;
+        if (d.latestUpdatedAt && d.latestUpdatedAt !== latestUpdatedAt.current) {
+          latestUpdatedAt.current = d.latestUpdatedAt;
+          load(true);
+        }
+      } catch (e) { /* 静默失败 */ }
+    };
+
+    const timer = setInterval(poll, 3000);
+    const onVisible = () => { if (!document.hidden) poll(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      active = false;
+    };
+  }, [user, load]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    load(true);
+  };
 
   const handleStart = async (e) => {
     e.preventDefault();
@@ -65,11 +101,20 @@ export default function MessagesPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <MessageSquare size={22} /> 私信
-      </h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <MessageSquare size={22} /> 私信
+        </h1>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-primary-600 transition-colors"
+          title="刷新列表"
+        >
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+        </button>
+      </div>
 
-      {/* 发起新私信 */}
       <form onSubmit={handleStart} className="card p-3 mb-4 flex gap-2 items-center">
         <PenSquare size={16} className="text-gray-400 shrink-0" />
         <input
