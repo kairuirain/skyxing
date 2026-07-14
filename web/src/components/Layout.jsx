@@ -99,6 +99,39 @@ export default function Layout() {
             )}
           </nav>
         </div>
+
+        {/* Desktop top tab nav (inside header so it stays sticky) */}
+        <div className="hidden md:block border-t border-gray-100">
+          <div className="max-w-6xl mx-auto px-2 flex items-center gap-1 overflow-x-auto">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = isActive(tab);
+              return (
+                <Link
+                  key={tab.to}
+                  to={tab.to}
+                  onClick={(e) => handleTab(e, tab)}
+                  className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                    active
+                      ? 'text-primary-600'
+                      : 'text-gray-600 hover:text-primary-600'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{tab.label}</span>
+                  {tab.to === '/messages' && unread > 0 && (
+                    <span className="inline-flex min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold items-center justify-center">
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
+                  {active && (
+                    <span className="absolute bottom-0 inset-x-3 h-0.5 bg-primary-600 rounded-t" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </header>
 
       {/* Main content */}
@@ -113,8 +146,8 @@ export default function Layout() {
         </div>
       </footer>
 
-      {/* Bottom Tab Bar (mobile + always visible) */}
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 z-50 md:hidden">
+      {/* Bottom Tab Bar (mobile only) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 z-50">
         <div className="max-w-6xl mx-auto flex items-stretch justify-around">
           {TABS.map((tab) => {
             const Icon = tab.icon;
