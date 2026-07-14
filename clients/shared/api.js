@@ -132,6 +132,52 @@ class ApiClient {
   async getAdminArticles() {
     return this.request('/admin/articles');
   }
+
+  // Messages (private messaging)
+  async getConversations() {
+    return this.request('/messages/conversations');
+  }
+
+  async getUnreadCount() {
+    return this.request('/messages/unread-count');
+  }
+
+  async createConversation(targetUserId) {
+    return this.request('/messages/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserId }),
+    });
+  }
+
+  async startConversation(username) {
+    return this.request('/messages/conversations/start', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    });
+  }
+
+  async getConversationMessages(convId) {
+    return this.request(`/messages/conversations/${convId}`);
+  }
+
+  async sendMessage(convId, content) {
+    return this.request(`/messages/conversations/${convId}`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async markRead(convId) {
+    return this.request(`/messages/conversations/${convId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async deleteConversation(convId) {
+    return this.request(`/messages/conversations/${convId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export default ApiClient;

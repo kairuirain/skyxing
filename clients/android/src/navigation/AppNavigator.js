@@ -12,6 +12,8 @@ const PodcastScreen = React.lazy(() => import('../screens/PodcastScreen'));
 const ProfileScreen = React.lazy(() => import('../screens/ProfileScreen'));
 const ArticleScreen = React.lazy(() => import('../screens/ArticleScreen'));
 const AdminScreen = React.lazy(() => import('../screens/AdminScreen'));
+const MessagesScreen = React.lazy(() => import('../screens/MessagesScreen'));
+const ConversationScreen = React.lazy(() => import('../screens/ConversationScreen'));
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -139,6 +141,30 @@ export default function AppNavigator() {
               <View style={styles.loading}><Text>加载中...</Text></View>
             }>
               <AdminScreen />
+            </React.Suspense>
+          )}
+        </Stack.Screen>
+        <Stack.Screen
+          name="Messages"
+          options={{ title: '私信' }}
+        >
+          {() => (
+            <React.Suspense fallback={
+              <View style={styles.loading}><Text>加载中...</Text></View>
+            }>
+              <MessagesScreen />
+            </React.Suspense>
+          )}
+        </Stack.Screen>
+        <Stack.Screen
+          name="Conversation"
+          options={({ route }) => ({ title: route.params?.title || '会话' })}
+        >
+          {(props) => (
+            <React.Suspense fallback={
+              <View style={styles.loading}><Text>加载中...</Text></View>
+            }>
+              <ConversationScreen {...props} />
             </React.Suspense>
           )}
         </Stack.Screen>

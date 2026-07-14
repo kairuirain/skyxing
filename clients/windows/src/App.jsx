@@ -14,6 +14,8 @@ const WritePage = lazy(() => import('./pages/WritePage'));
 const EditPage = lazy(() => import('./pages/EditPage'));
 const UserPage = lazy(() => import('./pages/UserPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const ConversationPage = lazy(() => import('./pages/ConversationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageLoader() {
@@ -50,6 +52,8 @@ export default function App() {
             <Route path="/write" element={<WritePage />} />
             <Route path="/edit/:id" element={<EditPage />} />
             <Route path="/user/:id" element={<UserPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:convId" element={<ConversationPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

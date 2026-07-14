@@ -166,6 +166,40 @@ messages.post('/conversations', authRequired, async (c) => {
 });
 
 /**
+ * POST /server/api/messages/conversations/start
+ * 按用户名发起（或获取已有）会话：body { username }
+ */
+messages.post('/conversations/start', authRequired, async (c) => {
+  try {
+    const env = c.env;
+    const user = c.get('user');
+    const { username } = await c.req.json();
+
+    if (!username || !username.trim()) {
+      return c.json({ error: 'username is required' }, 400);
+    }
+
+    const targetId = await kvGet(env, PREFIX.USERNAME_INDEX + username.trim().toLowerCase(), false);
+    if (!targetId) {
+      return c.json({ error: 'Target user not found' }, 404);
+    }
+    if (targetId === user.userId) {
+      return c.json({ error: 'Cannot start a conversation with yourself' }, 400);
+    }
+
+    const target = await kvGet(env, PREFIX.USERS + targetId);
+    if (!target) {
+      return c.json({ error: 'Target user not found' }, 404);
+    }
+
+    const { conv } = await getOrCreateConversation(env, user.userId, targetId);
+    return c.json({ conversation: await conversationSummary(env, conv, user.userId) }, 201);
+  } catch (e) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+});
+
+/**
  * GET /server/api/messages/conversations/:convId
  * 获取会话消息记录（仅参与者可访问，访问即标记已读）
  */

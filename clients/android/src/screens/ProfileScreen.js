@@ -407,6 +407,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.menuLabel}>写文章</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('Messages')}
+        >
+          <Text style={styles.menuIcon}>💬</Text>
+          <Text style={styles.menuLabel}>私信</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
         {user.role === 'admin' && (
           <TouchableOpacity
             style={styles.menuRow}

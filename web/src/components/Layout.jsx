@@ -1,10 +1,25 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { PenSquare, User, LogOut, LogIn, Home, Settings } from 'lucide-react';
+import api from '../lib/api';
+import { PenSquare, User, LogOut, LogIn, Home, Settings, MessageSquare } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    if (user) {
+      api.getUnreadCount()
+        .then((d) => { if (active) setUnread(d.unreadCount || 0); })
+        .catch(() => {});
+    } else {
+      setUnread(0);
+    }
+    return () => { active = false; };
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -30,6 +45,18 @@ export default function Layout() {
                 >
                   <PenSquare size={16} />
                   <span className="hidden sm:inline">写文章</span>
+                </Link>
+                <Link
+                  to="/messages"
+                  className="relative text-gray-600 hover:text-gray-900 transition-colors"
+                  title="私信"
+                >
+                  <MessageSquare size={20} />
+                  {unread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
                 </Link>
                 <Link
                   to={`/user/${user.id}`}
