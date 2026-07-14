@@ -3,13 +3,12 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import {
-  Home, Mic, MessageSquare, Download, User as UserIcon,
-  PenSquare, LogIn, Settings, Bell,
+  Home, MessageSquare, Download, User as UserIcon,
+  PenSquare, LogIn, Settings,
 } from 'lucide-react';
 
 const TABS = [
   { to: '/', label: '主页', icon: Home, exact: true },
-  { to: '/podcast', label: '播客', icon: Mic },
   { to: '/messages', label: '私信', icon: MessageSquare, requireAuth: true },
   { to: '/download', label: '下载', icon: Download },
   { to: '/me', label: '我的', icon: UserIcon, requireAuth: true },
@@ -100,7 +99,7 @@ export default function Layout() {
           </nav>
         </div>
 
-        {/* Desktop top tab nav (inside header so it stays sticky) */}
+        {/* Desktop top tab nav */}
         <div className="hidden md:block border-t border-gray-100">
           <div className="max-w-6xl mx-auto px-2 flex items-center gap-1 overflow-x-auto">
             {TABS.map((tab) => {

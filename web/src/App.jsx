@@ -11,7 +11,6 @@ import AdminPage from './pages/AdminPage';
 import MessagesPage from './pages/MessagesPage';
 import ConversationPage from './pages/ConversationPage';
 import SettingsPage from './pages/SettingsPage';
-import PodcastPage from './pages/PodcastPage';
 import DownloadPage from './pages/DownloadPage';
 import MyPage from './pages/MyPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -23,7 +22,6 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/podcast" element={<PodcastPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/me" element={<MyPage />} />
         <Route path="/article/:id" element={<ArticlePage />} />
