@@ -1,179 +1,89 @@
 /**
  * 轻量 Markdown → HTML 转换器
  * 支持常用语法，同时保留内嵌 HTML（透传不作处理）
- * 使用场景：文章编辑器 Markdown 编写 + HTML 内嵌
  */
 
-// 转义 HTML 特殊字符
-function escapeHTML(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
-  return text.replace(/[&<>"']/g, c => map[c]);
-}
+const HTML_ESCAPE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
 
-/**
- * 将 Markdown 文本转换为 HTML
- * @param {string} md - Markdown 原始文本
- * @returns {string} - HTML 字符串
- */
-export function markdownToHTML(md) {
+function esc(t) { return t.replace(/[&<>"']/g, c => HTML_ESCAPE[c]); }
+
+function mdToHtml(md) {
   if (!md || typeof md !== 'string') return '';
+  let h = md;
 
-  let html = md;
-
-  // 1. 提取代码块（```...```），保护它们不被后续规则破坏
-  const codeBlocks = [];
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    const idx = codeBlocks.length;
-    codeBlocks.push(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${escapeHTML(code.trim())}</code></pre>`);
-    return `\`\`\`CODEBLOCK_${idx}\`\`\``;
+  // 保护代码块
+  const cbs = [];
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, l, c) => {
+    const i = cbs.length;
+    cbs.push(`<pre><code${l ? ` class="language-${l}"` : ''}>${esc(c.trim())}</code></pre>`);
+    return `\x00CB${i}\x00`;
   });
 
-  // 2. 提取行内代码（`...`）
-  const inlineCodes = [];
-  html = html.replace(/`([^`]+)`/g, (_, code) => {
-    const idx = inlineCodes.length;
-    inlineCodes.push(`<code>${escapeHTML(code)}</code>`);
-    return `\`INLINECODE_${idx}\``;
+  // 保护行内代码
+  const ics = [];
+  h = h.replace(/`([^`]+)`/g, (_, c) => {
+    const i = ics.length;
+    ics.push(`<code>${esc(c)}</code>`);
+    return `\x00IC${i}\x00`;
   });
 
-  // 3. 分割成行处理
-  const lines = html.split('\n');
-  const result = [];
-  let inParagraph = false;
-
-  function closeParagraph() {
-    if (inParagraph) { result.push('</p>'); inParagraph = false; }
+  // 行内样式处理
+  function il(t) {
+    if (!t) return '';
+    let r = t.replace(/\x00IC(\d+)\x00/g, (_, i) => ics[+i] || '');
+    r = r.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    r = r.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+    r = r.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    r = r.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    r = r.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+    return r;
   }
 
-  function processInline(text) {
-    if (!text) return '';
-    // 恢复行内代码保护
-    let t = text.replace(/`INLINECODE_(\d+)`/g, (_, idx) => inlineCodes[parseInt(idx)] || '');
-    // 粗体 **text** 或 __text__
-    t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    t = t.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    // 斜体 *text* 或 _text_
-    t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    t = t.replace(/_(.+?)_/g, '<em>$1</em>');
-    // 删除线 ~~text~~
-    t = t.replace(/~~(.+?)~~/g, '<del>$1</del>');
-    // 链接 [text](url)
-    t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-    // 图片 ![alt](url)
-    t = t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
-    return t;
+  const lines = h.split('\n');
+  const out = [];
+  let inP = false;
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { if (inP) { out.push('</p>'); inP = false; } continue; }
+
+    const cbMatch = t.match(/^\x00CB(\d+)\x00$/);
+    if (cbMatch) { if (inP) { out.push('</p>'); inP = false; } out.push(cbs[+cbMatch[1]]); continue; }
+
+    if (/^(-{3,}|\*{3,})$/.test(t)) { if (inP) { out.push('</p>'); inP = false; } out.push('<hr />'); continue; }
+
+    const hMatch = t.match(/^(#{1,6})\s+(.+)$/);
+    if (hMatch) { if (inP) { out.push('</p>'); inP = false; } out.push(`<h${hMatch[1].length}>${il(hMatch[2])}</h${hMatch[1].length}>`); continue; }
+
+    const qMatch = t.match(/^>\s+(.+)$/);
+    if (qMatch) { if (inP) { out.push('</p>'); inP = false; } out.push(`<blockquote>${il(qMatch[1])}</blockquote>`); continue; }
+
+    const lMatch = t.match(/^[-*]\s+(.+)$/);
+    if (lMatch) { if (inP) { out.push('</p>'); inP = false; } out.push(`<li>${il(lMatch[1])}</li>`); continue; }
+    const oMatch = t.match(/^\d+\.\s+(.+)$/);
+    if (oMatch) { if (inP) { out.push('</p>'); inP = false; } out.push(`<li>${il(oMatch[1])}</li>`); continue; }
+
+    if (!inP) { out.push('<p>'); inP = true; } else { out.push('\n'); }
+    out.push(il(t));
   }
+  if (inP) out.push('</p>');
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    // 空行
-    if (!trimmed) {
-      closeParagraph();
-      continue;
-    }
-
-    // 保护代码块
-    if (/^```CODEBLOCK_(\d+)```$/.test(trimmed)) {
-      closeParagraph();
-      result.push(codeBlocks[parseInt(RegExp.$1)]);
-      continue;
-    }
-
-    // 水平线 --- 或 ***
-    if (/^(-{3,}|\*{3,})$/.test(trimmed)) {
-      closeParagraph();
-      result.push('<hr />');
-      continue;
-    }
-
-    // 标题 # ~ ######
-    if (/^(#{1,6})\s+(.+)$/.test(trimmed)) {
-      closeParagraph();
-      const level = RegExp.$1.length;
-      result.push(`<h${level}>${processInline(RegExp.$2)}</h${level}>`);
-      continue;
-    }
-
-    // 引用 > text
-    if (/^>\s+(.+)$/.test(trimmed)) {
-      closeParagraph();
-      result.push(`<blockquote>${processInline(RegExp.$1)}</blockquote>`);
-      continue;
-    }
-
-    // 无序列表 - 或 * 开头
-    if (/^[-*]\s+(.+)$/.test(trimmed)) {
-      closeParagraph();
-      result.push(`<li>${processInline(RegExp.$1)}</li>`);
-      continue;
-    }
-
-    // 有序列表 1. 2. 开头
-    if (/^\d+\.\s+(.+)$/.test(trimmed)) {
-      closeParagraph();
-      result.push(`<li>${processInline(RegExp.$1)}</li>`);
-      continue;
-    }
-
-    // 普通段落
-    if (!inParagraph) {
-      result.push('<p>');
-      inParagraph = true;
-    } else {
-      result.push('\n');
-    }
-    result.push(processInline(trimmed));
-  }
-  closeParagraph();
-
-  // 合并无序列表
-  const joined = result.join('');
-  return joined
-    .replace(/(<li>(?:.(?!<\/li>))*?<\/li>(\s*<li>.*?<\/li>)*)/g, '<ul>$1</ul>')
-    .replace(/(<li>.*?<\/li>)/g, (m) => {
-      // 确保所有li都被合适的ul包裹
-      return m;
-    });
+  let html = out.join('');
+  html = html.replace(/((?:<li>.*?<\/li>(?:\s*<li>.*?<\/li>)*))/g, '<ul>$1</ul>');
+  return html;
 }
 
-/**
- * 将文章内容中的外部链接重写为跳转页链接
- * @param {string} html - 已处理的 HTML
- * @returns {string}
- */
-export function rewriteExternalLinks(html) {
+function rewriteLinks(html) {
   if (!html) return '';
-  // 替换所有 <a href="http..."> 为跳转页链接
   return html.replace(
     /<a\s+([^>]*?)href="(https?:\/\/[^"]+)"([^>]*)>/gi,
-    (match, before, url, after) => {
-      return `<a ${before}href="/link?url=${encodeURIComponent(url)}"${after}>`;
-    }
+    (_, b, u, a) => `<a ${b}href="/link?url=${encodeURIComponent(u)}"${a}>`
   );
 }
 
-/**
- * 检查内容是否以 HTML 标签开头（判断是 Markdown 还是 HTML）
- */
-export function looksLikeHTML(content) {
-  return /^\s*</.test(content);
-}
+function looksLikeHTML(c) { return /^\s*</.test(c); }
 
-/**
- * 一站式处理：将 Markdown/HTML 内容转换为安全的、链接经过重写的 HTML
- * 1. 如果是 Markdown 则转换
- * 2. 如已经 HTML 则透传
- * 3. 重写外部链接
- * 4. sanitize 安全过滤由调用方执行
- */
 export function prepareArticleContent(content) {
   if (!content) return '';
-  // 检测是否已经是 HTML（以 < 开头）
-  const isHTML = looksLikeHTML(content);
-  let html = isHTML ? content : markdownToHTML(content);
-  // 重写外部链接
-  html = rewriteExternalLinks(html);
-  return html;
+  return rewriteLinks(looksLikeHTML(content) ? content : mdToHtml(content));
 }
