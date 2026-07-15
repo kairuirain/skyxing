@@ -55,10 +55,31 @@ async function fetchReleases(env, repo, ttl) {
   return data;
 }
 
+/**
+ * 判断一个发布是否为预发布（测试版）
+ * 通过两个条件判断：
+ * 1. GitHub UI 上勾选了 "This is a pre-release" 复选框（r.prerelease === true）
+ * 2. 标签名包含测试版后缀：-a, -b, -rc, -alpha, -beta, -preview
+ */
+function isPrerelease(r) {
+  if (r.prerelease) return true;
+  if (/-[a-z]/i.test(r.tag_name)) return true;
+  return false;
+}
+
+/**
+ * 按渠道筛选对应类型的最新发布
+ * - stable: 仅返回非预发布版本（正式版）
+ * - beta: 仅返回预发布版本（测试版）
+ */
 function pickRelease(releases, channel) {
   const list = (releases || []).filter((r) => !r.draft);
-  if (channel === 'beta') return list[0] || null;
-  return list.find((r) => !r.prerelease) || null;
+  if (channel === 'beta') {
+    // 测试版渠道：仅返回预发布版本
+    return list.find((r) => isPrerelease(r)) || null;
+  }
+  // 稳定版渠道（默认）：仅返回正式版本
+  return list.find((r) => !isPrerelease(r)) || null;
 }
 
 function pickAsset(release, matchRegex) {
