@@ -20,6 +20,32 @@ export default function HomePage() {
   const [unread, setUnread] = useState(0);
   const [latestConversations, setLatestConversations] = useState([]);
 
+  // 函数声明必须放在 hooks 之前，避免 const TDZ
+  const loadArticles = async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: 10 };
+      if (selectedTag) params.tag = selectedTag;
+      if (search) params.search = search;
+      const data = await api.getArticles(params);
+      setArticles(data.articles || []);
+      setPagination(data.pagination);
+    } catch (e) {
+      console.error('Failed to load articles:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTags = async () => {
+    try {
+      const data = await api.getTags();
+      setTags(data.tags || []);
+    } catch (e) {
+      console.error('Failed to load tags:', e);
+    }
+  };
+
   useEffect(() => {
     loadArticles();
     loadTags();
@@ -44,22 +70,6 @@ export default function HomePage() {
       .catch(() => {});
     return () => { active = false; };
   }, [user]);
-
-  const loadArticles = async () => {
-    setLoading(true);
-    try {
-      const params = { page, limit: 10 };
-      if (selectedTag) params.tag = selectedTag;
-      if (search) params.search = search;
-      const data = await api.getArticles(params);
-      setArticles(data.articles || []);
-      setPagination(data.pagination);
-    } catch (e) {
-      console.error('Failed to load articles:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadTags = async () => {
     try {

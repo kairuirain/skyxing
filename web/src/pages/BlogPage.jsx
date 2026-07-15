@@ -10,8 +10,6 @@ export default function BlogPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadArticles(); }, [page]);
-
   const loadArticles = async () => {
     setLoading(true);
     try {
@@ -26,6 +24,8 @@ export default function BlogPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => { loadArticles(); }, [page]);
 
   const handleSearch = (e) => {
     e.preventDefault();
