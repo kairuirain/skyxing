@@ -5,24 +5,6 @@ import { authRequired, authOptional } from '../middleware/rbac.js';
 const users = new Hono();
 
 /**
- * GET /server/api/users/find/:username
- * 用静态前缀 /find 避免与 /:id 冲突
- */
-users.get('/find/:username', async (c) => {
-  const env = c.env;
-  const username = c.req.param('username').toLowerCase();
-
-  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
-  if (!userId) return c.json({ error: 'User not found' }, 404);
-
-  const user = await kvGet(env, PREFIX.USERS + userId);
-  if (!user) return c.json({ error: 'User not found' }, 404);
-
-  const { passwordHash, ...publicUser } = user;
-  return c.json({ user: publicUser });
-});
-
-/**
  * GET /server/api/users/:id
  * Get user public profile
  */

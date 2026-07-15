@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from './middleware/cors.js';
+import { kvGet, PREFIX } from './utils/kv.js';
 import authRoutes from './routes/auth.js';
 import articlesRoutes from './routes/articles.js';
 import commentsRoutes from './routes/comments.js';
@@ -32,6 +33,18 @@ api.route('/comments', commentsRoutes);
 
 // Users routes (public profile, auth for own)
 api.route('/users', usersRoutes);
+
+// User lookup by username (直接注册在api层，避免子路由器内路由冲突)
+api.get('/users/find/:username', async (c) => {
+  const env = c.env;
+  const username = c.req.param('username').toLowerCase();
+  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
+  if (!userId) return c.json({ error: 'User not found' }, 404);
+  const user = await kvGet(env, PREFIX.USERS + userId);
+  if (!user) return c.json({ error: 'User not found' }, 404);
+  const { passwordHash, ...publicUser } = user;
+  return c.json({ user: publicUser });
+});
 
 // Admin routes (protected)
 api.route('/admin', adminRoutes);
