@@ -101,7 +101,7 @@ class ApiClient {
   }
 
   async getUserByUsername(username) {
-    return this.request(`/user-lookup/${username}`);
+    return this.request(`/lookup/${username}`);
   }
 
   async getStateVersion() {

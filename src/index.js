@@ -34,8 +34,8 @@ api.route('/comments', commentsRoutes);
 // Users routes (public profile, auth for own)
 api.route('/users', usersRoutes);
 
-// User lookup by username (独立路径，避免与 /users/* 子路由器冲突)
-api.get('/user-lookup/:username', async (c) => {
+// 在 /server/api 下直接注册常用公共查询
+api.get('/lookup/:username', async (c) => {
   try {
     const env = c.env;
     const username = c.req.param('username').toLowerCase();
