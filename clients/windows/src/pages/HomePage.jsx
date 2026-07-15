@@ -100,7 +100,8 @@ export default function HomePage() {
 
   useEffect(() => { fetchTags(); }, [fetchTags]);
   useEffect(() => { fetchArticles(1); }, [fetchArticles]);
-  useSync(api, () => fetchArticles(1), { enabled: !selectedTag && !search.trim() });
+  const onSyncRefresh = useCallback(() => fetchArticles(1), [fetchArticles]);
+  useSync(api, onSyncRefresh, { enabled: !selectedTag && !search.trim() });
 
   const handleSearch = (e) => {
     e.preventDefault();

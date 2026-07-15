@@ -157,7 +157,8 @@ export default function HomeScreen({ navigation }) {
     fetchTags();
   }, [fetchArticles, fetchTags]);
 
-  useSync(api, () => fetchArticles(1), { enabled: !selectedTag && !search.trim() });
+  const onSyncRefresh = useCallback(() => fetchArticles(1), [fetchArticles]);
+  useSync(api, onSyncRefresh, { enabled: !selectedTag && !search.trim() });
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

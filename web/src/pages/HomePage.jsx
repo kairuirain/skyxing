@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -20,8 +20,8 @@ export default function HomePage() {
   const [unread, setUnread] = useState(0);
   const [latestConversations, setLatestConversations] = useState([]);
 
-  // 函数声明必须放在 hooks 之前，避免 const TDZ
-  const loadArticles = async () => {
+  // 使用 useCallback 保持引用稳定，避免 useSync 无限循环
+  const loadArticles = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, limit: 10 };
@@ -35,21 +35,21 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, selectedTag, search]);
 
-  const loadTags = async () => {
+  const loadTags = useCallback(async () => {
     try {
       const data = await api.getTags();
       setTags(data.tags || []);
     } catch (e) {
       console.error('Failed to load tags:', e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadArticles();
     loadTags();
-  }, [page, selectedTag]);
+  }, [loadArticles, loadTags]);
 
   // 实时同步：后台变化时自动刷新
   useSync(loadArticles, { enabled: !selectedTag && !search });

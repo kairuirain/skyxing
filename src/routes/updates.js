@@ -7,7 +7,7 @@ const updates = new Hono();
 const DEFAULT_CONFIG = {
   proxyPrefix: 'https://ghfast.top/',
   proxyCountries: ['CN'],
-  cacheTtl: 300,
+  cacheTtl: 60,
   platforms: {
     android: { repo: 'kairuirain/skyxing-app', match: '\\.apk$' },
     windows: { repo: 'kairuirain/skyxing-app', match: '\\.(exe|msi)$' },
@@ -41,17 +41,20 @@ function compareVersion(a, b) {
   return 0;
 }
 
-async function fetchReleases(env, repo, ttl) {
+async function fetchReleases(env, repo, ttl, forceRefresh = false) {
   const cacheKey = PREFIX.UPDATES + 'cache:' + repo;
-  const cached = await kvGet(env, cacheKey);
-  const now = Date.now();
-  if (cached && cached.expireAt > now) return cached.data;
+  if (!forceRefresh) {
+    const cached = await kvGet(env, cacheKey);
+    const now = Date.now();
+    if (cached && cached.expireAt > now) return cached.data;
+  }
   const resp = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=30`, {
     headers: { 'User-Agent': 'SkyXing-OTA', Accept: 'application/vnd.github+json' },
   });
-  if (!resp.ok) { if (cached) return cached.data; throw new Error(`GitHub API ${resp.status}`); }
+  if (!resp.ok) { if (!forceRefresh) { const c = await kvGet(env, cacheKey); if (c) return c.data; } throw new Error(`GitHub API ${resp.status}`); }
   const data = await resp.json();
-  await kvPut(env, cacheKey, { data, expireAt: now + (ttl || 300) * 1000 });
+  // 缓存时间 60s（开发测试友好），生产可调大
+  await kvPut(env, cacheKey, { data, expireAt: Date.now() + (ttl || 60) * 1000 });
   return data;
 }
 
@@ -104,10 +107,10 @@ function buildDownload(asset, config, useProxy) {
   };
 }
 
-async function buildLatestPayload(c, env, config, platform, channel) {
+async function buildLatestPayload(c, env, config, platform, channel, forceRefresh = false) {
   const platConf = config.platforms[platform];
   if (!platConf) return { error: `Unknown platform: ${platform}`, status: 400 };
-  const releases = await fetchReleases(env, platConf.repo, config.cacheTtl);
+  const releases = await fetchReleases(env, platConf.repo, config.cacheTtl, forceRefresh);
   const release = pickRelease(releases, channel);
   if (!release) return { error: 'No release found', status: 404 };
   const asset = pickAsset(release, platConf.match);
@@ -144,7 +147,8 @@ updates.get('/latest', async (c) => {
     const platform = (c.req.query('platform') || 'web').toLowerCase();
     const channel = (c.req.query('channel') || 'stable').toLowerCase();
     const current = c.req.query('current') || '0.0.0';
-    const result = await buildLatestPayload(c, c.env, config, platform, channel);
+    const forceRefresh = c.req.query('nocache') === 'true';
+    const result = await buildLatestPayload(c, c.env, config, platform, channel, forceRefresh);
     if (result.error) return c.json({ error: result.error }, result.status);
     const notices = await getActiveNotices(c.env, platform, current);
     return c.json({ ...result.payload, protocolVersion: 3, notices });
@@ -159,7 +163,8 @@ updates.get('/check', async (c) => {
     const platform = (c.req.query('platform') || 'web').toLowerCase();
     const channel = (c.req.query('channel') || 'stable').toLowerCase();
     const current = c.req.query('current') || '0.0.0';
-    const result = await buildLatestPayload(c, c.env, config, platform, channel);
+    const forceRefresh = c.req.query('nocache') === 'true';
+    const result = await buildLatestPayload(c, c.env, config, platform, channel, forceRefresh);
     if (result.error) return c.json({ error: result.error }, result.status);
     const latest = result.payload;
     const hasUpdate = compareVersion(latest.version, current) > 0;
