@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { Calendar, Eye, Tag, User, Send, Trash2, Edit3, Pin, PinOff } from 'lucide-react';
 import { sanitizeHTML } from '../lib/sanitize.js';
+import { prepareArticleContent } from '../lib/markdown.js';
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -209,7 +210,7 @@ export default function ArticlePage() {
       {/* Article content */}
       <div
         className="article-content prose max-w-none mb-12"
-        dangerouslySetInnerHTML={{ __html: sanitizeHTML(article.content) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHTML(prepareArticleContent(article.content)) }}
       />
 
       {/* Author card */}

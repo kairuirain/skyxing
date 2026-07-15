@@ -103,13 +103,15 @@ export default function WritePage() {
             onChange={(e) => setContent(e.target.value)}
             className="input resize-none font-mono"
             rows={20}
-            placeholder="文章内容（支持HTML）..."
+            placeholder="支持 Markdown 语法 + 内嵌 HTML..."
             required
           />
         </div>
 
-        <div className="text-sm text-gray-500">
-          提示：内容支持 HTML 标签，如 &lt;h2&gt;标题&lt;/h2&gt;、&lt;p&gt;段落&lt;/p&gt;、&lt;img src="..."&gt;图片等。
+        <div className="text-sm text-gray-500 space-y-1">
+          <p>支持 <strong>Markdown</strong> 语法：# 标题、**加粗**、*斜体*、`代码`、[链接](url)、![]()图片</p>
+          <p>也支持直接写入 HTML 标签如 &lt;h2&gt;、&lt;p&gt;、&lt;img&gt; 等（经过安全过滤）。</p>
+          <p>文章中的外部链接会通过安全跳转页访问，提醒用户注意风险。</p>
         </div>
 
         <div className="flex gap-3 pt-4">

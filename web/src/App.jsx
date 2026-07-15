@@ -14,6 +14,7 @@ import ConversationPage from './pages/ConversationPage';
 import SettingsPage from './pages/SettingsPage';
 import DownloadPage from './pages/DownloadPage';
 import MyPage from './pages/MyPage';
+import LinkRedirect from './pages/LinkRedirect';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/messages/:convId" element={<ConversationPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/link" element={<LinkRedirect />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
