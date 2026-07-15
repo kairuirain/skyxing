@@ -34,16 +34,20 @@ api.route('/comments', commentsRoutes);
 // Users routes (public profile, auth for own)
 api.route('/users', usersRoutes);
 
-// User lookup by username (独立路径 /user-lookup 避免与 /users/* 子路由器冲突)
+// User lookup by username (独立路径，避免与 /users/* 子路由器冲突)
 api.get('/user-lookup/:username', async (c) => {
-  const env = c.env;
-  const username = c.req.param('username').toLowerCase();
-  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
-  if (!userId) return c.json({ error: 'User not found' }, 404);
-  const user = await kvGet(env, PREFIX.USERS + userId);
-  if (!user) return c.json({ error: 'User not found' }, 404);
-  const { passwordHash, ...publicUser } = user;
-  return c.json({ user: publicUser });
+  try {
+    const env = c.env;
+    const username = c.req.param('username').toLowerCase();
+    const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
+    if (!userId) return c.json({ error: 'User not found' }, 404);
+    const user = await kvGet(env, PREFIX.USERS + userId);
+    if (!user) return c.json({ error: 'User not found' }, 404);
+    const { passwordHash, ...publicUser } = user;
+    return c.json({ user: publicUser });
+  } catch (e) {
+    return c.json({ error: e.message || 'Internal error' }, 500);
+  }
 });
 
 // Admin routes (protected)
