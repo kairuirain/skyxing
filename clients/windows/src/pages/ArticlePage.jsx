@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeHTML, formatRelativeTime } from '../../shared/sanitize';
+import { Pin, PinOff } from 'lucide-react';
 
-function CommentItem({ comment, user, onDelete, onReply }) {
+function CommentItem({ comment, user, onDelete, onPin, isArticleAuthor, onReply }) {
   const canDelete = user && (user.id === comment.userId || user.role === 'admin');
 
   return (
-    <div className="mb-3">
+    <div className={'mb-3 ' + (comment.pinned ? 'bg-primary-50/30 -mx-4 px-4 py-2 rounded-lg border-l-4 border-primary-300' : '')}>
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xs font-bold">
@@ -19,6 +20,7 @@ function CommentItem({ comment, user, onDelete, onReply }) {
             <span className="text-sm font-medium text-gray-900">
               {comment.userDisplayName || comment.username || '匿名'}
             </span>
+            {comment.pinned && <span className="inline-flex items-center gap-0.5 text-xs text-primary-600 font-medium"><Pin size={10} /> 置顶</span>}
             <span className="text-xs text-gray-400">{formatRelativeTime(comment.createdAt)}</span>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">{comment.content}</p>
@@ -26,6 +28,11 @@ function CommentItem({ comment, user, onDelete, onReply }) {
             {user && (
               <button onClick={() => onReply(comment.id)} className="text-xs text-gray-400 hover:text-primary-600">
                 回复
+              </button>
+            )}
+            {isArticleAuthor && (
+              <button onClick={() => onPin(comment.id)} className="text-xs text-gray-400 hover:text-primary-600">
+                {comment.pinned ? '取消置顶' : '置顶'}
               </button>
             )}
             {canDelete && (
@@ -39,7 +46,7 @@ function CommentItem({ comment, user, onDelete, onReply }) {
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-11 mt-2 pl-4 border-l-2 border-gray-100 space-y-3">
           {comment.replies.map(reply => (
-            <CommentItem key={reply.id} comment={reply} user={user} onDelete={onDelete} onReply={onReply} />
+            <CommentItem key={reply.id} comment={reply} user={user} onDelete={onDelete} onPin={onPin} isArticleAuthor={isArticleAuthor} onReply={onReply} />
           ))}
         </div>
       )}
@@ -128,6 +135,24 @@ export default function ArticlePage() {
     }
   };
 
+  const pinArticle = async () => {
+    try {
+      const data = await api.pinArticle(id);
+      setArticle(prev => ({ ...prev, pinned: data.article.pinned }));
+    } catch (err) {
+      alert(err.message || '操作失败');
+    }
+  };
+
+  const pinComment = async (commentId) => {
+    try {
+      await api.pinComment(commentId);
+      fetchComments();
+    } catch (err) {
+      alert(err.message || '操作失败');
+    }
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse max-w-3xl mx-auto">
@@ -153,6 +178,7 @@ export default function ArticlePage() {
   }
 
   const isOwner = user && (user.id === article.authorId || user.role === 'admin');
+  const isArticleAuthor = user && user.id === article.authorId;
   const sanitizedContent = sanitizeHTML(article.content);
 
   return (
@@ -177,6 +203,11 @@ export default function ArticlePage() {
         {isOwner && (
           <div className="flex gap-2 mb-6">
             <Link to={`/edit/${article.id}`} className="btn-outline btn-sm">编辑</Link>
+            {user?.role === 'admin' && (
+              <button onClick={pinArticle} className="btn-outline btn-sm">
+                {article.pinned ? <><PinOff size={13} className="mr-1" />取消置顶</> : <><Pin size={13} className="mr-1" />置顶</>}
+              </button>
+            )}
             <button onClick={deleteArticle} className="btn-danger btn-sm">删除</button>
           </div>
         )}
@@ -246,6 +277,8 @@ export default function ArticlePage() {
                 comment={comment}
                 user={user}
                 onDelete={deleteComment}
+                onPin={pinComment}
+                isArticleAuthor={isArticleAuthor}
                 onReply={(cid) => { setReplyTo(cid); }}
               />
             ))}

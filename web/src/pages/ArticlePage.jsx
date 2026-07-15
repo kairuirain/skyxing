@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { Calendar, Eye, Tag, User, Send, Trash2, Edit3 } from 'lucide-react';
+import { Calendar, Eye, Tag, User, Send, Trash2, Edit3, Pin, PinOff } from 'lucide-react';
 import { sanitizeHTML } from '../lib/sanitize.js';
 
 export default function ArticlePage() {
@@ -82,6 +82,24 @@ export default function ArticlePage() {
     }
   };
 
+  const handlePinArticle = async () => {
+    try {
+      const data = await api.pinArticle(id);
+      setArticle(prev => ({ ...prev, pinned: data.article.pinned }));
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handlePinComment = async (commentId) => {
+    try {
+      await api.pinComment(commentId);
+      loadComments();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -116,6 +134,7 @@ export default function ArticlePage() {
   }
 
   const isOwner = user && (user.id === article.authorId || user.role === 'admin');
+  const isArticleAuthor = user && user.id === article.authorId;
 
   // Build comment tree
   const topLevelComments = comments.filter(c => !c.parentId);
@@ -164,6 +183,12 @@ export default function ArticlePage() {
               <Edit3 size={14} className="mr-1" />
               编辑
             </Link>
+            {user?.role === 'admin' && (
+              <button onClick={handlePinArticle} className="btn-outline btn-sm">
+                {article.pinned ? <PinOff size={14} className="mr-1" /> : <Pin size={14} className="mr-1" />}
+                {article.pinned ? '取消置顶' : '置顶'}
+              </button>
+            )}
             <button onClick={handleDeleteArticle} className="btn-danger btn-sm">
               <Trash2 size={14} className="mr-1" />
               删除
@@ -266,6 +291,8 @@ export default function ArticlePage() {
               currentUser={user}
               onReply={setReplyTo}
               onDelete={handleDeleteComment}
+              onPin={handlePinComment}
+              isArticleAuthor={isArticleAuthor}
               formatDate={formatDate}
             />
           ))}
@@ -278,13 +305,13 @@ export default function ArticlePage() {
   );
 }
 
-function CommentItem({ comment, replies, currentUser, onReply, onDelete, formatDate }) {
+function CommentItem({ comment, replies, currentUser, onReply, onDelete, onPin, isArticleAuthor, formatDate }) {
   const canDelete = currentUser && (
     currentUser.id === comment.userId || currentUser.role === 'admin'
   );
 
   return (
-    <div className="border-l-2 border-gray-100 pl-4">
+    <div className={'border-l-2 pl-4 ' + (comment.pinned ? 'border-primary-300 bg-primary-50/30 -ml-2 pl-6 pr-2 py-2 rounded-r-lg' : 'border-gray-100')}>
       <div className="flex gap-3">
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-sm font-bold flex-shrink-0">
           {comment.user?.displayName?.[0] || '?'}
@@ -294,6 +321,11 @@ function CommentItem({ comment, replies, currentUser, onReply, onDelete, formatD
             <span className="font-medium text-sm text-gray-900">
               {comment.user?.displayName || '匿名用户'}
             </span>
+            {comment.pinned && (
+              <span className="inline-flex items-center gap-0.5 text-xs text-primary-600 font-medium">
+                <Pin size={10} /> 置顶
+              </span>
+            )}
             <span className="text-xs text-gray-400">
               {formatDate(comment.createdAt)}
             </span>
@@ -306,6 +338,14 @@ function CommentItem({ comment, replies, currentUser, onReply, onDelete, formatD
                 className="text-gray-500 hover:text-primary-600"
               >
                 回复
+              </button>
+            )}
+            {isArticleAuthor && (
+              <button
+                onClick={() => onPin(comment.id)}
+                className="text-gray-500 hover:text-primary-600"
+              >
+                {comment.pinned ? '取消置顶' : '置顶'}
               </button>
             )}
             {canDelete && (
@@ -329,6 +369,8 @@ function CommentItem({ comment, replies, currentUser, onReply, onDelete, formatD
                   currentUser={currentUser}
                   onReply={onReply}
                   onDelete={onDelete}
+                  onPin={onPin}
+                  isArticleAuthor={isArticleAuthor}
                   formatDate={formatDate}
                 />
               ))}

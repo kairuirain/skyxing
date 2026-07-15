@@ -88,6 +88,26 @@ class ApiClient {
     });
   }
 
+  async pinArticle(id) {
+    return this.request(`/articles/${id}/pin`, {
+      method: 'PUT',
+    });
+  }
+
+  async pinComment(id) {
+    return this.request(`/comments/${id}/pin`, {
+      method: 'PUT',
+    });
+  }
+
+  async getUserByUsername(username) {
+    return this.request(`/users/by-username/${username}`);
+  }
+
+  async getStateVersion() {
+    return this.request('/state/version');
+  }
+
   async getTags() {
     return this.request('/articles/tags');
   }

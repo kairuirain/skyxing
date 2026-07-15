@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { kvGet, kvPut, kvDelete, kvList, kvIncrement, kvGetMany, generateId, slugify, PREFIX } from '../utils/kv.js';
 import { sanitizeHTML } from '../utils/sanitize.js';
-import { authRequired } from '../middleware/rbac.js';
+import { authRequired, adminRequired } from '../middleware/rbac.js';
 
 const articles = new Hono();
 
@@ -41,8 +41,11 @@ articles.get('/', async (c) => {
     );
   }
 
-  // Sort by createdAt desc
-  articleList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // Sort: pinned first, then by createdAt desc
+  articleList.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
 
   const total = articleList.length;
   const totalPages = Math.ceil(total / limit);
@@ -166,6 +169,7 @@ articles.post('/', authRequired, async (c) => {
       status: 'published',
       views: 0,
       likes: 0,
+      pinned: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -218,6 +222,26 @@ articles.put('/:id', authRequired, async (c) => {
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);
   }
+});
+
+/**
+ * PUT /server/api/articles/:id/pin
+ * Toggle article pin status (admin only)
+ */
+articles.put('/:id/pin', adminRequired, async (c) => {
+  const id = c.req.param('id');
+  const env = c.env;
+
+  const article = await kvGet(env, PREFIX.ARTICLES + id);
+  if (!article) {
+    return c.json({ error: 'Article not found' }, 404);
+  }
+
+  article.pinned = !article.pinned;
+  article.updatedAt = new Date().toISOString();
+  await kvPut(env, PREFIX.ARTICLES + id, article);
+
+  return c.json({ message: article.pinned ? 'Article pinned' : 'Article unpinned', article });
 });
 
 /**

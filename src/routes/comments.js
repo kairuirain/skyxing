@@ -36,8 +36,11 @@ comments.get('/', async (c) => {
     }
   }
 
-  // Sort by createdAt asc (oldest first for comment threads)
-  commentList.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  // Sort: pinned first, then by createdAt asc
+  commentList.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
 
   // Get user info for each comment
   const commentsWithUser = await Promise.all(
@@ -104,6 +107,7 @@ comments.post('/', authRequired, async (c) => {
       userId: user.userId,
       content: content.trim(),
       parentId: parentId || null,
+      pinned: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -157,6 +161,36 @@ comments.put('/:id', authRequired, async (c) => {
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);
   }
+});
+
+/**
+ * PUT /server/api/comments/:id/pin
+ * Toggle comment pin status (article author only)
+ */
+comments.put('/:id/pin', authRequired, async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+  const env = c.env;
+
+  const comment = await kvGet(env, PREFIX.COMMENTS + id);
+  if (!comment) {
+    return c.json({ error: 'Comment not found' }, 404);
+  }
+
+  // Verify the current user is the article's author
+  const article = await kvGet(env, PREFIX.ARTICLES + comment.articleId);
+  if (!article) {
+    return c.json({ error: 'Article not found' }, 404);
+  }
+  if (article.authorId !== user.userId && user.role !== 'admin') {
+    return c.json({ error: 'Only the article author can pin comments' }, 403);
+  }
+
+  comment.pinned = !comment.pinned;
+  comment.updatedAt = new Date().toISOString();
+  await kvPut(env, PREFIX.COMMENTS + id, comment);
+
+  return c.json({ message: comment.pinned ? 'Comment pinned' : 'Comment unpinned', comment });
 });
 
 /**

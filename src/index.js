@@ -8,6 +8,7 @@ import usersRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import messagesRoutes from './routes/messages.js';
 import updatesRoutes from './routes/updates.js';
+import stateRoutes from './routes/state.js';
 
 const app = new Hono();
 
@@ -40,6 +41,9 @@ api.route('/messages', messagesRoutes);
 
 // OTA update routes (public read, admin config)
 api.route('/updates', updatesRoutes);
+
+// State version routes (public, for real-time sync polling)
+api.route('/state', stateRoutes);
 
 // Mount API under /server/api
 app.route('/server/api', api);

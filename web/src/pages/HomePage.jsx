@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import useSync from '../hooks/useSync';
 import {
   Calendar, Eye, Tag, User, MessageSquare, Bell, ArrowRight,
-  Sparkles, Download,
+  Sparkles, Download, Pin,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -23,6 +24,9 @@ export default function HomePage() {
     loadArticles();
     loadTags();
   }, [page, selectedTag]);
+
+  // 实时同步：后台变化时自动刷新
+  useSync(loadArticles, { enabled: !selectedTag && !search });
 
   // 已登录用户拉取未读数与最近会话
   useEffect(() => {
@@ -146,9 +150,16 @@ export default function HomePage() {
                     to={`/article/${article.id}`}
                     className="card p-6 block hover:shadow-md transition-shadow"
                   >
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2 hover:text-primary-600 transition-colors">
-                      {article.title}
-                    </h2>
+                    <div className="flex items-center gap-2 mb-2">
+                      {article.pinned && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">
+                          <Pin size={10} /> 置顶
+                        </span>
+                      )}
+                      <h2 className="text-xl font-semibold text-gray-900 hover:text-primary-600 transition-colors">
+                        {article.title}
+                      </h2>
+                    </div>
                     <p className="text-gray-600 mb-4 line-clamp-2">
                       {article.excerpt || article.content?.replace(/<[^>]*>/g, '').slice(0, 200)}
                     </p>

@@ -6,11 +6,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { sanitizeHTML, formatRelativeTime } from '../../shared/sanitize';
 import { useSettings } from '../context/SettingsContext';
+// 置顶指示器使用纯文本，避免引入 lucide-react（React Native 依赖管理不同）
 
 // 懒加载评论列表
 const CommentList = React.lazy(() => Promise.resolve({ default: CommentListView }));
 
-function CommentListView({ comments, user, onDelete }) {
+function CommentListView({ comments, user, onDelete, onPin, isArticleAuthor }) {
   // 构建评论树
   const commentTree = React.useMemo(() => {
     const map = {};
@@ -34,17 +35,19 @@ function CommentListView({ comments, user, onDelete }) {
           comment={comment}
           user={user}
           onDelete={onDelete}
+          onPin={onPin}
+          isArticleAuthor={isArticleAuthor}
         />
       ))}
     </View>
   );
 }
 
-function CommentItem({ comment, user, onDelete }) {
+function CommentItem({ comment, user, onDelete, onPin, isArticleAuthor }) {
   const canDelete = user && (user.id === comment.userId || user.role === 'admin');
 
   return (
-    <View style={commentStyles.item}>
+    <View style={[commentStyles.item, comment.pinned && { backgroundColor: '#eff6ff', borderLeftWidth: 3, borderLeftColor: '#2563eb', marginLeft: -14, paddingLeft: 17 }]}>
       <View style={commentStyles.itemHeader}>
         <View style={commentStyles.avatarSmall}>
           <Text style={commentStyles.avatarSmallText}>
@@ -52,18 +55,25 @@ function CommentItem({ comment, user, onDelete }) {
           </Text>
         </View>
         <View style={commentStyles.itemMeta}>
-          <Text style={commentStyles.itemAuthor}>
-            {comment.userDisplayName || comment.username || '匿名'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={commentStyles.itemAuthor}>
+              {comment.userDisplayName || comment.username || '匿名'}
+            </Text>
+            {comment.pinned && (
+              <Text style={{ fontSize: 11, color: '#2563eb', fontWeight: '600' }}>📌 置顶</Text>
+            )}
+          </View>
           <Text style={commentStyles.itemTime}>
             {formatRelativeTime(comment.createdAt)}
           </Text>
         </View>
+        {isArticleAuthor && (
+          <TouchableOpacity onPress={() => onPin(comment.id)} style={commentStyles.deleteBtn}>
+            <Text style={{ fontSize: 12, color: '#2563eb' }}>{comment.pinned ? '取消' : '置顶'}</Text>
+          </TouchableOpacity>
+        )}
         {canDelete && (
-          <TouchableOpacity
-            onPress={() => onDelete(comment.id)}
-            style={commentStyles.deleteBtn}
-          >
+          <TouchableOpacity onPress={() => onDelete(comment.id)} style={commentStyles.deleteBtn}>
             <Text style={commentStyles.deleteBtnText}>删除</Text>
           </TouchableOpacity>
         )}
@@ -77,6 +87,8 @@ function CommentItem({ comment, user, onDelete }) {
               comment={reply}
               user={user}
               onDelete={onDelete}
+              onPin={onPin}
+              isArticleAuthor={isArticleAuthor}
             />
           ))}
         </View>
@@ -219,6 +231,24 @@ export default function ArticleScreen({ route, navigation }) {
     ]);
   };
 
+  const pinArticle = async () => {
+    try {
+      const data = await api.pinArticle(id);
+      setArticle(prev => ({ ...prev, pinned: data.article.pinned }));
+    } catch (err) {
+      Alert.alert('操作失败', err.message || '请稍后重试');
+    }
+  };
+
+  const pinComment = async (commentId) => {
+    try {
+      await api.pinComment(commentId);
+      fetchComments();
+    } catch (err) {
+      Alert.alert('操作失败', err.message || '请稍后重试');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -236,6 +266,7 @@ export default function ArticleScreen({ route, navigation }) {
   }
 
   const isOwner = user && (user.id === article.authorId || user.role === 'admin');
+  const isArticleAuthor = user && user.id === article.authorId;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -266,6 +297,11 @@ export default function ArticleScreen({ route, navigation }) {
             >
               <Text style={styles.actionBtnText}>编辑</Text>
             </TouchableOpacity>
+            {user?.role === 'admin' && (
+              <TouchableOpacity style={styles.actionBtn} onPress={pinArticle}>
+                <Text style={styles.actionBtnText}>{article.pinned ? '取消置顶' : '置顶'}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={[styles.actionBtn, styles.deleteAction]} onPress={deleteArticle}>
               <Text style={[styles.actionBtnText, { color: '#dc2626' }]}>删除</Text>
             </TouchableOpacity>
@@ -320,7 +356,7 @@ export default function ArticleScreen({ route, navigation }) {
         {/* 评论列表 - 懒加载 */}
         {comments.length > 0 ? (
           <React.Suspense fallback={<ActivityIndicator size="small" color="#2563eb" style={{ marginTop: 16 }} />}>
-            <CommentList comments={comments} user={user} onDelete={deleteComment} />
+            <CommentList comments={comments} user={user} onDelete={deleteComment} onPin={pinComment} isArticleAuthor={isArticleAuthor} />
           </React.Suspense>
         ) : (
           <Text style={styles.noComments}>暂无评论，来说点什么吧</Text>

@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { extractExcerpt, formatRelativeTime } from '../../shared/sanitize';
 import { useSettings } from '../context/SettingsContext';
+import useSync from '../hooks/useSync';
 
 const { width } = Dimensions.get('window');
 
@@ -31,9 +32,16 @@ const ArticleCard = React.memo(({ article, onPress, fontSize }) => {
         </View>
       ) : null}
       <View style={styles.cardBody}>
-        <Text style={[styles.cardTitle, { fontSize: baseSize + 2 }]} numberOfLines={2}>
-          {article.title}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          {article.pinned && (
+            <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, backgroundColor: '#dbeafe' }}>
+              <Text style={{ fontSize: 10, color: '#1d4ed8', fontWeight: '700' }}>📌 置顶</Text>
+            </View>
+          )}
+          <Text style={[styles.cardTitle, { fontSize: baseSize + 2 }]} numberOfLines={2}>
+            {article.title}
+          </Text>
+        </View>
         <Text style={[styles.cardExcerpt, { fontSize: baseSize - 1 }]} numberOfLines={2}>
           {excerpt}
         </Text>
@@ -148,6 +156,8 @@ export default function HomeScreen({ navigation }) {
     fetchArticles(1);
     fetchTags();
   }, [fetchArticles, fetchTags]);
+
+  useSync(api, () => fetchArticles(1), { enabled: !selectedTag && !search.trim() });
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

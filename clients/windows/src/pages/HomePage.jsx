@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import useSync from '../hooks/useSync';
 import { extractExcerpt, formatRelativeTime } from '../../shared/sanitize';
 
 function ArticleCard({ article }) {
@@ -22,9 +23,16 @@ function ArticleCard({ article }) {
         </div>
       )}
       <div className="p-5">
-        <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
-          {article.title}
-        </h2>
+        <div className="flex items-center gap-2 mb-2">
+          {article.pinned && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold">
+              📌 置顶
+            </span>
+          )}
+          <h2 className="text-lg font-bold text-gray-900 line-clamp-2 hover:text-primary-600 transition-colors">
+            {article.title}
+          </h2>
+        </div>
         <p className="text-sm text-gray-600 mb-3 line-clamp-2">{excerpt}</p>
         <div className="flex items-center gap-3 text-xs text-gray-400">
           <span>{article.authorName || '匿名'}</span>
@@ -92,6 +100,7 @@ export default function HomePage() {
 
   useEffect(() => { fetchTags(); }, [fetchTags]);
   useEffect(() => { fetchArticles(1); }, [fetchArticles]);
+  useSync(api, () => fetchArticles(1), { enabled: !selectedTag && !search.trim() });
 
   const handleSearch = (e) => {
     e.preventDefault();
