@@ -5,6 +5,28 @@ import { authRequired, authOptional } from '../middleware/rbac.js';
 const users = new Hono();
 
 /**
+ * GET /server/api/users/by-username/:username
+ * 必须在 /:id 之前注册，否则 Hono 会将 "by-username" 匹配为 :id
+ */
+users.get('/by-username/:username', async (c) => {
+  const env = c.env;
+  const username = c.req.param('username').toLowerCase();
+
+  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
+  if (!userId) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const user = await kvGet(env, PREFIX.USERS + userId);
+  if (!user) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  const { passwordHash, ...publicUser } = user;
+  return c.json({ user: publicUser });
+});
+
+/**
  * GET /server/api/users/:id
  * Get user public profile
  */
@@ -75,28 +97,6 @@ users.put('/:id', authRequired, async (c) => {
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);
   }
-});
-
-/**
- * GET /server/api/users/by-username/:username
- * Get user by username (uses USERNAME_INDEX)
- */
-users.get('/by-username/:username', async (c) => {
-  const env = c.env;
-  const username = c.req.param('username').toLowerCase();
-
-  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
-  if (!userId) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  const user = await kvGet(env, PREFIX.USERS + userId);
-  if (!user) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  const { passwordHash, ...publicUser } = user;
-  return c.json({ user: publicUser });
 });
 
 export default users;
