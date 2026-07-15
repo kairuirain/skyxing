@@ -4,7 +4,7 @@ import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Calendar, Eye, Tag, User, MessageSquare, Bell, ArrowRight,
-  Sparkles, Mic, Download, Heart,
+  Sparkles, Download,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -99,9 +99,6 @@ export default function HomePage() {
               立即加入
             </Link>
           )}
-          <Link to="/podcast" className="btn-outline">
-            <Mic size={16} className="mr-1.5" /> 收听播客
-          </Link>
           <Link to="/download" className="btn-outline">
             <Download size={16} className="mr-1.5" /> 下载客户端
           </Link>
