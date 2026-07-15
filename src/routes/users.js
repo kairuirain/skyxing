@@ -5,26 +5,21 @@ import { authRequired, authOptional } from '../middleware/rbac.js';
 const users = new Hono();
 
 /**
- * POST /server/api/users/lookup
- * 用 POST + body 传 username（避免与 GET /:id 的路由冲突）
+ * GET /server/api/users/find/:username
+ * 用静态前缀 /find 避免与 /:id 冲突
  */
-users.post('/lookup', async (c) => {
-  try {
-    const env = c.env;
-    const { username } = await c.req.json();
-    if (!username) return c.json({ error: 'username is required' }, 400);
+users.get('/find/:username', async (c) => {
+  const env = c.env;
+  const username = c.req.param('username').toLowerCase();
 
-    const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase());
-    if (!userId) return c.json({ error: 'User not found' }, 404);
+  const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
+  if (!userId) return c.json({ error: 'User not found' }, 404);
 
-    const user = await kvGet(env, PREFIX.USERS + userId);
-    if (!user) return c.json({ error: 'User not found' }, 404);
+  const user = await kvGet(env, PREFIX.USERS + userId);
+  if (!user) return c.json({ error: 'User not found' }, 404);
 
-    const { passwordHash, ...publicUser } = user;
-    return c.json({ user: publicUser });
-  } catch (e) {
-    return c.json({ error: 'Invalid request' }, 400);
-  }
+  const { passwordHash, ...publicUser } = user;
+  return c.json({ user: publicUser });
 });
 
 /**
