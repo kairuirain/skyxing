@@ -34,8 +34,8 @@ api.route('/comments', commentsRoutes);
 // Users routes (public profile, auth for own)
 api.route('/users', usersRoutes);
 
-// User lookup by username (直接注册在api层，避免子路由器内路由冲突)
-api.get('/users/find/:username', async (c) => {
+// User lookup by username (独立路径 /user-lookup 避免与 /users/* 子路由器冲突)
+api.get('/user-lookup/:username', async (c) => {
   const env = c.env;
   const username = c.req.param('username').toLowerCase();
   const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
