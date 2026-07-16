@@ -192,14 +192,21 @@ updates.get('/check', async (c) => {
     const result = await buildLatestPayload(c, c.env, config, platform, channel, forceRefresh);
     if (result.error) return c.json({ error: result.error }, result.status);
     const latest = result.payload;
-    const hasUpdate = compareVersion(latest.version, current) > 0;
 
     // 检测渠道切换
     const currentChannel = detectVersionChannel(current);
+    const isCrossChannel = currentChannel !== channel;
     let channelSwitch = null;
-    if (currentChannel !== channel) {
+    if (isCrossChannel) {
       channelSwitch = { from: currentChannel, to: channel };
     }
+
+    // 跨渠道时：强制显示目标渠道的最新版（即便当前版本号更高）
+    // 提示用户下载新版本以完成渠道切换
+    // 同渠道时：正常比较版本号
+    const hasUpdate = isCrossChannel
+      ? true
+      : compareVersion(latest.version, current) > 0;
 
     const notices = await getActiveNotices(c.env, platform, current);
     return c.json({
