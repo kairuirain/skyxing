@@ -71,6 +71,13 @@ app.get('/favicon.svg', serveStatic({ path: './public/favicon.svg' }));
 app.get('/favicon.ico', serveStatic({ path: './public/favicon.ico' }));
 
 // SPA fallback - serve index.html for all non-API routes
-app.get('/*', serveStatic({ path: './public/index.html' }));
+// 当 public/index.html 不存在时，直接内联返回（避免 500）
+app.get('/*', async (c) => {
+  try {
+    const res = await serveStatic({ path: './public/index.html' })(c);
+    if (res) return res;
+  } catch {}
+  return c.html('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SkyXing</title><link rel="stylesheet" href="/assets/index.css"></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>');
+});
 
 export default app;

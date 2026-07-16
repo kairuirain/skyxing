@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -134,6 +134,23 @@ export default function ArticlePage() {
     );
   }
 
+  // 拦截文章内链接点击，使用 React Router 导航
+  useEffect(() => {
+    const el = document.getElementById('article-content');
+    if (!el) return;
+    const handler = (e) => {
+      const a = e.target.closest('a');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (href && href.startsWith('/link?')) {
+        e.preventDefault();
+        navigate(href);
+      }
+    };
+    el.addEventListener('click', handler);
+    return () => el.removeEventListener('click', handler);
+  }, [navigate]);
+
   const isOwner = user && (user.id === article.authorId || user.role === 'admin');
   const isArticleAuthor = user && user.id === article.authorId;
 
@@ -209,6 +226,7 @@ export default function ArticlePage() {
 
       {/* Article content */}
       <div
+        id="article-content"
         className="article-content prose max-w-none mb-12"
         dangerouslySetInnerHTML={{ __html: sanitizeHTML(prepareArticleContent(article.content)) }}
       />
