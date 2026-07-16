@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/cloudflare-workers';
 import { cors } from './middleware/cors.js';
 import { kvGet, PREFIX } from './utils/kv.js';
 import authRoutes from './routes/auth.js';
@@ -65,19 +64,25 @@ api.route('/state', stateRoutes);
 // Mount API under /server/api
 app.route('/server/api', api);
 
-// Serve static frontend files from public/ directory
-app.get('/assets/*', serveStatic({ root: './' }));
-app.get('/favicon.svg', serveStatic({ path: './public/favicon.svg' }));
-app.get('/favicon.ico', serveStatic({ path: './public/favicon.ico' }));
-
-// SPA fallback - serve index.html for all non-API routes
-// 当 public/index.html 不存在时，直接内联返回（避免 500）
+// SPA fallback：使用 Cloudflare ASSETS 绑定直接读取真实的 index.html
+// 当请求的资源不在 API 路径下时，先尝试 ASSETS，404 则回退到 index.html
 app.get('/*', async (c) => {
-  try {
-    const res = await serveStatic({ path: './public/index.html' })(c);
-    if (res) return res;
-  } catch {}
-  return c.html('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SkyXing</title><link rel="stylesheet" href="/assets/index.css"></head><body><div id="root"></div><script type="module" src="/assets/index.js"></script></body></html>');
+  if (!c.env.ASSETS) {
+    return c.text('ASSETS binding not available', 500);
+  }
+  const url = new URL(c.req.url);
+  const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+  // 命中静态资源（200）或 favicon 等（200/304）则直接返回
+  if (assetResponse.status === 200 || assetResponse.status === 304) {
+    return assetResponse;
+  }
+  // SPA fallback：取 index.html
+  const indexUrl = new URL('/index.html', url.origin);
+  const indexResponse = await c.env.ASSETS.fetch(new Request(indexUrl));
+  if (indexResponse.ok) {
+    return indexResponse;
+  }
+  return c.text('Not Found', 404);
 });
 
 export default app;

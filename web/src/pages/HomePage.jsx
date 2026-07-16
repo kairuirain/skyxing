@@ -71,15 +71,6 @@ export default function HomePage() {
     return () => { active = false; };
   }, [user]);
 
-  const loadTags = async () => {
-    try {
-      const data = await api.getTags();
-      setTags(data.tags || []);
-    } catch (e) {
-      console.error('Failed to load tags:', e);
-    }
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
