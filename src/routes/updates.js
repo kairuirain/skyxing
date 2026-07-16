@@ -157,6 +157,13 @@ updates.get('/latest', async (c) => {
   }
 });
 
+/**
+ * 从版本号检测渠道：含 -a / -b / -rc 等后缀的为测试版
+ */
+function detectVersionChannel(ver) {
+  return /-[a-z]/i.test(ver) ? 'beta' : 'stable';
+}
+
 updates.get('/check', async (c) => {
   try {
     const config = await getConfig(c.env);
@@ -168,10 +175,19 @@ updates.get('/check', async (c) => {
     if (result.error) return c.json({ error: result.error }, result.status);
     const latest = result.payload;
     const hasUpdate = compareVersion(latest.version, current) > 0;
+
+    // 检测渠道切换
+    const currentChannel = detectVersionChannel(current);
+    let channelSwitch = null;
+    if (currentChannel !== channel) {
+      channelSwitch = { from: currentChannel, to: channel };
+    }
+
     const notices = await getActiveNotices(c.env, platform, current);
     return c.json({
       protocolVersion: 3, hasUpdate, current, latest: latest.version,
       channel, platform, release: hasUpdate ? latest : null, notices,
+      channelSwitch,
     });
   } catch (e) {
     return c.json({ error: 'Failed to check update', detail: String(e.message || e) }, 502);
