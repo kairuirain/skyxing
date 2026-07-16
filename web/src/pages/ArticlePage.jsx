@@ -111,6 +111,23 @@ export default function ArticlePage() {
     });
   };
 
+  // 拦截文章内链接点击（必须在早期 return 之前，保证 hooks 数量一致）
+  useEffect(() => {
+    const el = document.getElementById('article-content');
+    if (!el) return;
+    const handler = (e) => {
+      const a = e.target.closest('a');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (href && href.startsWith('/link?')) {
+        e.preventDefault();
+        navigate(href);
+      }
+    };
+    el.addEventListener('click', handler);
+    return () => el.removeEventListener('click', handler);
+  }, [navigate]);
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto animate-pulse">
@@ -133,23 +150,6 @@ export default function ArticlePage() {
       </div>
     );
   }
-
-  // 拦截文章内链接点击，使用 React Router 导航
-  useEffect(() => {
-    const el = document.getElementById('article-content');
-    if (!el) return;
-    const handler = (e) => {
-      const a = e.target.closest('a');
-      if (!a) return;
-      const href = a.getAttribute('href');
-      if (href && href.startsWith('/link?')) {
-        e.preventDefault();
-        navigate(href);
-      }
-    };
-    el.addEventListener('click', handler);
-    return () => el.removeEventListener('click', handler);
-  }, [navigate]);
 
   const isOwner = user && (user.id === article.authorId || user.role === 'admin');
   const isArticleAuthor = user && user.id === article.authorId;
