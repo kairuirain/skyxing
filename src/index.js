@@ -12,35 +12,22 @@ import stateRoutes from './routes/state.js';
 
 const app = new Hono();
 
-// CORS middleware
 app.use('*', cors);
 
-// Public API routes (under /server/api)
 const api = new Hono();
 
-// Health check
 api.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
-
-// Auth routes (public)
 api.route('/auth', authRoutes);
-
-// Articles routes (public read, auth write)
 api.route('/articles', articlesRoutes);
-
-// Comments routes (public read, auth write)
 api.route('/comments', commentsRoutes);
-
-// Users routes (public profile, auth for own)
 api.route('/users', usersRoutes);
 
-// 在 /server/api 下直接注册常用公共查询
 api.get('/lookup/:username', async (c) => {
   try {
-    const env = c.env;
     const username = c.req.param('username').toLowerCase();
-    const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username);
+    const userId = await kvGet(c.env, PREFIX.USERNAME_INDEX + username);
     if (!userId) return c.json({ error: 'User not found' }, 404);
-    const user = await kvGet(env, PREFIX.USERS + userId);
+    const user = await kvGet(c.env, PREFIX.USERS + userId);
     if (!user) return c.json({ error: 'User not found' }, 404);
     const { passwordHash, ...publicUser } = user;
     return c.json({ user: publicUser });
@@ -49,40 +36,14 @@ api.get('/lookup/:username', async (c) => {
   }
 });
 
-// Admin routes (protected)
 api.route('/admin', adminRoutes);
-
-// Private messaging routes (auth required)
 api.route('/messages', messagesRoutes);
-
-// OTA update routes (public read, admin config)
 api.route('/updates', updatesRoutes);
-
-// State version routes (public, for real-time sync polling)
 api.route('/state', stateRoutes);
 
-// Mount API under /server/api
 app.route('/server/api', api);
 
-// SPA fallback：使用 Cloudflare ASSETS 绑定直接读取真实的 index.html
-// 当请求的资源不在 API 路径下时，先尝试 ASSETS，404 则回退到 index.html
-app.get('/*', async (c) => {
-  if (!c.env.ASSETS) {
-    return c.text('ASSETS binding not available', 500);
-  }
-  const url = new URL(c.req.url);
-  const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
-  // 命中静态资源（200）或 favicon 等（200/304）则直接返回
-  if (assetResponse.status === 200 || assetResponse.status === 304) {
-    return assetResponse;
-  }
-  // SPA fallback：取 index.html
-  const indexUrl = new URL('/index.html', url.origin);
-  const indexResponse = await c.env.ASSETS.fetch(new Request(indexUrl));
-  if (indexResponse.ok) {
-    return indexResponse;
-  }
-  return c.text('Not Found', 404);
-});
+// SPA fallback — 所有非 API 路径返回 index.html（硬编码构建时的最新内容）
+app.get('/*', (c) => c.html('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /><title>SkyXing</title><link rel="icon" type="image/svg+xml" href="/favicon.svg" /><meta name="description" content="SkyXing - 自由创作，分享你的想法" /><script type="module" crossorigin src="/assets/index-d_UCJ-J3.js"></script><link rel="stylesheet" crossorigin href="/assets/index-Cw_pfPot.css"></head><body class="bg-gray-50 text-gray-900"><div id="root"></div></body></html>'));
 
 export default app;
