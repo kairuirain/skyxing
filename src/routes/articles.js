@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { kvGet, kvPut, kvDelete, kvList, kvIncrement, kvGetMany, generateId, slugify, PREFIX } from '../utils/kv.js';
+import { kvGet, kvPut, kvDelete, kvList, kvIncrement, kvGetMany, invalidateListCache, generateId, slugify, PREFIX } from '../utils/kv.js';
 import { sanitizeHTML } from '../utils/sanitize.js';
 import { authRequired, adminRequired } from '../middleware/rbac.js';
 
@@ -175,6 +175,7 @@ articles.post('/', authRequired, async (c) => {
     };
 
     await kvPut(env, PREFIX.ARTICLES + id, article);
+    invalidateListCache(PREFIX.ARTICLES);
 
     return c.json({ message: 'Article created', article }, 201);
   } catch (e) {
@@ -217,6 +218,7 @@ articles.put('/:id', authRequired, async (c) => {
     };
 
     await kvPut(env, PREFIX.ARTICLES + id, updated);
+    invalidateListCache(PREFIX.ARTICLES);
 
     return c.json({ message: 'Article updated', article: updated });
   } catch (e) {
@@ -240,6 +242,7 @@ articles.put('/:id/pin', adminRequired, async (c) => {
   article.pinned = !article.pinned;
   article.updatedAt = new Date().toISOString();
   await kvPut(env, PREFIX.ARTICLES + id, article);
+  invalidateListCache(PREFIX.ARTICLES);
 
   return c.json({ message: article.pinned ? 'Article pinned' : 'Article unpinned', article });
 });
@@ -272,6 +275,7 @@ articles.delete('/:id', authRequired, async (c) => {
   }
 
   await kvDelete(env, PREFIX.ARTICLES + id);
+  invalidateListCache(PREFIX.ARTICLES);
 
   return c.json({ message: 'Article deleted' });
 });

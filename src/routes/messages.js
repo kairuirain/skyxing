@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { kvGet, kvPut, kvDelete, kvList, generateId, PREFIX } from '../utils/kv.js';
+import { kvGet, kvPut, kvDelete, kvList, invalidateListCache, generateId, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
 
 const messages = new Hono();
@@ -60,6 +60,7 @@ async function getOrCreateConversation(env, a, b) {
     updatedAt: now,
   };
   await kvPut(env, PREFIX.MESSAGES + 'conv:' + id, conv);
+  invalidateListCache(PREFIX.MESSAGES + 'conv:');
   await addToIndex(env, a, id);
   await addToIndex(env, b, id);
   return { conv, created: true };
@@ -329,6 +330,7 @@ messages.delete('/conversations/:convId', authRequired, async (c) => {
     await kvDelete(env, PREFIX.MESSAGES + 'conv:' + convId);
     await kvDelete(env, PREFIX.MESSAGES + 'unread:' + convId + ':' + user.userId);
     await kvDelete(env, PREFIX.MESSAGES + 'unread:' + convId + ':' + otherId);
+    invalidateListCache(PREFIX.MESSAGES + 'conv:');
   }
 
   return c.json({ message: 'Conversation deleted' });

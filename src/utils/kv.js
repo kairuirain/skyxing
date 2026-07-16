@@ -45,11 +45,38 @@ export async function kvDelete(env, key) {
 }
 
 /**
- * List keys with a prefix
+ * 内存缓存（同一 Worker 实例内共享）
+ * 避免每个请求都消耗 KV list() 配额（免费计划每日有限）
+ */
+const listCache = new Map();
+
+function getListCacheKey(prefix, limit) {
+  return `kvlist:${prefix}:${limit}`;
+}
+
+/**
+ * List keys with a prefix（带 60s 内存缓存，减少 KV list() 调用）
  */
 export async function kvList(env, prefix, limit = 100) {
+  const cacheKey = getListCacheKey(prefix, limit);
+  const cached = listCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < 60_000) {
+    return cached.data;
+  }
   const result = await env.SKYXING_KV.list({ prefix, limit });
+  listCache.set(cacheKey, { data: result.keys, ts: Date.now() });
   return result.keys;
+}
+
+/**
+ * 清除指定前缀的 list 缓存（在写入操作后调用）
+ */
+export function invalidateListCache(prefix) {
+  for (const key of listCache.keys()) {
+    if (key.startsWith(`kvlist:${prefix}`)) {
+      listCache.delete(key);
+    }
+  }
 }
 
 /**
