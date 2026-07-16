@@ -144,10 +144,13 @@ admin.delete('/users/:id', adminRequired, async (c) => {
 
 /**
  * GET /server/api/admin/articles
- * List all articles including drafts
+ * List all articles including drafts, with sorting support
+ * Query params: sortBy=createdAt|views|weight, sortOrder=asc|desc
  */
 admin.get('/articles', adminRequired, async (c) => {
   const env = c.env;
+  const sortBy = c.req.query('sortBy') || 'createdAt';
+  const sortOrder = c.req.query('sortOrder') || 'desc';
   const articleKeys = await kvList(env, PREFIX.ARTICLES, 1000);
   const articles = [];
 
@@ -162,8 +165,35 @@ admin.get('/articles', adminRequired, async (c) => {
     }
   }
 
-  articles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return c.json({ articles, total: articles.length });
+  articles.sort((a, b) => {
+    let va, vb;
+    if (sortBy === 'views') { va = a.views || 0; vb = b.views || 0; }
+    else if (sortBy === 'weight') { va = a.weight || 0; vb = b.weight || 0; }
+    else { va = new Date(a.createdAt).getTime(); vb = new Date(b.createdAt).getTime(); }
+    return sortOrder === 'asc' ? va - vb : vb - va;
+  });
+
+  return c.json({ articles, total: articles.length, sortBy, sortOrder });
+});
+
+/**
+ * PUT /server/api/admin/articles/:id/weight
+ * Update article weight for custom ordering
+ */
+admin.put('/articles/:id/weight', adminRequired, async (c) => {
+  try {
+    const env = c.env;
+    const id = c.req.param('id');
+    const { weight } = await c.req.json();
+    const article = await kvGet(env, PREFIX.ARTICLES + id);
+    if (!article) return c.json({ error: 'Article not found' }, 404);
+    article.weight = typeof weight === 'number' ? weight : 0;
+    article.updatedAt = new Date().toISOString();
+    await kvPut(env, PREFIX.ARTICLES + id, article);
+    return c.json({ message: 'Weight updated', article });
+  } catch (e) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
 });
 
 export default admin;

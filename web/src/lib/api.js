@@ -171,8 +171,15 @@ class ApiClient {
     });
   }
 
-  async getAdminArticles() {
-    return this.request('/admin/articles');
+  async getAdminArticles(sortBy = 'createdAt', sortOrder = 'desc') {
+    return this.request(`/admin/articles?sortBy=${sortBy}&sortOrder=${sortOrder}`);
+  }
+
+  async updateArticleWeight(id, weight) {
+    return this.request(`/admin/articles/${id}/weight`, {
+      method: 'PUT',
+      body: JSON.stringify({ weight }),
+    });
   }
 
   // Messages (private messaging)
