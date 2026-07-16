@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -111,22 +111,29 @@ export default function ArticlePage() {
     });
   };
 
-  // 拦截文章内链接点击（必须在早期 return 之前，保证 hooks 数量一致）
+  const LINK_BASE = 'https://skyxing.dpdns.org';
+
+  // 拦截文章内链接点击（必须在早期 return 之前）
   useEffect(() => {
-    const el = document.getElementById('article-content');
-    if (!el) return;
+    if (!article) return;
     const handler = (e) => {
-      const a = e.target.closest('a');
+      const a = e.target.closest && e.target.closest('a');
       if (!a) return;
       const href = a.getAttribute('href');
-      if (href && href.startsWith('/link?')) {
+      if (!href) return;
+      if (href.startsWith(`${LINK_BASE}/link?url=`)) {
+        e.preventDefault();
+        navigate(`/link?${href.substring(`${LINK_BASE}/link?`.length)}`);
+        return;
+      }
+      if (href.startsWith('/link?url=')) {
         e.preventDefault();
         navigate(href);
       }
     };
-    el.addEventListener('click', handler);
-    return () => el.removeEventListener('click', handler);
-  }, [navigate]);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [navigate, article]);
 
   if (loading) {
     return (
@@ -226,7 +233,6 @@ export default function ArticlePage() {
 
       {/* Article content */}
       <div
-        id="article-content"
         className="article-content prose max-w-none mb-12"
         dangerouslySetInnerHTML={{ __html: sanitizeHTML(prepareArticleContent(article.content)) }}
       />

@@ -73,11 +73,13 @@ function mdToHtml(md) {
   return html;
 }
 
+const LINK_BASE_URL = 'https://skyxing.dpdns.org';
+
 function rewriteLinks(html) {
   if (!html) return '';
   return html.replace(
     /<a\s+([^>]*?)href="(https?:\/\/[^"]+)"([^>]*)>/gi,
-    (_, b, u, a) => `<a ${b}href="/link?url=${encodeURIComponent(u)}"${a}>`
+    (_, b, u, a) => `<a ${b}href="${LINK_BASE_URL}/link?url=${encodeURIComponent(u)}"${a}>`
   );
 }
 
