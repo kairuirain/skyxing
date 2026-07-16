@@ -23,20 +23,38 @@ async function getConfig(env) {
 }
 
 function parseVersion(v) {
-  if (!v) return [0];
-  const cleaned = String(v).trim().replace(/^v/i, '').split(/[-+]/)[0];
-  return cleaned.split('.').map((n) => parseInt(n, 10) || 0);
+  if (!v) return { nums: [0], pre: [] };
+  const cleaned = String(v).trim().replace(/^v/i, '');
+  const parts = cleaned.split(/[-+]/);
+  const nums = parts[0].split('.').map((n) => parseInt(n, 10) || 0);
+  const pre = parts[1] ? parts[1].split('.') : [];
+  return { nums, pre };
 }
 
 function compareVersion(a, b) {
   const pa = parseVersion(a);
   const pb = parseVersion(b);
-  const len = Math.max(pa.length, pb.length);
+  // 比较主版本号数字部分
+  const len = Math.max(pa.nums.length, pb.nums.length);
   for (let i = 0; i < len; i++) {
-    const x = pa[i] || 0;
-    const y = pb[i] || 0;
+    const x = pa.nums[i] || 0;
+    const y = pb.nums[i] || 0;
     if (x > y) return 1;
     if (x < y) return -1;
+  }
+  // 数字部分相等时比较 prerelease
+  // semver 规则：正式版 > 预发布版（无 prerelease > 有 prerelease）
+  if (pa.pre.length === 0 && pb.pre.length > 0) return 1;
+  if (pa.pre.length > 0 && pb.pre.length === 0) return -1;
+  const plen = Math.max(pa.pre.length, pb.pre.length);
+  for (let i = 0; i < plen; i++) {
+    const x = pa.pre[i] || '';
+    const y = pb.pre[i] || '';
+    if (x === y) continue;
+    const xn = parseInt(x, 10);
+    const yn = parseInt(y, 10);
+    if (!isNaN(xn) && !isNaN(yn)) return xn > yn ? 1 : -1;
+    return x > y ? 1 : -1;
   }
   return 0;
 }
