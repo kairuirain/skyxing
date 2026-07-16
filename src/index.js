@@ -44,6 +44,6 @@ api.route('/state', stateRoutes);
 app.route('/server/api', api);
 
 // SPA fallback — 所有非 API 路径返回 index.html（硬编码构建时的最新内容）
-app.get('/*', (c) => c.html('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /><title>SkyXing</title><link rel="icon" type="image/svg+xml" href="/favicon.svg" /><meta name="description" content="SkyXing - 自由创作，分享你的想法" /><script type="module" crossorigin src="/assets/index-d_UCJ-J3.js"></script><link rel="stylesheet" crossorigin href="/assets/index-Cw_pfPot.css"></head><body class="bg-gray-50 text-gray-900"><div id="root"></div></body></html>'));
+app.get('/*', (c) => c.html('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /><title>SkyXing</title><link rel="icon" type="image/svg+xml" href="/favicon.svg" /><meta name="description" content="SkyXing - 自由创作，分享你的想法" /><script type="module" crossorigin src="/assets/index-6XeiY6-G.js"></script><link rel="stylesheet" crossorigin href="/assets/index-Cw_pfPot.css"></head><body class="bg-gray-50 text-gray-900"><div id="root"></div></body></html>'));
 
 export default app;
