@@ -1,11 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ExternalLink, ArrowLeft, ShieldAlert } from 'lucide-react';
+
+const SITE_HOSTNAMES = new Set(['skyxing.dpdns.org', 'www.skyxing.dpdns.org']);
+
+function isSameSiteLink(url) {
+  try {
+    const u = new URL(url);
+    return SITE_HOSTNAMES.has(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 export default function LinkRedirect() {
   const [searchParams] = useSearchParams();
   const targetUrl = searchParams.get('url') || '';
   const [confirmed, setConfirmed] = useState(false);
+
+  // 如果是同站链接，直接跳转，不显示安全提示页
+  useEffect(() => {
+    if (targetUrl) {
+      const decodedUrl = decodeURIComponent(targetUrl);
+      if (isSameSiteLink(decodedUrl)) {
+        window.location.href = decodedUrl;
+      }
+    }
+  }, [targetUrl]);
 
   if (!targetUrl) {
     return (
@@ -20,6 +41,11 @@ export default function LinkRedirect() {
   const hostname = (() => {
     try { return new URL(decodedUrl).hostname; } catch { return '未知域名'; }
   })();
+
+  // 如果属于同站链接，不渲染安全提示（会由 useEffect 自动跳转）
+  if (isSameSiteLink(decodedUrl)) {
+    return null;
+  }
 
   const handleConfirm = () => {
     setConfirmed(true);
