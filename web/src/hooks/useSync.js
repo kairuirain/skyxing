@@ -24,7 +24,7 @@ export default function useSync(onRefresh, options = {}) {
 
       if (lastVersion.current > 0 && newVersion !== lastVersion.current) {
         // 版本号变化，触发刷新
-        onRefresh();
+        try { onRefresh(); } catch (e) { console.error('[useSync] onRefresh error:', e); }
       }
       lastVersion.current = newVersion;
     } catch {
