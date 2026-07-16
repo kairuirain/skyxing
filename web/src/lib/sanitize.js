@@ -82,6 +82,9 @@ export function sanitizeHTML(html) {
 
   let result = '';
   let pos = 0;
+  // 标签栈：跟踪 <pre> 和 <code> 等不需要转义内容的标签
+  const noEscapeStack = [];
+  const NO_ESCAPE_TAGS = new Set(['pre', 'code', 'script', 'style']);
   const tagRegex = /<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>|<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>/g;
   let match;
 
@@ -90,7 +93,9 @@ export function sanitizeHTML(html) {
     const tagName = match[1] ? match[1].toLowerCase() : null;
 
     if (pos < match.index) {
-      result += escapeHTML(html.slice(pos, match.index));
+      const text = html.slice(pos, match.index);
+      // 在 noEscape 栈内有内容时，不转义文本（保留代码块内的实体）
+      result += noEscapeStack.length > 0 ? text : escapeHTML(text);
     }
 
     if (!tagName) { pos = match.index + fullMatch.length; continue; }
@@ -99,8 +104,16 @@ export function sanitizeHTML(html) {
     const attrStr = match[2] || '';
 
     if (isClosing) {
+      // 弹出标签栈
+      if (noEscapeStack.length > 0 && noEscapeStack[noEscapeStack.length - 1] === tagName) {
+        noEscapeStack.pop();
+      }
       if (ALLOWED_TAGS.has(tagName)) result += `</${tagName}>`;
     } else {
+      // 进入不需要转义的标签时入栈
+      if (NO_ESCAPE_TAGS.has(tagName)) {
+        noEscapeStack.push(tagName);
+      }
       if (!ALLOWED_TAGS.has(tagName)) {
         result += escapeHTML(fullMatch);
         pos = match.index + fullMatch.length;
@@ -135,7 +148,10 @@ export function sanitizeHTML(html) {
     pos = match.index + fullMatch.length;
   }
 
-  if (pos < html.length) result += escapeHTML(html.slice(pos));
+  if (pos < html.length) {
+    const text = html.slice(pos);
+    result += noEscapeStack.length > 0 ? text : escapeHTML(text);
+  }
   return result;
 }
 

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { Save, X } from 'lucide-react';
+import { Save, X, Wand2 } from 'lucide-react';
+import { standardizeContent } from '../lib/formatter.js';
 
 export default function WritePage() {
   const { user } = useAuth();
@@ -42,6 +43,20 @@ export default function WritePage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStandardize = () => {
+    if (!content.trim()) {
+      setError('请先填写内容');
+      return;
+    }
+    try {
+      const standardized = standardizeContent(content);
+      setContent(standardized);
+      setError('');
+    } catch (e) {
+      setError('标准化处理失败: ' + e.message);
     }
   };
 
@@ -97,7 +112,7 @@ export default function WritePage() {
           />
         </div>
 
-        <div>
+        <div className="relative">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -106,6 +121,15 @@ export default function WritePage() {
             placeholder="支持 Markdown 语法 + 内嵌 HTML..."
             required
           />
+          <button
+            type="button"
+            onClick={handleStandardize}
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 transition-colors shadow-sm"
+            title="自动格式化文章为 SkyXing 标准格式"
+          >
+            <Wand2 size={14} />
+            文章标准化
+          </button>
         </div>
 
         <div className="text-sm text-gray-500 space-y-1">
