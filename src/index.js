@@ -12,6 +12,12 @@ import stateRoutes from './routes/state.js';
 
 const app = new Hono();
 
+// 全局错误处理：返回 JSON 而非默认的纯文本 "Internal Server Error"
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  return c.json({ error: 'Internal Server Error', detail: err.message }, 500);
+});
+
 app.use('*', cors);
 
 const api = new Hono();
