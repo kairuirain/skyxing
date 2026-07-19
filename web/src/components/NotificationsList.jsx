@@ -1,6 +1,8 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Bell, MessageSquare, UserPlus } from 'lucide-react';
 import Loading from './Loading';
+import { prepareArticleContent } from '../lib/markdown.js';
+import sanitizeHTML from '../lib/sanitize.js';
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -32,6 +34,7 @@ export default function NotificationsList({ notifications, loading, onMarkRead }
       {notifications.map((n) => {
         const Icon = n.type === 'message' ? MessageSquare : n.type === 'follow' ? UserPlus : Bell;
         const actorName = n.actor?.displayName || n.actor?.username;
+        const html = sanitizeHTML(prepareArticleContent(n.text || ''));
         return (
           <div
             key={n.id}
@@ -49,7 +52,7 @@ export default function NotificationsList({ notifications, loading, onMarkRead }
               <Icon size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-700">
+              <div className="text-sm text-gray-700">
                 {n.actor ? (
                   <Link
                     to={`/user/${n.actor.id}`}
@@ -62,8 +65,11 @@ export default function NotificationsList({ notifications, loading, onMarkRead }
                     {actorName}
                   </Link>
                 ) : null}
-                <span className="ml-1">{n.text}</span>
-              </p>
+                <div
+                  className="article-content prose max-w-none ml-1 mt-1"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              </div>
               <p className="text-xs text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
             </div>
             {!n.read && (

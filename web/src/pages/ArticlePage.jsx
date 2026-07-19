@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTransition } from '../context/TransitionContext';
 import api from '../lib/api';
 import Loading from '../components/Loading';
+import Avatar from '../components/Avatar';
 import { Calendar, Eye, Tag, User, Send, Trash2, Edit3, Pin, PinOff } from 'lucide-react';
 import { sanitizeHTML } from '../lib/sanitize.js';
 import { prepareArticleContent } from '../lib/markdown.js';

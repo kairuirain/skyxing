@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { hashPassword } from '../utils/auth.js';
 import { kvGet, kvPut, kvDelete, kvList, PREFIX } from '../utils/kv.js';
 import { adminRequired, officialRequired, canManage, ROLE_RANK } from '../middleware/rbac.js';
+import { createNotification } from '../utils/notifications.js';
 
 const admin = new Hono();
 
@@ -149,6 +150,27 @@ admin.put('/articles/:id/weight', adminRequired, async (c) => {
     article.updatedAt = new Date().toISOString();
     await kvPut(env, PREFIX.ARTICLES + id, article);
     return c.json({ message: 'Weight updated', article });
+  } catch (e) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+});
+
+// ─── 群发系统通知（支持 Markdown） ──────────────────────────────────
+admin.post('/notify', adminRequired, async (c) => {
+  const env = c.env;
+  try {
+    const { title, content, link } = await c.req.json();
+    if (!content || !String(content).trim()) return c.json({ error: '通知内容不能为空' }, 400);
+    const text = (title ? `**${title}**\n\n` : '') + String(content);
+    const userKeys = await kvList(env, PREFIX.USERS, 1000);
+    let count = 0;
+    for (const key of userKeys) {
+      const u = await kvGet(env, key.name);
+      if (!u) continue;
+      await createNotification(env, { userId: u.id, type: 'system', actor: null, text, link: link || null });
+      count++;
+    }
+    return c.json({ message: `已向 ${count} 位用户发送系统通知`, count });
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);
   }

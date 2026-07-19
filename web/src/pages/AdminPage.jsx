@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import Loading from '../components/Loading';
-import { Users, FileText, MessageSquare, Eye, Trash2, Shield } from 'lucide-react';
+import { prepareArticleContent } from '../lib/markdown.js';
+import sanitizeHTML from '../lib/sanitize.js';
+import { Users, FileText, MessageSquare, Eye, Trash2, Shield, Send } from 'lucide-react';
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -13,6 +15,10 @@ export default function AdminPage() {
   const [articles, setArticles] = useState([]);
   const [tab, setTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [notify, setNotify] = useState({ title: '', content: '', link: '' });
+  const [notifyLoading, setNotifyLoading] = useState(false);
+  const [notifyMsg, setNotifyMsg] = useState('');
+  const [notifyErr, setNotifyErr] = useState('');
 
   useEffect(() => {
     if (!user || !['admin', 'official'].includes(user.role)) {
@@ -68,6 +74,21 @@ export default function AdminPage() {
     }
   };
 
+  const handlePublishNotify = async (e) => {
+    e.preventDefault();
+    if (!notify.content.trim()) { setNotifyErr('通知内容不能为空'); return; }
+    setNotifyLoading(true); setNotifyErr(''); setNotifyMsg('');
+    try {
+      const data = await api.publishNotification(notify.title.trim(), notify.content, notify.link.trim());
+      setNotifyMsg(data.message || '发布成功');
+      setNotify({ title: '', content: '', link: '' });
+    } catch (err) {
+      setNotifyErr(err.message || '发布失败');
+    } finally {
+      setNotifyLoading(false);
+    }
+  };
+
   if (loading) return <Loading />;
 
   const roleLabel = (role) => {
@@ -90,7 +111,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg inline-flex">
-        {['overview', 'users', 'articles'].map(t => (
+        {['overview', 'users', 'articles', 'notify'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -101,6 +122,7 @@ export default function AdminPage() {
             {t === 'overview' && '概览'}
             {t === 'users' && '用户管理'}
             {t === 'articles' && '文章管理'}
+            {t === 'notify' && '发布通知'}
           </button>
         ))}
       </div>
@@ -235,6 +257,60 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {tab === 'notify' && (
+        <div className="card p-6 max-w-2xl">
+          <h3 className="font-semibold text-gray-900 mb-1">发布系统通知</h3>
+          <p className="text-sm text-gray-500 mb-4">内容支持 Markdown，将推送给全站所有用户。</p>
+          <form onSubmit={handlePublishNotify} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">标题（可选）</label>
+              <input
+                type="text"
+                value={notify.title}
+                onChange={(e) => setNotify({ ...notify, title: e.target.value })}
+                className="input"
+                placeholder="如：系统维护通知"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">内容（支持 Markdown）</label>
+              <textarea
+                value={notify.content}
+                onChange={(e) => setNotify({ ...notify, content: e.target.value })}
+                rows={8}
+                className="input resize-none font-mono text-sm"
+                placeholder="支持 **加粗**、*斜体*、列表、标题、[链接](https://...) 等"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">跳转链接（可选）</label>
+              <input
+                type="text"
+                value={notify.link}
+                onChange={(e) => setNotify({ ...notify, link: e.target.value })}
+                className="input"
+                placeholder="如 /article/xxx 或 https://..."
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">预览</p>
+              <div
+                className="article-content prose max-w-none border rounded-lg p-4 bg-gray-50 min-h-[4rem]"
+                dangerouslySetInnerHTML={{ __html: sanitizeHTML(prepareArticleContent(notify.content || '*预览将显示在这里*')) }}
+              />
+            </div>
+
+            {notifyErr && <p className="text-sm text-red-500">{notifyErr}</p>}
+            {notifyMsg && <p className="text-sm text-green-600">{notifyMsg}</p>}
+
+            <button type="submit" disabled={notifyLoading} className="btn-primary inline-flex items-center gap-1.5">
+              <Send size={16} /> {notifyLoading ? '发布中...' : '发布通知'}
+            </button>
+          </form>
         </div>
       )}
     </div>

@@ -154,6 +154,14 @@ class ApiClient {
     return this.request('/admin/stats');
   }
 
+  // 管理员群发系统通知（支持 Markdown）
+  async publishNotification(title, content, link) {
+    return this.request('/admin/notify', {
+      method: 'POST',
+      body: JSON.stringify({ title, content, link }),
+    });
+  }
+
   async getAdminUsers() {
     return this.request('/admin/users');
   }
