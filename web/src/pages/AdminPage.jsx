@@ -8,7 +8,7 @@ import sanitizeHTML from '../lib/sanitize.js';
 import { Users, FileText, MessageSquare, Eye, Trash2, Shield, Send } from 'lucide-react';
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -21,12 +21,13 @@ export default function AdminPage() {
   const [notifyErr, setNotifyErr] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user || !['admin', 'official'].includes(user.role)) {
       navigate('/');
       return;
     }
     loadData();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const loadData = async () => {
     try {
