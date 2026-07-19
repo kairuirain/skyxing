@@ -9,3 +9,4 @@ preview_id = "73f13dd572bc4ee58dc6946933568b9e"
 
 [assets]
 directory = "./public"
+binding = "ASSETS"

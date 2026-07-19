@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { generateToken, verifyToken, hashPassword, verifyPassword } from '../utils/auth.js';
 import { kvGet, kvPut, generateId, PREFIX } from '../utils/kv.js';
+import { createNotification } from '../utils/notifications.js';
 
 const auth = new Hono();
 
@@ -75,6 +76,15 @@ auth.post('/register', async (c) => {
       username: user.username,
       role: user.role,
     }, env);
+
+    // 系统欢迎通知
+    await createNotification(env, {
+      userId: id,
+      type: 'system',
+      actor: null,
+      text: '欢迎加入 SkyXing！开始分享你的想法吧。',
+      link: '/',
+    });
 
     const { passwordHash, ...userWithoutPassword } = user;
 

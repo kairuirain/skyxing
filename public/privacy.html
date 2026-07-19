@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyXing 隐私政策</title>
+  <script>
+    // 与 Web 应用一致：仅在用户显式设置过（theme_set 标记）时信任 theme 值，
+    // 否则跟随系统偏好，并在首屏前应用深色。
+    (function () {
+      try {
+        function gc(n){ var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)')); return m?m[1]:null; }
+        function gls(n){ try { return localStorage.getItem(n); } catch(e){ return null; } }
+        var cookieTheme = gc('theme'); var lsTheme = gls('theme');
+        var mark = gc('theme_set') || gls('theme_set');
+        var stored = cookieTheme || lsTheme;
+        var t;
+        if (stored === 'dark') t = 'dark';
+        else if (stored === 'light' && mark) t = 'light';
+        else t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root { --primary: #2563eb; --primary-dark: #1d4ed8; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+        'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #1f2937; line-height: 1.75; background: #f9fafb;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 768px; margin: 0 auto; padding: 40px 20px 64px; }
+    header { text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; margin-bottom: 32px; }
+    header h1 { font-size: 28px; font-weight: 800; color: var(--primary); }
+    header .meta { margin-top: 8px; font-size: 13px; color: #6b7280; }
+    h2 { font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 10px; }
+    p { margin: 10px 0; font-size: 15px; color: #374151; }
+    .updated { color: #6b7280; font-size: 13px; }
+    .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 36px;
+      color: var(--primary); text-decoration: none; font-weight: 600; }
+    .back:hover { color: var(--primary-dark); }
+
+    /* ---------- 深色模式（由 <html class="dark"> 触发，主题偏好存于 Cookie） ---------- */
+    html.dark body { background: #111827; color: #e5e7eb; }
+    html.dark header { border-bottom-color: #374151; }
+    html.dark header .meta { color: #9ca3af; }
+    html.dark h2 { color: #f3f4f6; }
+    html.dark p { color: #cbd5e1; }
+    html.dark .updated { color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>SkyXing 隐私政策</h1>
+      <div class="meta">最后更新日期：2026-07-17</div>
+    </header>
+
+    <h2>一、我们收集的信息</h2>
+    <p>当您注册 SkyXing 账号时，我们会收集您主动提供的信息，包括：用户名、邮箱地址、显示名称以及您设置的密码（以加密哈希形式存储，我们无法获知您的明文密码）。</p>
+    <p>在您使用服务过程中，我们会收集您发布的内容（文章、评论、私信）、上传的头像，以及用于保障账号安全的登录设备与登录时间等日志信息。</p>
+
+    <h2>二、信息的使用</h2>
+    <p>我们仅将收集的信息用于：为您提供账号与内容服务、改进产品体验、保障平台安全与防范滥用行为、以及在必要时向您发送与服务相关的重要通知。</p>
+    <p>我们不会将您的个人信息出售给任何第三方。</p>
+
+    <h2>三、信息的共享与披露</h2>
+    <p>除以下情形外，我们不会向第三方披露您的个人信息：(1) 获得您的明确同意；(2) 依照法律法规或司法/行政机关的强制性要求；(3) 为保护 SkyXing、用户或公众的合法权益所必需。</p>
+
+    <h2>四、信息的存储与安全</h2>
+    <p>您的密码以单向加密哈希形式存储，即使发生数据泄露也无法还原为明文。我们采用业界通行的技术手段保护您的数据安全。</p>
+    <p>您发布的内容由您自行管理：文章可发布为公开状态，或保存为草稿（仅您自己可见），并可在对应文章页随时编辑或删除。</p>
+
+    <h2>五、您的权利</h2>
+    <p>您有权访问、更正或删除您的个人信息，并可以随时注销账号。注销后，我们将删除您的账号及相关个人数据（法律法规要求保留的除外）。</p>
+    <p>如需行使上述权利或注销账号，请通过应用内「设置 - 账号管理」操作，或通过邮箱 support@skyxing.app 联系我们。</p>
+
+    <h2>六、未成年人保护</h2>
+    <p>SkyXing 主要面向成年用户。若您未满 18 周岁，请在监护人陪同下使用本服务。我们不会刻意收集未成年人的个人信息。</p>
+
+    <h2>七、政策的变更</h2>
+    <p>我们可能会不时更新本隐私政策。重大变更时，我们会通过站内公告等方式通知您。您继续使用服务即视为接受更新后的政策。</p>
+
+    <a class="back" href="javascript:window.close && window.close();">&larr; 返回</a>
+  </div>
+</body>
+</html>

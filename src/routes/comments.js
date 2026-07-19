@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { kvGet, kvPut, kvDelete, kvList, kvGetMany, generateId, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
+import { createNotification, getActorSnapshot } from '../utils/notifications.js';
 
 const comments = new Hono();
 
@@ -119,6 +120,18 @@ comments.post('/', authRequired, async (c) => {
     const idx = (await kvGet(env, idxKey)) || [];
     idx.push(id);
     await kvPut(env, idxKey, idx);
+
+    // 通知文章作者（评论者非作者本人时）
+    if (article.authorId && article.authorId !== user.userId) {
+      const actor = await getActorSnapshot(env, user.userId);
+      await createNotification(env, {
+        userId: article.authorId,
+        type: 'comment',
+        actor,
+        text: `评论了你的文章《${article.title}》`,
+        link: `/article/${article.id}`,
+      });
+    }
 
     return c.json({ message: 'Comment created', comment }, 201);
   } catch (e) {

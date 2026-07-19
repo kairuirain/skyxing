@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { kvGet, kvPut, kvDelete, kvList, invalidateListCache, generateId, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
+import { createNotification, getActorSnapshot } from '../utils/notifications.js';
 
 const messages = new Hono();
 
@@ -278,6 +279,16 @@ messages.post('/conversations/:convId', authRequired, async (c) => {
 
     const unread = (await kvGet(env, PREFIX.MESSAGES + 'unread:' + convId + ':' + toId)) || 0;
     await kvPut(env, PREFIX.MESSAGES + 'unread:' + convId + ':' + toId, unread + 1);
+
+    // 通知接收方
+    const actor = await getActorSnapshot(env, user.userId);
+    await createNotification(env, {
+      userId: toId,
+      type: 'message',
+      actor,
+      text: '给你发送了一条新私信',
+      link: `/messages/${convId}`,
+    });
 
     return c.json({ message: msg }, 201);
   } catch (e) {

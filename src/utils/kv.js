@@ -14,6 +14,8 @@ const PREFIX = {
   COUNTERS: 'counter:',
   MESSAGES: 'msg:',
   UPDATES: 'update:',
+  NOTIFICATIONS: 'notif:',
+  NOTIFICATION_INDEX: 'notif:idx:',
 };
 
 /**
