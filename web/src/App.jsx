@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import SlideOutlet from './components/SlideOutlet';
 import HomePage from './pages/HomePage';
 import BlogPage from './pages/BlogPage';
 import LoginPage from './pages/LoginPage';
@@ -21,6 +22,7 @@ import NotFoundPage from './pages/NotFoundPage';
 export default function App() {
   return (
     <Routes>
+      {/* 主内容框架（含顶部导航栏 + 底栏） */}
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/blog" element={<BlogPage />} />
@@ -32,13 +34,17 @@ export default function App() {
         <Route path="/write" element={<WritePage />} />
         <Route path="/edit/:id" element={<EditPage />} />
         <Route path="/user/:id" element={<UserPage />} />
-      <Route path="/messages" element={<MessagesPage />} />
-      <Route path="/messages/:convId" element={<ConversationPage />} />
-      <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:convId" element={<ConversationPage />} />
         <Route path="/link" element={<LinkRedirect />} />
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+
+      {/* 二级菜单（全屏滑入，覆盖导航栏） */}
+      <Route element={<SlideOutlet />}>
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>
   );

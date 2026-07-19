@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import Loading from '../components/Loading';
-import { Calendar, Edit3, FileText } from 'lucide-react';
+import Avatar from '../components/Avatar';
+import { fileToAvatarDataUrl } from '../lib/avatar';
+import { Calendar, Edit3, FileText, ImagePlus } from 'lucide-react';
 
 export default function UserPage() {
   const { id } = useParams();
@@ -12,7 +14,8 @@ export default function UserPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ displayName: '', bio: '' });
+  const [form, setForm] = useState({ displayName: '', bio: '', avatar: '' });
+  const [avatarError, setAvatarError] = useState('');
 
   const isOwnProfile = currentUser?.id === id;
 
@@ -25,11 +28,24 @@ export default function UserPage() {
     try {
       const data = await api.getUser(id);
       setProfile(data.user);
-      setForm({ displayName: data.user.displayName || '', bio: data.user.bio || '' });
+      setForm({ displayName: data.user.displayName || '', bio: data.user.bio || '', avatar: data.user.avatar || '' });
     } catch (e) {
       console.error('Failed to load profile:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { setAvatarError('图片过大，请选择 3MB 以内'); return; }
+    setAvatarError('');
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      setForm((f) => ({ ...f, avatar: dataUrl }));
+    } catch (err) {
+      setAvatarError(err.message || '图片处理失败');
     }
   };
 
@@ -77,9 +93,7 @@ export default function UserPage() {
       {/* Profile header */}
       <div className="card p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-2xl flex-shrink-0">
-            {profile.displayName?.[0] || '?'}
-          </div>
+          <Avatar src={profile.avatar} name={profile.displayName} className="w-20 h-20 rounded-full text-2xl" />
           <div className="flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-bold text-gray-900">{profile.displayName}</h1>
             <p className="text-gray-500 text-sm">@{profile.username}</p>
@@ -107,6 +121,19 @@ export default function UserPage() {
         {/* Edit form */}
         {isOwnProfile && editing && (
           <form onSubmit={handleUpdate} className="mt-6 pt-6 border-t border-gray-100 space-y-3">
+            <div className="flex items-center gap-4">
+              <Avatar src={form.avatar} name={form.displayName} className="w-16 h-16 rounded-2xl text-2xl" initialClass="bg-primary-600 text-white" />
+              <div>
+                <label className="btn-outline btn-sm inline-flex items-center gap-1.5 cursor-pointer">
+                  <ImagePlus size={14} /> 上传头像
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
+                </label>
+                {form.avatar && (
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, avatar: '' }))} className="ml-3 text-sm text-red-500 hover:underline">移除</button>
+                )}
+                {avatarError && <p className="text-xs text-red-500 mt-1">{avatarError}</p>}
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">显示名称</label>
               <input

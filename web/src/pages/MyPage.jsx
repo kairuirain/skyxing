@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTransition } from '../context/TransitionContext';
 import api from '../lib/api';
+import Avatar from '../components/Avatar';
 import {
   User as UserIcon, FileText, PenSquare, Settings, LogOut,
   Shield, Bell, MessageSquare, Bookmark, Heart,
@@ -48,9 +49,7 @@ export default function MyPage() {
       {/* Profile header */}
       <div className="card p-6 mb-6 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/30 dark:to-gray-800">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary-600 text-white text-2xl font-bold flex items-center justify-center">
-            {(display.displayName || display.username || '?').charAt(0).toUpperCase()}
-          </div>
+          <Avatar src={display.avatar} name={display.displayName || display.username} className="w-16 h-16 rounded-2xl text-2xl" initialClass="bg-primary-600 text-white" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-gray-900 truncate">
               {display.displayName || display.username}
@@ -86,7 +85,7 @@ export default function MyPage() {
             <Shield size={18} className="text-primary-600" />
             <span className="font-semibold text-gray-900">管理后台</span>
           </div>
-          <Link to="/admin" className="btn-outline btn-sm">进入</Link>
+          <button onClick={() => navigate('/admin')} className="btn-outline btn-sm">进入</button>
         </div>
       )}
 
@@ -123,6 +122,7 @@ export default function MyPage() {
 }
 
 function ActionCard({ to, icon: Icon, title, desc, comingSoon }) {
+  const navigate = useNavigate();
   const { launch } = useTransition();
   if (comingSoon) {
     return (
@@ -133,9 +133,12 @@ function ActionCard({ to, icon: Icon, title, desc, comingSoon }) {
       </div>
     );
   }
+  // 二级菜单（/settings /notifications /admin）走 SlideOutlet，直接 navigate
+  const SLIDE_ROUTES = ['/settings', '/notifications', '/admin'];
+  const isSlide = SLIDE_ROUTES.some(p => to.startsWith(p));
   return (
     <button
-      onClick={(e) => launch(e, to)}
+      onClick={(e) => isSlide ? navigate(to) : launch(e, to)}
       className="card p-4 hover:shadow-md transition-shadow block text-left w-full"
     >
       <Icon size={20} className="text-primary-600 mb-2" />

@@ -35,6 +35,7 @@ export default {
       animation: {
         'page-in-slide': 'pageInSlide 0.34s cubic-bezier(0.22, 1, 0.36, 1)',
         'page-in-scale': 'pageInScale 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+        'slide-in-right': 'slideInRightFull 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
     },
   },

@@ -125,9 +125,24 @@ function buildDownload(asset, config, useProxy) {
   };
 }
 
+const GENERIC_DOWNLOAD = 'https://github.com/kairuirain/skyxing-app/releases/latest';
+const GENERIC_NOTES = '您的版本太低，无法自动更新，请点击按钮自行下载';
+
 async function buildLatestPayload(c, env, config, platform, channel, forceRefresh = false) {
   const platConf = config.platforms[platform];
-  if (!platConf) return { error: `Unknown platform: ${platform}`, status: 400 };
+  if (!platConf) {
+    // 未知平台 / 未传平台参数 → 返回通用下载链接与提示
+    return {
+      payload: {
+        platform, channel, version: '0.0.0', tag: '', name: 'SkyXing',
+        notes: GENERIC_NOTES, prerelease: false, publishedAt: null,
+        htmlUrl: GENERIC_DOWNLOAD, repo: 'kairuirain/skyxing-app',
+        download: { url: GENERIC_DOWNLOAD, name: '', size: 0 },
+        proxyApplied: false,
+      },
+      genericFallback: true,
+    };
+  }
   const releases = await fetchReleases(env, platConf.repo, config.cacheTtl, forceRefresh);
   const release = pickRelease(releases, channel);
   if (!release) return { error: 'No release found', status: 404 };
@@ -168,6 +183,7 @@ updates.get('/latest', async (c) => {
     const forceRefresh = c.req.query('nocache') === 'true';
     const result = await buildLatestPayload(c, c.env, config, platform, channel, forceRefresh);
     if (result.error) return c.json({ error: result.error }, result.status);
+    if (result.genericFallback) return c.json({ ...result.payload, protocolVersion: 3, notices: [] });
     const notices = await getActiveNotices(c.env, platform, current);
     return c.json({ ...result.payload, protocolVersion: 3, notices });
   } catch (e) {
@@ -191,6 +207,11 @@ updates.get('/check', async (c) => {
     const forceRefresh = c.req.query('nocache') === 'true';
     const result = await buildLatestPayload(c, c.env, config, platform, channel, forceRefresh);
     if (result.error) return c.json({ error: result.error }, result.status);
+    // 通用回落 → 无条件显示可更新
+    if (result.genericFallback) {
+      const notices = await getActiveNotices(c.env, platform, current);
+      return c.json({ protocolVersion: 3, hasUpdate: true, current, latest: '0.0.0', channel, platform, release: result.payload, notices });
+    }
     const latest = result.payload;
 
     // 检测渠道切换

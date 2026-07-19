@@ -72,15 +72,16 @@ app.get('/*', async (c) => {
     const indexReq = new Request(new URL('/index.html', url.origin), { method: 'GET', redirect: 'follow' });
     const indexRes = await c.env.ASSETS.fetch(indexReq);
     if (indexRes.ok || indexRes.status === 304) {
-      return new Response(indexRes.body, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
+      const headers = new Headers({
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'private, no-store, no-cache, must-revalidate, proxy-revalidate, s-maxage=0, max-age=0',
+        'CDN-Cache-Control': 'no-store',
+        'Cloudflare-CDN-Cache-Control': 'no-store',
+        'Pragma': 'no-cache',
+        'Expires': '-1',
+        'Clear-Site-Data': '"cache"',
       });
+      return new Response(indexRes.body, { status: 200, headers });
     }
   } catch (e) {
     console.error('SPA fallback failed:', e);

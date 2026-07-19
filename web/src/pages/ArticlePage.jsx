@@ -238,9 +238,7 @@ export default function ArticlePage() {
       {article.author && (
         <div className="card p-6 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-lg">
-              {article.author.displayName?.[0] || '?'}
-            </div>
+            <Avatar src={article.author.avatar} name={article.author.displayName} className="w-12 h-12 rounded-full text-lg" />
             <div>
               <Link
                 to={`/user/${article.author.id}`}
@@ -335,9 +333,7 @@ function CommentItem({ comment, replies, currentUser, onReply, onDelete, onPin, 
   return (
     <div className={'border-l-2 pl-4 ' + (comment.pinned ? 'border-primary-300 bg-primary-50/30 -ml-2 pl-6 pr-2 py-2 rounded-r-lg' : 'border-gray-100')}>
       <div className="flex gap-3">
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-sm font-bold flex-shrink-0">
-          {comment.user?.displayName?.[0] || '?'}
-        </div>
+        <Avatar src={comment.user?.avatar} name={comment.user?.displayName} className="w-8 h-8 rounded-full text-sm" initialClass="bg-gray-200 text-gray-600" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-sm text-gray-900">
