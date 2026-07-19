@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SkyXing 服务条款</title>
   <script>
-    // 与 Web 应用一致：仅在用户显式设置过（theme_set 标记）时信任 theme 值，
-    // 否则跟随系统偏好，并在首屏前应用深色。
     (function () {
       try {
         function gc(n){ var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)')); return m?m[1]:null; }
@@ -14,7 +12,6 @@
         var cookieTheme = gc('theme'); var lsTheme = gls('theme');
         var mark = gc('theme_set') || gls('theme_set');
         var stored = cookieTheme || lsTheme;
-        var t;
         if (stored === 'dark') t = 'dark';
         else if (stored === 'light' && mark) t = 'light';
         else t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -25,60 +22,49 @@
   <style>
     :root { --primary: #2563eb; --primary-dark: #1d4ed8; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-        'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      color: #1f2937; line-height: 1.75; background: #f9fafb;
-      -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; line-height: 1.75; background: #f9fafb; -webkit-font-smoothing: antialiased; }
     .wrap { max-width: 768px; margin: 0 auto; padding: 40px 20px 64px; }
     header { text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; margin-bottom: 32px; }
     header h1 { font-size: 28px; font-weight: 800; color: var(--primary); }
     header .meta { margin-top: 8px; font-size: 13px; color: #6b7280; }
     h2 { font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 10px; }
     p { margin: 10px 0; font-size: 15px; color: #374151; }
-    .updated { color: #6b7280; font-size: 13px; }
-    .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 36px;
-      color: var(--primary); text-decoration: none; font-weight: 600; }
+    .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 36px; color: var(--primary); text-decoration: none; font-weight: 600; }
     .back:hover { color: var(--primary-dark); }
-
-    /* ---------- 深色模式（由 <html class="dark"> 触发，主题偏好存于 Cookie） ---------- */
     html.dark body { background: #111827; color: #e5e7eb; }
     html.dark header { border-bottom-color: #374151; }
     html.dark header .meta { color: #9ca3af; }
     html.dark h2 { color: #f3f4f6; }
     html.dark p { color: #cbd5e1; }
-    html.dark .updated { color: #9ca3af; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>SkyXing 服务条款</h1>
-      <div class="meta">最后更新日期：2026-07-17</div>
+      <div class="meta">最后更新日期：2026-07-19</div>
     </header>
 
-    <h2>一、账号注册与使用</h2>
-    <p>您承诺所提供的注册信息真实、准确、完整，并妥善保管您的账号与密码。因账号保管不善导致的损失由您自行承担。</p>
-    <p>请使用真实有效的信息注册并妥善保管账号与密码。请勿恶意注册多个账号或冒充他人名义注册。</p>
+    <h2>一、账号的所有权与使用</h2>
+    <p>SkyXing 账号的所有权归 SkyXing 所有，用户获得的是账号的使用权。用户不得将账号赠与、借用、租用、转让或出售，亦不得恶意注册多个账号。</p>
+    <p>用户需对注册信息的真实性负责，并妥善保管账号与密码。因账号保管不善导致的损失由用户自行承担。若用户长期不登录账号，SkyXing 有权对账号进行回收处理。</p>
 
     <h2>二、内容规范</h2>
-    <p>您在使用 SkyXing 时发布的内容（文章、评论、私信等）须遵守法律法规，不得包含以下信息：(1) 危害国家安全、煽动民族仇恨的；(2) 色情、暴力、赌博或教唆犯罪的；(3) 侮辱、诽谤、骚扰他人的；(4) 侵犯他人知识产权或其他合法权益的；(5) 其他违反法律或公序良俗的内容。</p>
-    <p>您对其发布的内容享有相应权利，并授予 SkyXing 为提供和展示服务所必需的使用权。</p>
+    <p>您在使用 SkyXing 时发布的内容（文章、评论、私信等）须遵守法律法规，不得包含危害国家安全、色情、暴力、侵犯他人权益或垃圾广告等信息。我们有权对违规内容进行删除或限制。</p>
+    <p><strong>SkyXing 不对平台上非 SkyXing 官方发布的内容的真实性、完整性或合法性作任何保证，也不承担由此产生的任何责任。</strong>用户之间因内容产生的纠纷，由相关用户自行解决，SkyXing 不因此向任何一方承担责任。</p>
+    <p>您对发布的内容保留相关权利，并授予 SkyXing 为提供和展示服务所必需的使用权。官方账号发布的内容视为 SkyXing 的官方信息。</p>
 
-    <h2>三、禁止行为</h2>
-    <p>您不得利用 SkyXing 从事以下行为：发布垃圾广告或恶意引流、攻击或干扰平台服务、未经授权抓取或批量导出数据、冒充他人或机构。</p>
-    <p>对于违反本条的行为，我们有权采取删除内容、限制功能直至封禁账号等措施。</p>
+    <h2>三、用户行为规范</h2>
+    <p>不得利用平台从事违法活动或干扰平台正常运行。对于违规行为，SkyXing 有权删除内容、限制功能直至封禁账号。</p>
 
     <h2>四、知识产权</h2>
     <p>SkyXing 平台的软件、界面、商标等知识产权归运营方所有。未经许可，不得复制、改编或用于商业用途。</p>
 
     <h2>五、免责声明</h2>
-    <p>本服务按「现状」提供。在法律允许的最大范围内，对于因网络、设备故障或不可抗力导致的服务中断或数据丢失，我们不承担责任。</p>
-    <p>用户之间因内容产生的纠纷，由相关用户自行解决，SkyXing 不因此向任何一方承担责任。</p>
+    <p>本服务按「现状」提供。SkyXing 不对非官方发布的内容承担任何责任。对于因网络、设备故障或不可抗力导致的服务中断或数据丢失，我们不承担责任。</p>
 
-    <h2>六、条款的变更与终止</h2>
-    <p>我们保留在合理范围内修改本条款的权利，修改后将以公告形式通知。若您不同意修改后的条款，可停止使用本服务。</p>
+    <h2>六、条款的变更</h2>
+    <p>我们保留在合理范围内修改本条款的权利，修改后以平台公示版本为准。若您不同意修改后的条款，可停止使用本服务。</p>
     <p>如您严重违反本条款，我们有权随时终止向您提供服务。</p>
 
     <a class="back" href="javascript:window.close && window.close();">&larr; 返回</a>
