@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import AnimatedOutlet from './AnimatedOutlet';
 import {
   Home, FileText, MessageSquare, Download, User as UserIcon,
   PenSquare, LogIn, Settings,
@@ -116,7 +117,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8"><Outlet /></main>
+      <main className="max-w-6xl mx-auto px-4 py-8"><AnimatedOutlet /></main>
 
       <footer className="hidden md:block border-t border-gray-200 bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-gray-500">

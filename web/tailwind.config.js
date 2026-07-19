@@ -22,6 +22,20 @@ export default {
           950: '#172554',
         },
       },
+      keyframes: {
+        pageInSlide: {
+          '0%': { opacity: '0', transform: 'translateY(22px)', filter: 'blur(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)', filter: 'blur(0)' },
+        },
+        pageInScale: {
+          '0%': { opacity: '0', transform: 'scale(0.94)', filter: 'blur(8px)' },
+          '100%': { opacity: '1', transform: 'scale(1)', filter: 'blur(0)' },
+        },
+      },
+      animation: {
+        'page-in-slide': 'pageInSlide 0.34s cubic-bezier(0.22, 1, 0.36, 1)',
+        'page-in-scale': 'pageInScale 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+      },
     },
   },
   plugins: [],
