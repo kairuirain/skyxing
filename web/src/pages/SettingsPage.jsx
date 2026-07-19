@@ -146,8 +146,14 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   请使用 Google Authenticator / Authy 等应用扫描下方二维码，或手动输入密钥。
                 </p>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-200 dark:border-gray-600">
-                  <a href={setupData.uri} className="text-xs text-blue-600 break-all text-center leading-tight">{setupData.uri}</a>
+                <div className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-200 dark:border-gray-600">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.uri)}`}
+                    alt="2FA QR Code"
+                    className="w-48 h-48"
+                    referrerPolicy="no-referrer"
+                  />
+                  <p className="text-[10px] text-gray-400 text-center leading-tight break-all">{setupData.uri}</p>
                 </div>
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                   <code className="text-sm font-mono flex-1 break-all select-all">{setupData.secret}</code>
