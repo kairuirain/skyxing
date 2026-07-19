@@ -11,6 +11,7 @@ import UserPage from './pages/UserPage';
 import AdminPage from './pages/AdminPage';
 import MessagesPage from './pages/MessagesPage';
 import ConversationPage from './pages/ConversationPage';
+import NotificationsPage from './pages/NotificationsPage';
 import SettingsPage from './pages/SettingsPage';
 import DownloadPage from './pages/DownloadPage';
 import MyPage from './pages/MyPage';
@@ -31,8 +32,9 @@ export default function App() {
         <Route path="/write" element={<WritePage />} />
         <Route path="/edit/:id" element={<EditPage />} />
         <Route path="/user/:id" element={<UserPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/messages/:convId" element={<ConversationPage />} />
+      <Route path="/messages" element={<MessagesPage />} />
+      <Route path="/messages/:convId" element={<ConversationPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/link" element={<LinkRedirect />} />

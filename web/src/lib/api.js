@@ -238,6 +238,24 @@ class ApiClient {
     const q = new URLSearchParams({ platform, channel }).toString();
     return this.request(`/updates/latest?${q}`);
   }
+
+  // Notifications (系统通知)
+  async getNotifications() {
+    return this.request('/notifications');
+  }
+
+  async markNotificationRead(id) {
+    return this.request(`/notifications/${id}/read`, { method: 'PUT' });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/read-all', { method: 'PUT' });
+  }
+
+  // Account
+  async deleteAccount() {
+    return this.request('/users/me', { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

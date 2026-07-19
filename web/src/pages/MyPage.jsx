@@ -45,7 +45,7 @@ export default function MyPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Profile header */}
-      <div className="card p-6 mb-6 bg-gradient-to-br from-primary-50 to-white">
+      <div className="card p-6 mb-6 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/30 dark:to-gray-800">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-primary-600 text-white text-2xl font-bold flex items-center justify-center">
             {(display.displayName || display.username || '?').charAt(0).toUpperCase()}
@@ -75,7 +75,7 @@ export default function MyPage() {
         <ActionCard to="/messages" icon={MessageSquare} title="我的私信" desc="查看会话列表" />
         <ActionCard to="/settings" icon={Settings} title="设置" desc="调试 / 更新 / 关于" />
         <ActionCard to="/bookmarks" icon={Bookmark} title="我的收藏" desc="稍后阅读" comingSoon />
-        <ActionCard to="/notifications" icon={Bell} title="消息通知" desc="系统消息" comingSoon />
+        <ActionCard to="/notifications" icon={Bell} title="消息通知" desc="系统消息" />
       </div>
 
       {/* Admin entry */}
@@ -97,6 +97,26 @@ export default function MyPage() {
         <LogOut size={18} />
         退出登录
       </button>
+
+      {/* 条款快捷入口：新标签页打开完整内容 */}
+      <div className="mt-6 text-center text-sm space-x-5">
+        <a
+          href="/terms.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-primary-600"
+        >
+          用户协议
+        </a>
+        <a
+          href="/privacy.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-primary-600"
+        >
+          隐私政策
+        </a>
+      </div>
     </div>
   );
 }

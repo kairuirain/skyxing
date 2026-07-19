@@ -55,25 +55,26 @@ export default function Layout() {
           </Link>
 
           <nav className="flex items-center gap-3">
+            {user && (
+              <Link to="/write" className="hidden sm:flex items-center gap-1.5 btn-primary btn-sm">
+                <PenSquare size={16} />
+                <span>写文章</span>
+              </Link>
+            )}
+            {/* 设置入口：所有用户可见（未登录可切换主题，登录后含账号管理） */}
+            <Link to="/settings" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors" title="设置">
+              <Settings size={20} />
+              {user && <span className="hidden md:inline text-sm">{user.displayName}</span>}
+            </Link>
             {user ? (
-              <>
-                <Link to="/write" className="hidden sm:flex items-center gap-1.5 btn-primary btn-sm">
-                  <PenSquare size={16} />
-                  <span>写文章</span>
-                </Link>
-                <Link to="/messages" className="relative text-gray-600 hover:text-gray-900 transition-colors" title="私信">
-                  <MessageSquare size={20} />
-                  {unread > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                      {unread > 99 ? '99+' : unread}
-                    </span>
-                  )}
-                </Link>
-                <Link to="/settings" className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors" title="设置">
-                  <Settings size={20} />
-                  <span className="hidden md:inline text-sm">{user.displayName}</span>
-                </Link>
-              </>
+              <Link to="/messages" className="relative text-gray-600 hover:text-gray-900 transition-colors" title="私信">
+                <MessageSquare size={20} />
+                {unread > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {unread > 99 ? '99+' : unread}
+                  </span>
+                )}
+              </Link>
             ) : (
               <>
                 <Link to="/login" className="btn-outline btn-sm">
@@ -119,7 +120,12 @@ export default function Layout() {
 
       <footer className="hidden md:block border-t border-gray-200 bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
-          <p>SkyXing &copy; {new Date().getFullYear()} - 自由创作，分享你的想法</p>
+          <p className="space-x-3">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary-600">隐私政策</a>
+            <span>·</span>
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary-600">服务条款</a>
+          </p>
+          <p className="mt-1">SkyXing &copy; {new Date().getFullYear()} - 自由创作，分享你的想法</p>
         </div>
       </footer>
 

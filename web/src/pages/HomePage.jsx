@@ -86,8 +86,8 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero / 平台介绍 */}
-      <section className="text-center mb-10 py-10 bg-gradient-to-br from-primary-50 via-white to-white rounded-2xl border border-primary-100">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold mb-4">
+      <section className="text-center mb-10 py-10 bg-gradient-to-br from-primary-50 via-white to-white rounded-2xl border border-primary-100 dark:from-primary-900/30 dark:via-gray-800 dark:to-gray-800 dark:border-gray-700">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold mb-4 dark:bg-primary-900/40 dark:text-primary-300">
           <Sparkles size={12} /> 跨平台博客平台
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-3">SkyXing</h1>

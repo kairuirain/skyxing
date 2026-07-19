@@ -122,8 +122,8 @@ export default function DownloadPage() {
       </div>
 
       {/* Latest release info */}
-      <div className="card p-6 bg-gradient-to-r from-primary-50 to-white border-primary-100">
-        <div className="flex items-center gap-2 text-xs text-primary-700 font-semibold mb-2">
+      <div className="card p-6 bg-gradient-to-r from-primary-50 to-white border-primary-100 dark:from-primary-900/30 dark:to-gray-800 dark:border-gray-700">
+        <div className="flex items-center gap-2 text-xs text-primary-700 font-semibold mb-2 dark:text-primary-300">
           <Star size={14} /> 最新版本 v{version}
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1">v{version}</h2>
