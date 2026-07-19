@@ -13,7 +13,6 @@ import stateRoutes from './routes/state.js';
 
 const app = new Hono();
 
-// 全局错误处理
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
   return c.json({ error: 'Internal Server Error', detail: err.message }, 500);
@@ -21,9 +20,7 @@ app.onError((err, c) => {
 
 app.use('*', cors);
 
-// 在首个请求到来时引导官方账号（模块级状态，每个 isolate 运行一次）
 let bootstrapped = false;
-
 app.use('*', async (c, next) => {
   if (!bootstrapped) {
     bootstrapped = true;
@@ -33,7 +30,6 @@ app.use('*', async (c, next) => {
 });
 
 const api = new Hono();
-
 api.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
 api.route('/auth', authRoutes);
 api.route('/articles', articlesRoutes);
@@ -62,13 +58,21 @@ api.route('/state', stateRoutes);
 
 app.route('/server/api', api);
 
-// SPA fallback
+// SPA fallback: 非 API 请求 → 尝试 ASSETS 获取文件，失败则返回 index.html
 app.get('/*', async (c) => {
+  const url = new URL(c.req.url);
+
+  // 先尝试从 ASSETS 获取当前路径的文件（JS/CSS/图片等）
+  const fileReq = new Request(url, { method: 'GET', redirect: 'follow', headers: c.req.raw.headers });
+  const fileRes = await c.env.ASSETS.fetch(fileReq).catch(() => null);
+  if (fileRes && fileRes.status !== 404) return fileRes;
+
+  // 没有对应文件 → SPA 回落：用 follow redirect 获取 /index.html
   try {
-    const assetReq = new Request(new URL('/index.html', c.req.url), c.req.raw);
-    const res = await c.env.ASSETS.fetch(assetReq);
-    if (res && res.ok) {
-      return new Response(res.body, {
+    const indexReq = new Request(new URL('/index.html', url.origin), { method: 'GET', redirect: 'follow' });
+    const indexRes = await c.env.ASSETS.fetch(indexReq);
+    if (indexRes.ok || indexRes.status === 304) {
+      return new Response(indexRes.body, {
         status: 200,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
