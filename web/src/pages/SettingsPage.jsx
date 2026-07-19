@@ -38,7 +38,6 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
 
   // 2FA
-  const [totpEnabled, setTotpEnabled] = useState(user?.totpEnabled || false);
   const [setupData, setSetupData] = useState(null);
   const [verifyCode, setVerifyCode] = useState('');
   const [setupLoading, setSetupLoading] = useState(false);
@@ -47,6 +46,9 @@ export default function SettingsPage() {
 
   // 进入页面时强制刷新一次 user，确保 totpEnabled 是最新
   useEffect(() => { refreshUser(); }, []);
+
+  // 实时派生 totpEnabled 状态（跟随 user 对象变化）
+  const totpEnabled = !!user?.totpEnabled;
 
   const handleDeleteAccount = async () => {
     if (!confirm('确定要注销账号吗？此操作不可恢复，你的账号、文章与私信将被删除。')) return;
@@ -76,8 +78,7 @@ export default function SettingsPage() {
     setSetupLoading(true); setSetupError('');
     try {
       await api.verifySetup2FA(setupData.secret, verifyCode);
-      await refreshUser(); // 同步 AuthContext 中的 user
-      setTotpEnabled(true);
+      await refreshUser(); // 同步 AuthContext 中的 user（totpEnabled 自动反映到 UI）
       setSetupData(null);
       setVerifyCode('');
     } catch (err) { setSetupError(err.message); }
@@ -90,7 +91,6 @@ export default function SettingsPage() {
     try {
       await api.disable2FA();
       await refreshUser();
-      setTotpEnabled(false);
     } catch (err) { alert(err.message); }
     finally { setSetupLoading(false); }
   };
