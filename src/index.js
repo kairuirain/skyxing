@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from './middleware/cors.js';
 import { kvGet, PREFIX } from './utils/kv.js';
-import authRoutes from './routes/auth.js';
+import authRoutes, { ensureOfficialAccount } from './routes/auth.js';
 import articlesRoutes from './routes/articles.js';
 import commentsRoutes from './routes/comments.js';
 import usersRoutes from './routes/users.js';
@@ -13,13 +13,24 @@ import stateRoutes from './routes/state.js';
 
 const app = new Hono();
 
-// 全局错误处理：返回 JSON 而非默认的纯文本 "Internal Server Error"
+// 全局错误处理
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
   return c.json({ error: 'Internal Server Error', detail: err.message }, 500);
 });
 
 app.use('*', cors);
+
+// 在首个请求到来时引导官方账号（模块级状态，每个 isolate 运行一次）
+let bootstrapped = false;
+
+app.use('*', async (c, next) => {
+  if (!bootstrapped) {
+    bootstrapped = true;
+    ensureOfficialAccount(c.env).catch((e) => console.error('[Bootstrap] 创建官方账号失败:', e));
+  }
+  await next();
+});
 
 const api = new Hono();
 
@@ -51,8 +62,7 @@ api.route('/state', stateRoutes);
 
 app.route('/server/api', api);
 
-// SPA fallback — 所有非 API、非静态资源路径，返回构建产物中的 index.html
-// （通过 ASSETS 绑定动态读取，避免硬编码资源 hash 导致部署后白屏）
+// SPA fallback
 app.get('/*', async (c) => {
   try {
     const assetReq = new Request(new URL('/index.html', c.req.url), c.req.raw);

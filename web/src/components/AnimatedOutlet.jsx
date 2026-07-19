@@ -1,5 +1,6 @@
 import { useOutlet, useLocation } from 'react-router-dom';
-import { NO_ANIMATION_ROUTES } from '../context/TransitionContext';
+import { useRef, useLayoutEffect } from 'react';
+import { NO_ANIMATION_ROUTES, useTransition } from '../context/TransitionContext';
 
 // 详情 / 表单 / 设置类页面用「放大呈现」（小米式启动），其余用「上下滑动 + 模糊」
 const SCALE_ROUTES = [
@@ -21,10 +22,17 @@ function isNoAnim(pathname, state) {
 export default function AnimatedOutlet() {
   const outlet = useOutlet();
   const location = useLocation();
+  const { registerOutlet } = useTransition();
+  const ref = useRef(null);
+
+  useLayoutEffect(() => {
+    registerOutlet(ref.current);
+  }, [registerOutlet]);
+
   const noAnim = isNoAnim(location.pathname, location.state);
   const anim = noAnim ? '' : getTransition(location.pathname);
   return (
-    <div key={location.pathname} className={anim + ' will-change-transform'}>
+    <div ref={ref} key={location.pathname} className={anim + ' will-change-transform'}>
       {outlet}
     </div>
   );

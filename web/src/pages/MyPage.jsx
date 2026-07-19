@@ -56,9 +56,9 @@ export default function MyPage() {
               {display.displayName || display.username}
             </h1>
             <p className="text-sm text-gray-500">@{display.username}</p>
-            {display.role === 'admin' && (
+            {['admin','official'].includes(display.role) && (
               <span className="inline-flex items-center gap-1 mt-1 text-xs text-primary-700 font-semibold">
-                <Shield size={12} /> 管理员
+                <Shield size={12} /> {display.role === 'official' ? '官方' : '管理员'}
               </span>
             )}
           </div>
@@ -80,7 +80,7 @@ export default function MyPage() {
       </div>
 
       {/* Admin entry */}
-      {display.role === 'admin' && (
+      {['admin','official'].includes(display.role) && (
         <div className="card p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield size={18} className="text-primary-600" />
@@ -107,7 +107,7 @@ export default function MyPage() {
           rel="noopener noreferrer"
           className="text-gray-500 hover:text-primary-600"
         >
-          用户协议
+          服务条款
         </a>
         <a
           href="/privacy.html"

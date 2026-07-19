@@ -71,15 +71,15 @@ export default function AdminPage() {
   if (loading) return <Loading />;
 
   const roleLabel = (role) => {
-    const map = { user: '用户', author: '作者', admin: '管理员' };
+    const map = { user: '用户', admin: '管理员', official: '官方' };
     return map[role] || role;
   };
 
   const roleColor = (role) => {
     const map = {
       user: 'bg-gray-100 text-gray-700',
-      author: 'bg-blue-100 text-blue-700',
       admin: 'bg-purple-100 text-purple-700',
+      official: 'bg-amber-100 text-amber-700',
     };
     return map[role] || '';
   };
@@ -162,11 +162,11 @@ export default function AdminPage() {
                         value={u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         className={`text-xs px-2 py-1 rounded-full ${roleColor(u.role)} border-0 cursor-pointer`}
-                        disabled={u.id === user.id}
+                        disabled={u.id === user.id || user.role !== 'official'}
                       >
                         <option value="user">用户</option>
-                        <option value="author">作者</option>
                         <option value="admin">管理员</option>
+                        <option value="official">官方</option>
                       </select>
                     </td>
                     <td className="p-4 text-sm text-gray-500">

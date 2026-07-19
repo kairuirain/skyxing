@@ -1,170 +1,132 @@
 import { Hono } from 'hono';
 import { hashPassword } from '../utils/auth.js';
 import { kvGet, kvPut, kvDelete, kvList, PREFIX } from '../utils/kv.js';
-import { adminRequired } from '../middleware/rbac.js';
+import { adminRequired, officialRequired, canManage, ROLE_RANK } from '../middleware/rbac.js';
 
 const admin = new Hono();
 
+/** 有效的角色值 */
+const VALID_ROLES = ['user', 'admin', 'official'];
+
 /**
- * GET /server/api/admin/stats
- * Get system statistics
+ * 根据当前管理员角色获取有权限查看的用户列表（KV 扫描、逐条解析）
  */
+async function getUserList(env, role) {
+  const userKeys = await kvList(env, PREFIX.USERS, 1000);
+  const users = [];
+  for (const key of userKeys) {
+    const u = await kvGet(env, key.name);
+    if (!u) continue;
+    // admin 只能看到 user 角色；official 可看到全部
+    if (role === 'admin' && u.role !== 'user') continue;
+    const { passwordHash, ...safe } = u;
+    users.push(safe);
+  }
+  return users;
+}
+
+// ─── 统计 ──────────────────────────────────────────────────────────────
 admin.get('/stats', adminRequired, async (c) => {
   const env = c.env;
-
   const userKeys = await kvList(env, PREFIX.USERS, 1000);
   const articleKeys = await kvList(env, PREFIX.ARTICLES, 1000);
   const commentKeys = await kvList(env, PREFIX.COMMENTS, 1000);
-
-  let totalViews = 0;
-  let publishedArticles = 0;
-  let draftArticles = 0;
-
+  let published = 0, draft = 0, totalViews = 0;
   for (const key of articleKeys) {
-    const article = await kvGet(env, key.name);
-    if (article) {
-      totalViews += article.views || 0;
-      if (article.status === 'published') publishedArticles++;
-      if (article.status === 'draft') draftArticles++;
+    const a = await kvGet(env, key.name);
+    if (a) {
+      totalViews += a.views || 0;
+      if (a.status === 'published') published++;
+      if (a.status === 'draft') draft++;
     }
   }
-
-  return c.json({
-    stats: {
-      totalUsers: userKeys.length,
-      totalArticles: articleKeys.length,
-      publishedArticles,
-      draftArticles,
-      totalComments: commentKeys.length,
-      totalViews,
-    },
-  });
+  return c.json({ stats: { totalUsers: userKeys.length, totalArticles: articleKeys.length, publishedArticles: published, draftArticles: draft, totalComments: commentKeys.length, totalViews } });
 });
 
-/**
- * GET /server/api/admin/users
- * List all users
- */
+// ─── 用户列表 ──────────────────────────────────────────────────────────
 admin.get('/users', adminRequired, async (c) => {
-  const env = c.env;
-  const userKeys = await kvList(env, PREFIX.USERS, 1000);
-  const users = [];
-
-  for (const key of userKeys) {
-    const user = await kvGet(env, key.name);
-    if (user) {
-      const { passwordHash, ...safeUser } = user;
-      users.push(safeUser);
-    }
-  }
-
+  const requester = c.get('user');
+  const users = await getUserList(c.env, requester.role);
   return c.json({ users });
 });
 
-/**
- * PUT /server/api/admin/users/:id/role
- * Change user role
- */
+// ─── 修改角色（仅 official 可操作） ──────────────────────────────────────
 admin.put('/users/:id/role', adminRequired, async (c) => {
   const env = c.env;
-  const id = c.req.param('id');
-
-  const user = await kvGet(env, PREFIX.USERS + id);
-  if (!user) {
-    return c.json({ error: 'User not found' }, 404);
+  const requester = c.get('user');
+  // 仅 official 及以上可修改角色
+  if ((ROLE_RANK[requester.role] ?? 0) < 3) {
+    return c.json({ error: '只有官方账号可以修改角色' }, 403);
   }
-
+  const id = c.req.param('id');
+  const user = await kvGet(env, PREFIX.USERS + id);
+  if (!user) return c.json({ error: 'User not found' }, 404);
   try {
-    const body = await c.req.json();
-    const { role } = body;
-
-    if (!['user', 'author', 'admin'].includes(role)) {
-      return c.json({ error: 'Invalid role. Must be user, author, or admin' }, 400);
-    }
-
+    const { role } = await c.req.json();
+    if (!VALID_ROLES.includes(role)) return c.json({ error: '无效角色。可选：user, admin, official' }, 400);
     user.role = role;
     user.updatedAt = new Date().toISOString();
     await kvPut(env, PREFIX.USERS + id, user);
-
-    const { passwordHash, ...safeUser } = user;
-    return c.json({ message: 'User role updated', user: safeUser });
+    const { passwordHash, ...safe } = user;
+    return c.json({ message: 'User role updated', user: safe });
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);
   }
 });
 
-/**
- * DELETE /server/api/admin/users/:id
- * Delete a user
- */
+// ─── 删除用户 ──────────────────────────────────────────────────────────
 admin.delete('/users/:id', adminRequired, async (c) => {
   const env = c.env;
+  const requester = c.get('user');
   const id = c.req.param('id');
-
   const user = await kvGet(env, PREFIX.USERS + id);
-  if (!user) {
-    return c.json({ error: 'User not found' }, 404);
+  if (!user) return c.json({ error: 'User not found' }, 404);
+
+  // 权限检查：admin 只能删除 user；official 可删除 admin/official（保留至少1个）
+  if (!canManage(requester.role, user.role)) {
+    return c.json({ error: '无权删除该用户' }, 403);
   }
 
-  if (user.role === 'admin') {
-    // Count admins before deleting
-    const allUsers = await kvList(env, PREFIX.USERS, 1000);
-    let adminCount = 0;
-    for (const key of allUsers) {
+  // 保护最后一个 admin / official
+  const allKeys = await kvList(env, PREFIX.USERS, 1000);
+  if (user.role === 'admin' || user.role === 'official') {
+    let count = 0;
+    for (const key of allKeys) {
       const u = await kvGet(env, key.name);
-      if (u && u.role === 'admin') adminCount++;
+      if (u && u.role === user.role) count++;
     }
-    if (adminCount <= 1) {
-      return c.json({ error: 'Cannot delete the last admin' }, 400);
-    }
+    if (count <= 1) return c.json({ error: `不能删除最后一个 ${user.role === 'admin' ? '管理员' : '官方'} 账号` }, 400);
   }
 
-  // Delete user's articles and comments
+  // 删除用户关联的文章和评论
   const articleKeys = await kvList(env, PREFIX.ARTICLES, 1000);
   for (const key of articleKeys) {
-    const article = await kvGet(env, key.name);
-    if (article && article.authorId === id) {
-      await kvDelete(env, key.name);
-    }
+    const a = await kvGet(env, key.name);
+    if (a && a.authorId === id) await kvDelete(env, key.name);
   }
-
   const commentKeys = await kvList(env, PREFIX.COMMENTS, 1000);
   for (const key of commentKeys) {
-    const comment = await kvGet(env, key.name);
-    if (comment && comment.userId === id) {
-      await kvDelete(env, key.name);
-    }
+    const c2 = await kvGet(env, key.name);
+    if (c2 && c2.userId === id) await kvDelete(env, key.name);
   }
-
   await kvDelete(env, PREFIX.USERNAME_INDEX + user.username.toLowerCase());
   await kvDelete(env, PREFIX.USERS + id);
-
   return c.json({ message: 'User deleted' });
 });
 
-/**
- * GET /server/api/admin/articles
- * List all articles including drafts, with sorting support
- * Query params: sortBy=createdAt|views|weight, sortOrder=asc|desc
- */
+// ─── 文章列表（全部含草稿） ──────────────────────────────────────────
 admin.get('/articles', adminRequired, async (c) => {
   const env = c.env;
   const sortBy = c.req.query('sortBy') || 'createdAt';
   const sortOrder = c.req.query('sortOrder') || 'desc';
   const articleKeys = await kvList(env, PREFIX.ARTICLES, 1000);
   const articles = [];
-
   for (const key of articleKeys) {
-    const article = await kvGet(env, key.name);
-    if (article) {
-      const author = await kvGet(env, PREFIX.USERS + article.authorId);
-      articles.push({
-        ...article,
-        author: author ? { id: author.id, username: author.username, displayName: author.displayName } : null,
-      });
-    }
+    const a = await kvGet(env, key.name);
+    if (!a) continue;
+    const author = await kvGet(env, PREFIX.USERS + a.authorId);
+    articles.push({ ...a, author: author ? { id: author.id, username: author.username, displayName: author.displayName } : null });
   }
-
   articles.sort((a, b) => {
     let va, vb;
     if (sortBy === 'views') { va = a.views || 0; vb = b.views || 0; }
@@ -172,14 +134,10 @@ admin.get('/articles', adminRequired, async (c) => {
     else { va = new Date(a.createdAt).getTime(); vb = new Date(b.createdAt).getTime(); }
     return sortOrder === 'asc' ? va - vb : vb - va;
   });
-
   return c.json({ articles, total: articles.length, sortBy, sortOrder });
 });
 
-/**
- * PUT /server/api/admin/articles/:id/weight
- * Update article weight for custom ordering
- */
+// ─── 文章权重 ──────────────────────────────────────────────────────────
 admin.put('/articles/:id/weight', adminRequired, async (c) => {
   try {
     const env = c.env;

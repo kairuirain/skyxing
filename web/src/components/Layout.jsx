@@ -5,7 +5,7 @@ import api from '../lib/api';
 import AnimatedOutlet from './AnimatedOutlet';
 import {
   Home, FileText, MessageSquare, Download, User as UserIcon,
-  PenSquare, LogIn, Settings,
+  PenSquare, LogIn, Settings, RefreshCw,
 } from 'lucide-react';
 
 const TABS = [
@@ -159,6 +159,15 @@ export default function Layout() {
           })}
         </div>
       </nav>
+
+      {/* 右下角刷新按钮（Web / Windows 端） */}
+      <button
+        onClick={() => window.location.reload()}
+        className="fixed bottom-20 right-5 md:bottom-6 md:right-6 z-50 w-12 h-12 rounded-full bg-primary-600 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+        title="刷新页面"
+      >
+        <RefreshCw size={18} />
+      </button>
     </div>
   );
 }

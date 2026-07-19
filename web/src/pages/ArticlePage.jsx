@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTransition } from '../context/TransitionContext';
 import api from '../lib/api';
 import Loading from '../components/Loading';
 import { Calendar, Eye, Tag, User, Send, Trash2, Edit3, Pin, PinOff } from 'lucide-react';
@@ -10,6 +11,7 @@ import { prepareArticleContent } from '../lib/markdown.js';
 export default function ArticlePage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { goBack } = useTransition();
   const navigate = useNavigate();
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
@@ -147,7 +149,7 @@ export default function ArticlePage() {
     );
   }
 
-  const isOwner = user && (user.id === article.authorId || user.role === 'admin');
+  const isOwner = user && (user.id === article.authorId || ['admin','official'].includes(user.role));
   const isArticleAuthor = user && user.id === article.authorId;
 
   // Build comment tree
@@ -156,6 +158,12 @@ export default function ArticlePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      <button
+        onClick={goBack}
+        className="mb-4 inline-flex items-center gap-1.5 h-9 px-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors outline-none"
+      >
+        <ArrowLeft size={18} /> 返回
+      </button>
       {/* Article header */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -197,7 +205,7 @@ export default function ArticlePage() {
               <Edit3 size={14} className="mr-1" />
               编辑
             </Link>
-            {user?.role === 'admin' && (
+            {['admin','official'].includes(user?.role) && (
               <button onClick={handlePinArticle} className="btn-outline btn-sm">
                 {article.pinned ? <PinOff size={14} className="mr-1" /> : <Pin size={14} className="mr-1" />}
                 {article.pinned ? '取消置顶' : '置顶'}
@@ -321,7 +329,7 @@ export default function ArticlePage() {
 
 function CommentItem({ comment, replies, currentUser, onReply, onDelete, onPin, isArticleAuthor, formatDate }) {
   const canDelete = currentUser && (
-    currentUser.id === comment.userId || currentUser.role === 'admin'
+    currentUser.id === comment.userId || ['admin','official'].includes(currentUser.role)
   );
 
   return (
