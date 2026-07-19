@@ -44,3 +44,9 @@ install/
 *.dmg
 *.AppImage
 *.deb
+
+# Dev scratch logs
+web/dev.err
+web/dev.out
+web/diag.txt
+web/empty.txt
