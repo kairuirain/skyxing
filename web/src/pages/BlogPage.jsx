@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Calendar, Eye, Tag, User, FileText } from 'lucide-react';
 
 export default function BlogPage() {
@@ -65,15 +66,7 @@ export default function BlogPage() {
 
       {/* Articles */}
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-3" />
-              <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-2/3" />
-            </div>
-          ))}
-        </div>
+        <Loading />
       ) : articles.length === 0 ? (
         <div className="text-center py-20">
           <FileText size={48} className="mx-auto text-gray-200 mb-4" />

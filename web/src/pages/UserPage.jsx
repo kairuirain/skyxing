@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Calendar, Edit3, FileText } from 'lucide-react';
 
 export default function UserPage() {
@@ -60,19 +61,7 @@ export default function UserPage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-3xl mx-auto animate-pulse">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-20 h-20 bg-gray-200 rounded-full" />
-          <div className="space-y-2">
-            <div className="h-6 bg-gray-200 rounded w-32" />
-            <div className="h-4 bg-gray-200 rounded w-48" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
 
   if (!profile) {
     return (

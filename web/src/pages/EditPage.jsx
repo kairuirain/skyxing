@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Save, X } from 'lucide-react';
 
 export default function EditPage() {
@@ -66,17 +67,7 @@ export default function EditPage() {
     }
   };
 
-  if (fetching) {
-    return (
-      <div className="max-w-4xl mx-auto animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6" />
-        <div className="space-y-4">
-          <div className="h-12 bg-gray-200 rounded" />
-          <div className="h-80 bg-gray-200 rounded" />
-        </div>
-      </div>
-    );
-  }
+  if (fetching) return <Loading />;
 
   return (
     <div className="max-w-4xl mx-auto">

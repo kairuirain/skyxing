@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Send, Trash2, ArrowLeft, RefreshCw, Wifi, WifiOff, Loader, AlertCircle } from 'lucide-react';
 import useRealtime from '../hooks/useRealtime';
 
@@ -75,7 +76,7 @@ export default function ConversationPage() {
 
   const statusLabel = status === 'connecting' ? '连接中...' : status === 'disconnected' ? '已断开' : '已连接';
 
-  if (loading) return <div className="max-w-3xl mx-auto animate-pulse h-40 bg-gray-200 rounded-lg" />;
+  if (loading) return <Loading />;
 
   const peerName = otherUser?.displayName || otherUser?.username || '会话';
 

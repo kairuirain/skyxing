@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Users, FileText, MessageSquare, Eye, Trash2, Shield } from 'lucide-react';
 
 export default function AdminPage() {
@@ -67,18 +68,7 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-1/4" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-24 bg-gray-200 rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
 
   const roleLabel = (role) => {
     const map = { user: '用户', author: '作者', admin: '管理员' };

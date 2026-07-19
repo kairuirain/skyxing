@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { Calendar, Eye, Tag, User, Send, Trash2, Edit3, Pin, PinOff } from 'lucide-react';
 import { sanitizeHTML } from '../lib/sanitize.js';
 import { prepareArticleContent } from '../lib/markdown.js';
@@ -135,19 +136,7 @@ export default function ArticlePage() {
     return () => document.removeEventListener('click', handler);
   }, [navigate, article]);
 
-  if (loading) {
-    return (
-      <div className="max-w-3xl mx-auto animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-3/4 mb-4" />
-        <div className="h-4 bg-gray-200 rounded w-1/2 mb-8" />
-        <div className="space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-2/3" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
 
   if (!article) {
     return (

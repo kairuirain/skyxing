@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTransition } from '../context/TransitionContext';
 import api from '../lib/api';
 import {
   User as UserIcon, FileText, PenSquare, Settings, LogOut,
@@ -122,6 +123,7 @@ export default function MyPage() {
 }
 
 function ActionCard({ to, icon: Icon, title, desc, comingSoon }) {
+  const { launch } = useTransition();
   if (comingSoon) {
     return (
       <div className="card p-4 opacity-60 cursor-not-allowed">
@@ -132,10 +134,13 @@ function ActionCard({ to, icon: Icon, title, desc, comingSoon }) {
     );
   }
   return (
-    <Link to={to} className="card p-4 hover:shadow-md transition-shadow block">
+    <button
+      onClick={(e) => launch(e, to)}
+      className="card p-4 hover:shadow-md transition-shadow block text-left w-full"
+    >
       <Icon size={20} className="text-primary-600 mb-2" />
       <div className="font-semibold text-gray-900 text-sm">{title}</div>
       <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
-    </Link>
+    </button>
   );
 }

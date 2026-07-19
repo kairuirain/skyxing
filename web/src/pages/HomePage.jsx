@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTransition } from '../context/TransitionContext';
+import Loading from '../components/Loading';
 import useSync from '../hooks/useSync';
 import {
   Calendar, Eye, Tag, User, MessageSquare, Bell, ArrowRight,
@@ -10,6 +12,7 @@ import {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { launch } = useTransition();
   const [articles, setArticles] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [tags, setTags] = useState([]);
@@ -96,13 +99,13 @@ export default function HomePage() {
         </p>
         <div className="flex items-center justify-center gap-3 flex-wrap">
           {user ? (
-            <Link to="/write" className="btn-primary">
+            <button onClick={(e) => launch(e, '/write')} className="btn-primary">
               写文章
-            </Link>
+            </button>
           ) : (
-            <Link to="/register" className="btn-primary">
+            <button onClick={(e) => launch(e, '/register')} className="btn-primary">
               立即加入
-            </Link>
+            </button>
           )}
           <Link to="/download" className="btn-outline">
             <Download size={16} className="mr-1.5" /> 下载客户端
@@ -129,15 +132,7 @@ export default function HomePage() {
 
           {/* Articles list */}
           {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-3" />
-                  <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-                  <div className="h-4 bg-gray-200 rounded w-2/3" />
-                </div>
-              ))}
-            </div>
+            <Loading />
           ) : articles.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg">还没有文章，快来写第一篇吧！</p>

@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Bell, MessageSquare, UserPlus } from 'lucide-react';
+import Loading from './Loading';
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -15,15 +16,7 @@ function timeAgo(iso) {
 export default function NotificationsList({ notifications, loading, onMarkRead }) {
   const navigate = useNavigate();
 
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-2">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 bg-gray-200 rounded-lg" />
-        ))}
-      </div>
-    );
-  }
+  if (loading) return <Loading />;
 
   if (!notifications || notifications.length === 0) {
     return (

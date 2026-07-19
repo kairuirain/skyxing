@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import Loading from '../components/Loading';
 import { MessageSquare, Send, Trash2, PenSquare, RefreshCw, Wifi, WifiOff, Loader, Bell } from 'lucide-react';
 import useRealtime from '../hooks/useRealtime';
 import NotificationsList from '../components/NotificationsList';
@@ -57,7 +58,7 @@ export default function MessagesPage() {
   };
 
   if (!user) return <div className="max-w-3xl mx-auto text-center py-12"><p className="text-gray-500">请先 <Link to="/login" className="text-primary-600">登录</Link> 后查看私信</p></div>;
-  if (loading) return <div className="max-w-3xl mx-auto animate-pulse space-y-3">{[0,1,2].map(i => <div key={i} className="h-16 bg-gray-200 rounded-lg"/>)}</div>;
+  if (loading) return <Loading />;
 
   const StatusIcon = () => {
     if (status === 'connecting') return <Loader size={14} className="animate-spin text-amber-500"/>;
