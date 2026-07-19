@@ -1,6 +1,6 @@
 name = "skyxing"
 main = "src/index.js"
-compatibility_date = "2025-07-12"
+compatibility_date = "2026-01-01"
 
 [[kv_namespaces]]
 binding = "SKYXING_KV"
@@ -10,4 +10,4 @@ preview_id = "73f13dd572bc4ee58dc6946933568b9e"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-not_found_handling = "SPA"
+not_found_handling = "none"
