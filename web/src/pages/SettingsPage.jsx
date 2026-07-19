@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -32,7 +32,7 @@ function Row({ label, value }) {
 }
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
@@ -44,6 +44,9 @@ export default function SettingsPage() {
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupError, setSetupError] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // 进入页面时强制刷新一次 user，确保 totpEnabled 是最新
+  useEffect(() => { refreshUser(); }, []);
 
   const handleDeleteAccount = async () => {
     if (!confirm('确定要注销账号吗？此操作不可恢复，你的账号、文章与私信将被删除。')) return;
@@ -73,6 +76,7 @@ export default function SettingsPage() {
     setSetupLoading(true); setSetupError('');
     try {
       await api.verifySetup2FA(setupData.secret, verifyCode);
+      await refreshUser(); // 同步 AuthContext 中的 user
       setTotpEnabled(true);
       setSetupData(null);
       setVerifyCode('');
@@ -85,6 +89,7 @@ export default function SettingsPage() {
     setSetupLoading(true);
     try {
       await api.disable2FA();
+      await refreshUser();
       setTotpEnabled(false);
     } catch (err) { alert(err.message); }
     finally { setSetupLoading(false); }
