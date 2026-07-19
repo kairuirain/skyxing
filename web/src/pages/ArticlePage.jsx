@@ -162,7 +162,7 @@ export default function ArticlePage() {
         onClick={goBack}
         className="mb-4 inline-flex items-center gap-1.5 h-9 px-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors outline-none"
       >
-        <ArrowLeft size={18} /> 返回
+        ← 返回
       </button>
       {/* Article header */}
       <div className="mb-8">

@@ -15,7 +15,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!user || !['admin', 'official'].includes(user.role)) {
       navigate('/');
       return;
     }
