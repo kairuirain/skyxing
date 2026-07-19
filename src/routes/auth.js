@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { generateToken, verifyToken, hashPassword, verifyPassword } from '../utils/auth.js';
 import { kvGet, kvPut, generateId, PREFIX } from '../utils/kv.js';
 import { createNotification } from '../utils/notifications.js';
+import { authRequired } from '../middleware/rbac.js';
 
 const auth = new Hono();
 
@@ -181,6 +182,38 @@ auth.get('/me', async (c) => {
 
   const { passwordHash, ...userWithoutPassword } = user;
   return c.json({ user: userWithoutPassword });
+});
+
+/**
+ * POST /server/api/auth/change-password
+ * 修改密码（需登录）：校验当前密码后更新哈希
+ */
+auth.post('/change-password', authRequired, async (c) => {
+  const user = c.get('user');
+  const env = c.env;
+  try {
+    const { currentPassword, newPassword } = await c.req.json();
+    if (!currentPassword || !newPassword) {
+      return c.json({ error: '当前密码与新密码均为必填' }, 400);
+    }
+    if (newPassword.length < 6) {
+      return c.json({ error: '新密码至少 6 位' }, 400);
+    }
+
+    const full = await kvGet(env, PREFIX.USERS + user.userId);
+    if (!full) return c.json({ error: '用户不存在' }, 404);
+
+    const valid = await verifyPassword(currentPassword, full.passwordHash);
+    if (!valid) return c.json({ error: '当前密码不正确' }, 401);
+
+    full.passwordHash = await hashPassword(newPassword);
+    full.updatedAt = new Date().toISOString();
+    await kvPut(env, PREFIX.USERS + user.userId, full);
+
+    return c.json({ message: '密码修改成功' });
+  } catch (e) {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
 });
 
 export default auth;
