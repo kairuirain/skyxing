@@ -256,6 +256,23 @@ class ApiClient {
   async deleteAccount() {
     return this.request('/users/me', { method: 'DELETE' });
   }
+
+  // 2FA
+  async setup2FA() {
+    return this.request('/auth/2fa/setup', { method: 'POST' });
+  }
+
+  async verifySetup2FA(secret, code) {
+    return this.request('/auth/2fa/verify-setup', { method: 'POST', body: JSON.stringify({ secret, code }) });
+  }
+
+  async disable2FA() {
+    return this.request('/auth/2fa/disable', { method: 'POST' });
+  }
+
+  async verify2FALogin(tempToken, code) {
+    return this.request('/auth/2fa/verify', { method: 'POST', body: JSON.stringify({ tempToken, code }) });
+  }
 }
 
 export const api = new ApiClient();
