@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { kvGet, kvPut, kvList, kvDelete, PREFIX } from '../utils/kv.js';
 import { authRequired, authOptional } from '../middleware/rbac.js';
+import { bumpSyncVersion } from '../utils/sync.js';
 
 const users = new Hono();
 
@@ -60,17 +61,19 @@ users.put('/:id', authRequired, async (c) => {
     const body = await c.req.json();
     const { displayName, bio, avatar } = body;
 
+    // 基于完整用户对象更新，避免覆盖 passwordHash / totpSecret / 设置字段
     const updated = {
-      ...user,
-      displayName: displayName !== undefined ? displayName : user.displayName,
-      bio: bio !== undefined ? bio : user.bio,
-      avatar: avatar !== undefined ? avatar : user.avatar,
+      ...target,
+      displayName: displayName !== undefined ? displayName : target.displayName,
+      bio: bio !== undefined ? bio : target.bio,
+      avatar: avatar !== undefined ? avatar : target.avatar,
       updatedAt: new Date().toISOString(),
     };
 
     await kvPut(env, PREFIX.USERS + id, updated);
+    await bumpSyncVersion(env, id);
 
-    const { passwordHash, ...publicUser } = updated;
+    const { passwordHash, totpSecret, ...publicUser } = updated;
     return c.json({ message: 'Profile updated', user: publicUser });
   } catch (e) {
     return c.json({ error: 'Invalid request' }, 400);

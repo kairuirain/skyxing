@@ -7,7 +7,7 @@ import { Save, X } from 'lucide-react';
 
 export default function EditPage() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -19,6 +19,7 @@ export default function EditPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate('/login');
       return;
@@ -26,7 +27,7 @@ export default function EditPage() {
 
     api.getArticle(id).then(data => {
       const article = data.article;
-      if (article.authorId !== user.id && user.role !== 'admin') {
+      if (article.authorId !== user.id && !['admin', 'official'].includes(user.role)) {
         navigate(`/article/${id}`);
         return;
       }

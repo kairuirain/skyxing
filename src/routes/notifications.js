@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { kvGet, kvGetMany, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
+import { bumpSyncVersion } from '../utils/sync.js';
 
 const notifications = new Hono();
 
@@ -35,6 +36,7 @@ notifications.put('/:id/read', authRequired, async (c) => {
 
   notif.read = true;
   await kvPut(env, PREFIX.NOTIFICATIONS + id, notif);
+  await bumpSyncVersion(env, user.userId);
   return c.json({ notification: notif });
 });
 
@@ -54,6 +56,7 @@ notifications.put('/read-all', authRequired, async (c) => {
       await kvPut(env, PREFIX.NOTIFICATIONS + id, notif);
     }
   }
+  await bumpSyncVersion(env, user.userId);
   return c.json({ message: 'All marked as read' });
 });
 

@@ -1,13 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
+import { useAnimation } from '../context/AnimationContext';
 import { validateRegisterForm } from '../lib/validation';
 import LegalModal from '../components/LegalModal';
+import TurnstileWidget from '../components/TurnstileWidget';
+import api from '../lib/api';
 
 const FIELD_ORDER = ['username', 'email', 'displayName', 'password', 'confirmPassword'];
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { t, lang } = useI18n();
+  const { animationMode } = useAnimation();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     username: '',
@@ -21,7 +27,16 @@ export default function RegisterPage() {
   const [agreeError, setAgreeError] = useState('');
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [legalType, setLegalType] = useState(null); // 'privacy' | 'terms' | null
+  const [legalType, setLegalType] = useState(null);
+  // 人机验证（需求 7）
+  const [siteKey, setSiteKey] = useState('');
+  const [needTurnstile, setNeedTurnstile] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+
+  useEffect(() => {
+    api.getConfig().then((d) => setSiteKey(d.turnstileSiteKey || '')).catch(() => {});
+    api.getBotStatus().then((d) => { if (d.needTurnstile) setNeedTurnstile(true); }).catch(() => {});
+  }, []);
 
   const inputRefs = useRef({});
   const agreeRef = useRef(null);
@@ -53,7 +68,7 @@ export default function RegisterPage() {
 
     let firstInvalid = firstErrorField;
     if (!agreed) {
-      setAgreeError('请先阅读并同意《SkyXing 隐私政策》与《SkyXing 服务条款》');
+      setAgreeError(t('auth.agreeRequired'));
       if (!firstInvalid) firstInvalid = 'agree';
     } else {
       setAgreeError('');
@@ -79,10 +94,20 @@ export default function RegisterPage() {
         email: form.email.trim(),
         password: form.password,
         displayName: form.displayName.trim() || form.username.trim(),
+        agreedToTerms: agreed,
+        language: lang,
+        animationMode,
+        turnstileToken: needTurnstile ? turnstileToken : undefined,
       });
       navigate('/');
     } catch (err) {
-      setServerError(err.message);
+      if (err.data?.needTurnstile) {
+        setNeedTurnstile(true);
+        setTurnstileToken(null);
+        setServerError(t('settings.turnstile'));
+      } else {
+        setServerError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -110,7 +135,7 @@ export default function RegisterPage() {
   return (
     <div className="max-w-md mx-auto mt-12">
       <div className="card p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">注册 SkyXing</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{t('auth.registerTitle')}</h1>
 
         {serverError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -119,11 +144,11 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {renderField('username', '用户名', 'text', '3-30个字符', { minLength: 3, maxLength: 30 })}
-          {renderField('email', '邮箱', 'email', 'your@email.com')}
-          {renderField('displayName', '显示名称', 'text', '可选，默认使用用户名', { maxLength: 30 })}
-          {renderField('password', '密码', 'password', '至少6位', { minLength: 6 })}
-          {renderField('confirmPassword', '确认密码', 'password', '再次输入密码')}
+          {renderField('username', t('auth.username'), 'text', '3-30个字符', { minLength: 3, maxLength: 30 })}
+          {renderField('email', t('auth.email'), 'email', 'your@email.com')}
+          {renderField('displayName', t('auth.displayName'), 'text', '可选，默认使用用户名', { maxLength: 30 })}
+          {renderField('password', t('auth.password'), 'password', '至少6位', { minLength: 6 })}
+          {renderField('confirmPassword', t('auth.confirmPassword'), 'password', '再次输入密码')}
 
           <div>
             <div className="flex items-start gap-2">
@@ -139,13 +164,13 @@ export default function RegisterPage() {
                 aria-invalid={!!agreeError}
               />
               <span className="text-sm text-gray-600 leading-relaxed">
-                我已阅读并同意
+                {t('auth.agreed')}
                 <button
                   type="button"
                   onClick={() => setLegalType('privacy')}
                   className="text-primary-600 hover:underline font-medium mx-0.5"
                 >
-                  《SkyXing 隐私政策》
+                  {t('auth.privacy')}
                 </button>
                 与
                 <button
@@ -153,26 +178,32 @@ export default function RegisterPage() {
                   onClick={() => setLegalType('terms')}
                   className="text-primary-600 hover:underline font-medium mx-0.5"
                 >
-                  《SkyXing 服务条款》
+                  {t('auth.terms')}
                 </button>
               </span>
             </div>
             {agreeError && <p className="text-red-500 text-xs mt-1">{agreeError}</p>}
           </div>
 
+          {needTurnstile && siteKey && (
+            <div className="flex justify-center py-1">
+              <TurnstileWidget siteKey={siteKey} onVerify={(tok) => setTurnstileToken(tok)} />
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
             className="btn-primary w-full"
           >
-            {loading ? '注册中...' : '注册'}
+            {loading ? t('common.loading') : t('auth.register')}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-4">
           已有账号？{' '}
           <Link to="/login" className="text-primary-600 hover:text-primary-700">
-            立即登录
+            {t('auth.login')}
           </Link>
         </p>
       </div>

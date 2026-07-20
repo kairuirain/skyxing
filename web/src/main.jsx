@@ -5,6 +5,9 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { TransitionProvider } from './context/TransitionContext';
+import { I18nProvider } from './context/I18nContext';
+import { AnimationProvider } from './context/AnimationContext';
+import { SyncProvider } from './context/SyncContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -12,9 +15,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <TransitionProvider>
-            <App />
-          </TransitionProvider>
+          <I18nProvider>
+            <AnimationProvider>
+              <SyncProvider>
+                <TransitionProvider>
+                  <App />
+                </TransitionProvider>
+              </SyncProvider>
+            </AnimationProvider>
+          </I18nProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -26,8 +26,8 @@ export function AuthProvider({ children }) {
     } catch (e) { return null; }
   }, []);
 
-  const login = useCallback(async (username, password) => {
-    const data = await api.login({ username, password });
+  const login = useCallback(async (username, password, turnstileToken) => {
+    const data = await api.login({ username, password, turnstileToken });
     if (data.requireTotp) return data;
     api.setToken(data.token);
     setUser(data.user);

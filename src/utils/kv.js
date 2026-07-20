@@ -16,6 +16,8 @@ const PREFIX = {
   UPDATES: 'update:',
   NOTIFICATIONS: 'notif:',
   NOTIFICATION_INDEX: 'notif:idx:',
+  SYNC: 'sync:',          // 用户同步版本号：sync:<userId>
+  RATELIMIT: 'rl:',       // 防人机验证计数器：rl:loginfail:<ip> 等
 };
 
 /**

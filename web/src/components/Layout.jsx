@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import api from '../lib/api';
 import AnimatedOutlet from './AnimatedOutlet';
 import {
@@ -9,15 +10,16 @@ import {
 } from 'lucide-react';
 
 const TABS = [
-  { to: '/', label: '主页', icon: Home, exact: true },
-  { to: '/blog', label: '博客', icon: FileText },
-  { to: '/messages', label: '私信', icon: MessageSquare, requireAuth: true },
-  { to: '/download', label: '下载', icon: Download },
-  { to: '/me', label: '我的', icon: UserIcon, requireAuth: true },
+  { to: '/', i18nKey: 'nav.home', icon: Home, exact: true },
+  { to: '/blog', i18nKey: 'nav.blog', icon: FileText },
+  { to: '/messages', i18nKey: 'nav.messages', icon: MessageSquare, requireAuth: true },
+  { to: '/download', i18nKey: 'nav.download', icon: Download },
+  { to: '/me', i18nKey: 'nav.me', icon: UserIcon, requireAuth: true },
 ];
 
 export default function Layout() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
@@ -103,7 +105,7 @@ export default function Layout() {
                   }`}
                 >
                   <Icon size={18} />
-                  <span>{tab.label}</span>
+                  <span>{t(tab.i18nKey)}</span>
                   {tab.to === '/messages' && unread > 0 && (
                     <span className="inline-flex min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold items-center justify-center">
                       {unread > 99 ? '99+' : unread}
@@ -153,7 +155,7 @@ export default function Layout() {
                     </span>
                   )}
                 </div>
-                <span>{tab.label}</span>
+                <span>{t(tab.i18nKey)}</span>
               </Link>
             );
           })}

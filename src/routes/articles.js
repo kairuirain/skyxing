@@ -198,8 +198,8 @@ articles.put('/:id', authRequired, async (c) => {
       return c.json({ error: 'Article not found' }, 404);
     }
 
-    // Check ownership
-    if (article.authorId !== user.userId && user.role !== 'admin') {
+    // Check ownership（作者本人、管理员或官方均可编辑）
+    if (article.authorId !== user.userId && !['admin', 'official'].includes(user.role)) {
       return c.json({ error: 'Not authorized to edit this article' }, 403);
     }
 

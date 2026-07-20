@@ -5,6 +5,8 @@ import { kvGet, kvPut, generateId, PREFIX } from '../utils/kv.js';
 import { createNotification } from '../utils/notifications.js';
 import { authRequired } from '../middleware/rbac.js';
 import { generateSecret, verifyTOTP, generateOTPAuthURI } from '../utils/totp.js';
+import { verifyTurnstile } from '../utils/turnstile.js';
+import { getCounter, incrCounter, resetCounter } from '../utils/ratelimit.js';
 
 const auth = new Hono();
 
@@ -37,6 +39,15 @@ auth.post('/register', async (c) => {
     if (!emailRegex.test(email)) return c.json({ error: 'Invalid email format' }, 400);
 
     const env = c.env;
+    const ip = c.req.header('cf-connecting-ip') || 'unknown';
+    // 需求 7：同一 IP 注册过于频繁时强制人机验证
+    const regKey = PREFIX.RATELIMIT + 'reg:' + ip;
+    const regCount = await getCounter(env, regKey, 60 * 60 * 1000);
+    if (regCount >= 5) {
+      const ok = await verifyTurnstile(body.turnstileToken, env, ip);
+      if (!ok) return c.json({ error: '操作过于频繁，请完成验证', needTurnstile: true }, 403);
+    }
+
     const existingUsername = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), false);
     if (existingUsername) return c.json({ error: 'Username already taken' }, 409);
     const existingEmail = await kvGet(env, PREFIX.EMAIL_INDEX + email.toLowerCase(), false);
@@ -52,12 +63,18 @@ auth.post('/register', async (c) => {
       avatar: '', bio: '',
       role: 'user',
       totpEnabled: false,
+      // 需求 1/2/6/13：协议同意与可同步的用户偏好
+      agreedToTerms: !!body.agreedToTerms,
+      language: body.language || null,
+      animationMode: body.animationMode || 'normal',
+      debugEnabled: false,
       createdAt: now, updatedAt: now,
     };
 
     await kvPut(env, PREFIX.USERS + id, user);
     await kvPut(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), id);
     await kvPut(env, PREFIX.EMAIL_INDEX + email.toLowerCase(), id);
+    await incrCounter(env, regKey, 60 * 60 * 1000);
 
     const token = await generateToken({ userId: id, username: user.username, role: user.role }, env);
     await createNotification(env, { userId: id, type: 'system', actor: null, text: '欢迎加入 SkyXing！开始分享你的想法吧。', link: '/' });
@@ -73,10 +90,22 @@ auth.post('/register', async (c) => {
 auth.post('/login', async (c) => {
   try {
     const body = await c.req.json();
-    const { username, password } = body;
+    const { username, password, turnstileToken } = body;
     if (!username || !password) return c.json({ error: 'Username and password are required' }, 400);
 
     const env = c.env;
+    const ip = c.req.header('cf-connecting-ip') || 'unknown';
+
+    // 需求 7：防人机验证。登录失败次数达阈值后强制 Turnstile 校验。
+    const failKey = PREFIX.RATELIMIT + 'loginfail:' + ip;
+    const failCount = await getCounter(env, failKey);
+    if (failCount >= 5) {
+      const ok = await verifyTurnstile(turnstileToken, env, ip);
+      if (!ok) {
+        return c.json({ error: '操作过于频繁，请完成验证', needTurnstile: true }, 403);
+      }
+    }
+
     const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), false);
     if (!userId) return c.json({ error: 'Invalid credentials' }, 401);
 
@@ -84,7 +113,13 @@ auth.post('/login', async (c) => {
     if (!user) return c.json({ error: 'Invalid credentials' }, 401);
 
     const valid = await verifyPassword(password, user.passwordHash);
-    if (!valid) return c.json({ error: 'Invalid credentials' }, 401);
+    if (!valid) {
+      await incrCounter(env, failKey);
+      return c.json({ error: 'Invalid credentials' }, 401);
+    }
+
+    // 登录成功 → 重置失败计数
+    await resetCounter(env, failKey);
 
     // 旧格式密码自动迁移到 PBKDF2
     if (!user.passwordHash || !user.passwordHash.startsWith('pbkdf2$')) {
@@ -222,8 +257,19 @@ auth.post('/2fa/disable', authRequired, async (c) => {
  */
 export async function ensureOfficialAccount(env) {
   const username = 'SkyXing';
-  const existing = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase());
-  if (existing) return;
+  const idxKey = PREFIX.USERNAME_INDEX + username.toLowerCase();
+  const existingId = await kvGet(env, idxKey, false);
+  if (existingId) {
+    // 幂等：账号已存在时，若角色不正确（本地旧数据/异常），修复之而非跳过
+    const full = await kvGet(env, PREFIX.USERS + existingId);
+    if (full && full.role !== 'official') {
+      full.role = 'official';
+      full.updatedAt = new Date().toISOString();
+      await kvPut(env, PREFIX.USERS + existingId, full);
+      console.log('[Bootstrap] SkyXing 官方账号角色已修复为 official');
+    }
+    return;
+  }
   const id = generateId();
   const hashedPassword = await hashPassword('WUkaiRUI@(SkyXing2026)');
   const now = new Date().toISOString();

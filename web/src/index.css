@@ -128,3 +128,17 @@
 .dark .hover\:bg-gray-300:hover { background-color: #374151 !important; }
 /* 焦点环偏移色：深色模式下避免白色光晕 */
 .dark { --tw-ring-offset-color: #1f2937; }
+
+/* ---------- 动画模式（需求 6），由 <html data-anim="..."> 触发 ---------- */
+/* 普通模式：禁用绝大多数过渡与动画，仅保留必要淡入淡出 */
+[data-anim="minimal"] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+/* 高级模式：增强动效（更柔和、稍长的缓动曲线） */
+[data-anim="rich"] * {
+  transition-duration: 0.42s !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}

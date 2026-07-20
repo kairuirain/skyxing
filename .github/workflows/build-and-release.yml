@@ -1,0 +1,129 @@
+name: Build and Release All Platforms
+
+on:
+  push:
+    tags:
+      - 'v*'          # 任何以 v 开头的 tag，如 v2.0.0-beta.01
+
+env:
+  CARGO_TERM_COLOR: always
+  GITHUB_REPO: kairuirain/skyxing-app
+
+jobs:
+  # ---------- 1. 共享 Rust 核心库：测试 + 编译 ----------
+  build-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Test & build core
+        run: |
+          cd app/core
+          cargo test
+          cargo build --release
+
+  # ---------- 2. Windows (WinUI 3 + core.dll) ----------
+  build-windows:
+    needs: build-core
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build Rust cdylib
+        run: cd app/core && cargo build --release
+      - name: Generate UniFFI C# bindings
+        run: |
+          cargo install uniffi-bindgen --locked || true
+          cd app/core && uniffi-bindgen generate --library target/release/skyxing_core.dll --language csharp --out-dir ../windows/Generated
+      - name: Build WinUI 3 app
+        run: |
+          # 待 app/windows 工程就绪后启用：
+          # dotnet build app/windows/YourApp.sln -c Release
+          # dotnet publish app/windows/YourApp.sln -c Release -o publish/win
+          echo "Windows UI project pending (see app/windows/README.md)"
+      - name: Package MSIX
+        run: echo "MSIX packaging pending"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: app/windows/publish/**
+
+  # ---------- 3. Android (Compose + core.so) ----------
+  build-android:
+    needs: build-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+      - name: Build Rust .so
+        run: |
+          cd app/core
+          cargo build --release --target aarch64-linux-android
+          # 其他目标类似；产物在 target/<triple>/release/
+      - name: Generate UniFFI Kotlin bindings
+        run: |
+          cargo install uniffi-bindgen --locked || true
+          cd app/core && uniffi-bindgen generate --library target/aarch64-linux-android/release/libskyxing_core.so --language kotlin --out-dir ../android/app/src/main/java/com/skyxing/core
+      - name: Build APK
+        run: |
+          # 待 app/android 工程就绪后启用：
+          # cd app/android && ./gradlew assembleRelease
+          echo "Android UI project pending (see app/android/README.md)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app/android/app/build/outputs/apk/release/**
+
+  # ---------- 4. Web (WASM) ----------
+  build-web:
+    needs: build-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build WASM
+        run: cd app/core && wasm-pack build --target web --out-dir ../web/core-pkg
+      - name: Build frontend
+        run: |
+          # 待 app/web 前端工程就绪后启用：
+          # cd app/web && npm ci && npm run build
+          echo "Web frontend project pending (see app/web/README.md)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: app/web/dist/**
+
+  # ---------- 5. 发布到 GitHub Release ----------
+  release:
+    needs: [build-windows, build-android, build-web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Create / Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          # 含 beta / alpha 的 tag 自动标记为预发布
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          files: |
+            windows-package/**
+            android-apk/**
+            web-dist/**
+          body: "Automated build for tag ${{ github.ref_name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

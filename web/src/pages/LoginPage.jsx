@@ -1,10 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import LegalModal from '../components/LegalModal';
+import TurnstileWidget from '../components/TurnstileWidget';
+import api from '../lib/api';
 
 export default function LoginPage() {
   const { login, complete2FALogin } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +21,15 @@ export default function LoginPage() {
   // 2FA
   const [tempToken, setTempToken] = useState(null);
   const [code, setCode] = useState('');
+  // 人机验证（需求 7）
+  const [siteKey, setSiteKey] = useState('');
+  const [needTurnstile, setNeedTurnstile] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+
+  useEffect(() => {
+    api.getConfig().then((d) => setSiteKey(d.turnstileSiteKey || '')).catch(() => {});
+    api.getBotStatus().then((d) => { if (d.needTurnstile) setNeedTurnstile(true); }).catch(() => {});
+  }, []);
 
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
@@ -34,7 +47,7 @@ export default function LoginPage() {
     setErrors(fe);
     let firstInvalid = Object.keys(fe)[0] || null;
     if (!agreed) {
-      setAgreeError('请先阅读并同意《SkyXing 隐私政策》与《SkyXing 服务条款》');
+      setAgreeError(t('auth.agreeRequired'));
       if (!firstInvalid) firstInvalid = 'agree';
     } else { setAgreeError(''); }
     if (firstInvalid) {
@@ -44,11 +57,17 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const res = await login(username.trim(), password);
+      const res = await login(username.trim(), password, needTurnstile ? turnstileToken : undefined);
       if (res.requireTotp) { setTempToken(res.tempToken); setLoading(false); return; }
       navigate('/');
     } catch (err) {
-      setServerError(err.message);
+      if (err.data?.needTurnstile) {
+        setNeedTurnstile(true);
+        setTurnstileToken(null);
+        setServerError(t('settings.turnstile'));
+      } else {
+        setServerError(err.message);
+      }
     } finally { setLoading(false); }
   };
 
@@ -73,7 +92,7 @@ export default function LoginPage() {
           {serverError && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{serverError}</div>}
           <form onSubmit={handle2FA} className="space-y-4">
             <input type="text" inputMode="numeric" autoComplete="one-time-code"
-              value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               className="input text-center text-2xl tracking-[0.5em] font-mono" placeholder="000000" />
             <button type="submit" disabled={loading || code.length < 6} className="btn-primary w-full">
               {loading ? '验证中...' : '验证'}
@@ -90,35 +109,42 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto mt-12">
       <div className="card p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">登录 SkyXing</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{t('auth.loginTitle')}</h1>
         {serverError && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{serverError}</div>}
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-            <input ref={usernameRef} type="text" value={username} onChange={e => setUsername(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.username')}</label>
+            <input ref={usernameRef} type="text" value={username} onChange={(e) => setUsername(e.target.value)}
               className={fieldClass('username')} placeholder="请输入用户名" />
             {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
-            <input ref={passwordRef} type="password" value={password} onChange={e => setPassword(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.password')}</label>
+            <input ref={passwordRef} type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className={fieldClass('password')} placeholder="请输入密码" />
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
           </div>
           <div>
             <div className="flex items-start gap-2">
-              <input ref={agreeRef} type="checkbox" checked={agreed} onChange={e => { setAgreed(e.target.checked); if (e.target.checked) setAgreeError(''); }}
+              <input ref={agreeRef} type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); if (e.target.checked) setAgreeError(''); }}
                 className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-sm text-gray-600 leading-relaxed">
-                我已阅读并同意
-                <button type="button" onClick={() => setLegalType('privacy')} className="text-primary-600 hover:underline font-medium mx-0.5">《SkyXing 隐私政策》</button>
+                {t('auth.agreed')}
+                <button type="button" onClick={() => setLegalType('privacy')} className="text-primary-600 hover:underline font-medium mx-0.5">{t('auth.privacy')}</button>
                 与
-                <button type="button" onClick={() => setLegalType('terms')} className="text-primary-600 hover:underline font-medium mx-0.5">《SkyXing 服务条款》</button>
+                <button type="button" onClick={() => setLegalType('terms')} className="text-primary-600 hover:underline font-medium mx-0.5">{t('auth.terms')}</button>
               </span>
             </div>
             {agreeError && <p className="text-red-500 text-xs mt-1">{agreeError}</p>}
           </div>
-          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? '登录中...' : '登录'}</button>
+
+          {needTurnstile && siteKey && (
+            <div className="flex justify-center py-1">
+              <TurnstileWidget siteKey={siteKey} onVerify={(tok) => setTurnstileToken(tok)} />
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? t('common.loading') : t('auth.login')}</button>
         </form>
         <p className="text-center text-sm text-gray-600 mt-4">
           还没有账号？<Link to="/register" className="text-primary-600 hover:text-primary-700">立即注册</Link>

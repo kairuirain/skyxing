@@ -33,7 +33,9 @@ class ApiClient {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+      const err = new Error(data.error || 'Request failed');
+      err.data = data;
+      throw err;
     }
 
     return data;
@@ -280,6 +282,38 @@ class ApiClient {
 
   async verify2FALogin(tempToken, code) {
     return this.request('/auth/2fa/verify', { method: 'POST', body: JSON.stringify({ tempToken, code }) });
+  }
+
+  // ── 数据同步（需求 13）──
+  async getSync() {
+    return this.request('/sync');
+  }
+
+  async putSync(body) {
+    return this.request('/sync', { method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  async getSyncVersion(since) {
+    const q = since != null ? `?since=${since}` : '';
+    return this.request(`/sync/version${q}`);
+  }
+
+  // ── 人机验证（需求 7）──
+  async getBotStatus() {
+    return this.request('/verify/bot-status');
+  }
+
+  async verifyTurnstile(token) {
+    return this.request('/verify/turnstile', { method: 'POST', body: JSON.stringify({ token }) });
+  }
+
+  // ── 首屏批量 / 公开配置（需求 5）──
+  async getBootstrap() {
+    return this.request('/bootstrap');
+  }
+
+  async getConfig() {
+    return this.request('/config');
   }
 }
 
