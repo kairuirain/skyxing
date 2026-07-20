@@ -8,6 +8,12 @@ import { useEffect, useRef } from 'react';
 export default function TurnstileWidget({ siteKey, onVerify, onError }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
+  // 用 ref 持有最新回调，避免父组件传入内联函数导致 effect 随每次渲染重跑、
+  // 反复卸载/重建 widget（会触发 Turnstile 无限重新验证）。
+  const onVerifyRef = useRef(onVerify);
+  const onErrorRef = useRef(onError);
+  onVerifyRef.current = onVerify;
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return undefined;
@@ -16,9 +22,9 @@ export default function TurnstileWidget({ siteKey, onVerify, onError }) {
       if (!window.turnstile || widgetIdRef.current != null) return;
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
-        callback: (token) => onVerify && onVerify(token || null),
-        'expired-callback': () => onVerify && onVerify(null),
-        'error-callback': () => onError && onError(),
+        callback: (token) => onVerifyRef.current && onVerifyRef.current(token || null),
+        'expired-callback': () => onVerifyRef.current && onVerifyRef.current(null),
+        'error-callback': () => onErrorRef.current && onErrorRef.current(),
       });
     };
 
@@ -38,7 +44,7 @@ export default function TurnstileWidget({ siteKey, onVerify, onError }) {
         widgetIdRef.current = null;
       }
     };
-  }, [siteKey, onVerify, onError]);
+  }, [siteKey]);
 
   if (!siteKey) return null;
   return <div ref={containerRef} className="cf-turnstile" />;
