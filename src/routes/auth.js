@@ -6,7 +6,7 @@ import { createNotification } from '../utils/notifications.js';
 import { authRequired } from '../middleware/rbac.js';
 import { generateSecret, verifyTOTP, generateOTPAuthURI } from '../utils/totp.js';
 import { verifyTurnstile } from '../utils/turnstile.js';
-import { getCounter, incrCounter, resetCounter } from '../utils/ratelimit.js';
+import { incrCounter, resetCounter } from '../utils/ratelimit.js';
 
 const auth = new Hono();
 
@@ -40,13 +40,10 @@ auth.post('/register', async (c) => {
 
     const env = c.env;
     const ip = c.req.header('cf-connecting-ip') || 'unknown';
-    // 需求 7：同一 IP 注册过于频繁时强制人机验证
     const regKey = PREFIX.RATELIMIT + 'reg:' + ip;
-    const regCount = await getCounter(env, regKey, 60 * 60 * 1000);
-    if (regCount >= 5) {
-      const ok = await verifyTurnstile(body.turnstileToken, env, ip);
-      if (!ok) return c.json({ error: '操作过于频繁，请完成验证', needTurnstile: true }, 403);
-    }
+    // 需求 7：注册强制人机验证（防垃圾账号）。未配置密钥时自动放行（本地开发）。
+    const regOk = await verifyTurnstile(body.turnstileToken, env, ip);
+    if (!regOk) return c.json({ error: '请先完成人机验证', needTurnstile: true }, 403);
 
     const existingUsername = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), false);
     if (existingUsername) return c.json({ error: 'Username already taken' }, 409);
@@ -95,16 +92,11 @@ auth.post('/login', async (c) => {
 
     const env = c.env;
     const ip = c.req.header('cf-connecting-ip') || 'unknown';
-
-    // 需求 7：防人机验证。登录失败次数达阈值后强制 Turnstile 校验。
     const failKey = PREFIX.RATELIMIT + 'loginfail:' + ip;
-    const failCount = await getCounter(env, failKey);
-    if (failCount >= 5) {
-      const ok = await verifyTurnstile(turnstileToken, env, ip);
-      if (!ok) {
-        return c.json({ error: '操作过于频繁，请完成验证', needTurnstile: true }, 403);
-      }
-    }
+
+    // 需求 7：登录强制人机验证。未配置密钥时自动放行（本地开发）。
+    const loginOk = await verifyTurnstile(turnstileToken, env, ip);
+    if (!loginOk) return c.json({ error: '请先完成人机验证', needTurnstile: true }, 403);
 
     const userId = await kvGet(env, PREFIX.USERNAME_INDEX + username.toLowerCase(), false);
     if (!userId) return c.json({ error: 'Invalid credentials' }, 401);

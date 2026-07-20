@@ -27,8 +27,12 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState(null);
 
   useEffect(() => {
-    api.getConfig().then((d) => setSiteKey(d.turnstileSiteKey || '')).catch(() => {});
-    api.getBotStatus().then((d) => { if (d.needTurnstile) setNeedTurnstile(true); }).catch(() => {});
+    api.getConfig().then((d) => {
+      const key = d.turnstileSiteKey || '';
+      setSiteKey(key);
+      if (key) setNeedTurnstile(true);
+    }).catch(() => {});
+    api.getBotStatus().then((d) => { if (d.turnstileEnabled) setNeedTurnstile(true); }).catch(() => {});
   }, []);
 
   const usernameRef = useRef(null);
