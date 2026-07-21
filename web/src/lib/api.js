@@ -315,6 +315,18 @@ class ApiClient {
   async getConfig() {
     return this.request('/config');
   }
+
+  // ── 系统内反馈（设置-反馈-提交反馈）──
+  async submitFeedback({ type = 'other', message, contact = '' }) {
+    return this.request('/feedback/submit', {
+      method: 'POST',
+      body: JSON.stringify({ type, message, contact }),
+    });
+  }
+
+  async getFeedbackList() {
+    return this.request('/feedback/list');
+  }
 }
 
 export const api = new ApiClient();

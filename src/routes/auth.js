@@ -74,7 +74,12 @@ auth.post('/register', async (c) => {
     await incrCounter(env, regKey, 60 * 60 * 1000);
 
     const token = await generateToken({ userId: id, username: user.username, role: user.role }, env);
-    await createNotification(env, { userId: id, type: 'system', actor: null, text: '欢迎加入 SkyXing！开始分享你的想法吧。', link: '/' });
+    await createNotification(env, {
+      userId: id, type: 'system', actor: null,
+      text: '欢迎加入 SkyXing！开始分享你的想法吧。', link: '/',
+      title: '欢迎加入', body: '欢迎加入 SkyXing！开始分享你的想法吧。',
+      category: 'system', icon: 'system', priority: 'normal',
+    });
 
     const { passwordHash, ...userWithoutPassword } = user;
     return c.json({ message: 'Registration successful', token, user: userWithoutPassword }, 201);

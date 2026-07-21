@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import ApiClient from '../../shared/api';
+import ApiClient from '@shared/api';
 
 // 使用 localStorage 作为 Electron 渲染进程的存储
 const storage = {

@@ -6,7 +6,7 @@ import api from '../lib/api';
 import Avatar from '../components/Avatar';
 import {
   User as UserIcon, FileText, PenSquare, Settings, LogOut,
-  Shield, Bell, MessageSquare, Bookmark, Heart,
+  Shield, Bell, MessageSquare, Bookmark, Heart, KeyRound,
 } from 'lucide-react';
 
 export default function MyPage() {
@@ -42,6 +42,17 @@ export default function MyPage() {
     if (!confirm('确定要退出登录吗？')) return;
     await logout();
     navigate('/');
+  };
+
+  const copyToken = async () => {
+    const t = localStorage.getItem('skyxing_token');
+    if (!t) { alert('当前未登录，无法复制令牌'); return; }
+    try {
+      await navigator.clipboard.writeText(t);
+      alert('已复制登录令牌，请在桌面客户端「使用登录令牌登录」处粘贴即可登录。');
+    } catch {
+      window.prompt('无法自动复制，请手动复制以下登录令牌：', t);
+    }
   };
 
   return (
@@ -88,6 +99,18 @@ export default function MyPage() {
           <button onClick={() => navigate('/admin')} className="btn-outline btn-sm">进入</button>
         </div>
       )}
+
+      {/* 登录令牌：用于同步到桌面客户端 */}
+      <div className="card p-4 mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <KeyRound size={18} className="text-primary-600" />
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">登录令牌</div>
+            <div className="text-xs text-gray-500 mt-0.5">复制到桌面客户端可直接登录</div>
+          </div>
+        </div>
+        <button onClick={copyToken} className="btn-outline btn-sm">复制</button>
+      </div>
 
       {/* Logout */}
       <button

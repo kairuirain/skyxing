@@ -288,6 +288,12 @@ messages.post('/conversations/:convId', authRequired, async (c) => {
       actor,
       text: '给你发送了一条新私信',
       link: `/messages/${convId}`,
+      title: '新私信',
+      body: `${actor?.displayName || '有人'} 给你发送了一条新私信`,
+      category: 'message',
+      icon: 'message',
+      priority: 'high',
+      action: { label: '查看私信', url: `/messages/${convId}` },
     });
 
     return c.json({ message: msg }, 201);

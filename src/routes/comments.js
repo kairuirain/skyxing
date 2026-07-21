@@ -130,6 +130,12 @@ comments.post('/', authRequired, async (c) => {
         actor,
         text: `评论了你的文章《${article.title}》`,
         link: `/article/${article.id}`,
+        title: '新评论',
+        body: `${actor?.displayName || '有人'} 评论了你的文章《${article.title}》`,
+        category: 'interaction',
+        icon: 'comment',
+        priority: 'normal',
+        action: { label: '查看评论', url: `/article/${article.id}` },
       });
     }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { formatRelativeTime } from '../../shared/sanitize';
+import { formatRelativeTime } from '@shared/sanitize';
 
 export default function AdminPage() {
   const { user, api } = useAuth();

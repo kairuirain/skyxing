@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { kvGet, kvGetMany, PREFIX } from '../utils/kv.js';
 import { authRequired } from '../middleware/rbac.js';
 import { bumpSyncVersion } from '../utils/sync.js';
+import { normalizeNotification } from '../utils/notifications.js';
 
 const notifications = new Hono();
 
@@ -14,8 +15,11 @@ notifications.get('/', authRequired, async (c) => {
   const env = c.env;
 
   const idx = (await kvGet(env, PREFIX.NOTIFICATION_INDEX + user.userId)) || [];
-  const list = (await kvGetMany(env, idx.map((id) => PREFIX.NOTIFICATIONS + id))).filter(Boolean);
-  list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const raw = (await kvGetMany(env, idx.map((id) => PREFIX.NOTIFICATIONS + id))).filter(Boolean);
+  raw.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // 统一规整（兼容旧格式）：回填 title/body/category/icon
+  const list = raw.map(normalizeNotification);
 
   const unread = list.filter((n) => !n.read).length;
   return c.json({ notifications: list, unread });
@@ -35,9 +39,10 @@ notifications.put('/:id/read', authRequired, async (c) => {
   if (notif.userId !== user.userId) return c.json({ error: 'Forbidden' }, 403);
 
   notif.read = true;
+  notif.readAt = new Date().toISOString();
   await kvPut(env, PREFIX.NOTIFICATIONS + id, notif);
   await bumpSyncVersion(env, user.userId);
-  return c.json({ notification: notif });
+  return c.json({ notification: normalizeNotification(notif) });
 });
 
 /**

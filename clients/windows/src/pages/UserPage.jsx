@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { extractExcerpt, formatRelativeTime } from '../../shared/sanitize';
+import { extractExcerpt, formatRelativeTime } from '@shared/sanitize';
 
 export default function UserPage() {
   const { id } = useParams();

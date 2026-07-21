@@ -4,6 +4,7 @@ const DEFAULTS = {
   startOnBoot: false,
   autoUpdate: true,
   updateChannel: 'stable',
+  updateSource: 'github', // 'github' | 'ghfast'
   cacheSize: 0,
   lastCleanTime: null,
 };

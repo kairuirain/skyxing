@@ -12,6 +12,7 @@ import updatesRoutes from './routes/updates.js';
 import stateRoutes from './routes/state.js';
 import verifyRoutes from './routes/verify.js';
 import syncRoutes from './routes/sync.js';
+import feedbackRoutes from './routes/feedback.js';
 import bootstrapRoutes from './routes/bootstrap.js';
 
 const app = new Hono();
@@ -152,6 +153,7 @@ api.route('/updates', updatesRoutes);
 api.route('/state', stateRoutes);
 api.route('/verify', verifyRoutes);
 api.route('/sync', syncRoutes);
+api.route('/feedback', feedbackRoutes);
 api.route('/bootstrap', bootstrapRoutes);
 
 /**

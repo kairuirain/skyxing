@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
+import api from '@shared/api';
 import { Send, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function ConversationPage() {

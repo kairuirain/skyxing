@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import useSync from '../hooks/useSync';
-import { extractExcerpt, formatRelativeTime } from '../../shared/sanitize';
+import { extractExcerpt, formatRelativeTime } from '@shared/sanitize';
 
 function ArticleCard({ article }) {
   const excerpt = article.excerpt || extractExcerpt(article.content, 150);

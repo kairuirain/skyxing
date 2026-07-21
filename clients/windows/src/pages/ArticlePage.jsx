@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sanitizeHTML, formatRelativeTime } from '../../shared/sanitize';
+import { sanitizeHTML, formatRelativeTime } from '@shared/sanitize';
 import { Pin, PinOff } from 'lucide-react';
 
 function CommentItem({ comment, user, onDelete, onPin, isArticleAuthor, onReply }) {

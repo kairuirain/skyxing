@@ -167,7 +167,13 @@ admin.post('/notify', adminRequired, async (c) => {
     for (const key of userKeys) {
       const u = await kvGet(env, key.name);
       if (!u) continue;
-      await createNotification(env, { userId: u.id, type: 'system', actor: null, text, link: link || null });
+      await createNotification(env, {
+        userId: u.id, type: 'system', actor: null,
+        text, link: link || null,
+        title: '官方通知', body: text,
+        category: 'system', icon: 'system', priority: 'normal',
+        action: link ? { label: '查看详情', url: link } : null,
+      });
       count++;
     }
     return c.json({ message: `已向 ${count} 位用户发送系统通知`, count });
