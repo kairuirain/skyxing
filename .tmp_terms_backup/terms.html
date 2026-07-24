@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyXing 服务条款</title>
+  <script>
+    (function () {
+      try {
+        function gc(n){ var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)')); return m?m[1]:null; }
+        function gls(n){ try { return localStorage.getItem(n); } catch(e){ return null; } }
+        var cookieTheme = gc('theme'); var lsTheme = gls('theme');
+        var mark = gc('theme_set') || gls('theme_set');
+        var stored = cookieTheme || lsTheme;
+        var t = 'dark';
+        if (stored === 'dark') t = 'dark';
+        else if (stored === 'light' && mark) t = 'light';
+        else t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root { --primary: #2563eb; --primary-dark: #1d4ed8; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; line-height: 1.8; background: #f9fafb; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 40px 20px 64px; }
+    header { text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; margin-bottom: 32px; }
+    header h1 { font-size: 28px; font-weight: 800; color: var(--primary); }
+    header .meta { margin-top: 8px; font-size: 13px; color: #6b7280; }
+    h2 { font-size: 19px; font-weight: 700; color: #111827; margin: 30px 0 10px; }
+    h3 { font-size: 15px; font-weight: 600; color: #374151; margin: 18px 0 6px; }
+    p { margin: 10px 0; font-size: 15px; color: #374151; }
+    ul { margin: 8px 0 8px 22px; }
+    li { margin: 6px 0; font-size: 15px; color: #374151; }
+    strong { color: #111827; }
+    .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 36px; color: var(--primary); text-decoration: none; font-weight: 600; }
+    .back:hover { color: var(--primary-dark); }
+    html.dark body { background: #111827; color: #e5e7eb; }
+    html.dark header { border-bottom-color: #374151; }
+    html.dark header .meta { color: #9ca3af; }
+    html.dark h2 { color: #f3f4f6; }
+    html.dark h3 { color: #d1d5db; }
+    html.dark p, html.dark li { color: #cbd5e1; }
+    html.dark strong { color: #f9fafb; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>SkyXing 服务条款</h1>
+      <div class="meta">最近更新日期：2026-07-21 · 版本 v2.0.1</div>
+    </header>
+
+    <h2>一、导言与适用范围</h2>
+    <p>欢迎使用 SkyXing（以下简称"本平台"）。本条款是您与本平台运营方之间关于使用本平台各项服务的法律协议。本平台提供跨平台博客内容发布、阅读、私信与交流等服务（以下简称"本服务"）。</p>
+    <p><strong>请您在使用本服务前仔细阅读本条款。一旦注册账号、登录或以任何方式使用本服务，即视为您已阅读、理解并同意接受本条款的全部内容。</strong>如您不同意本条款，请勿使用本服务。</p>
+    <p>本平台的个人信息处理规则详见《SkyXing 隐私政策》，该政策为本条款不可分割的组成部分。</p>
+
+    <h2>二、账号注册与管理</h2>
+    <p>SkyXing 账号的<strong>所有权归 SkyXing 运营方所有</strong>，您在注册成功后获得的是该账号的<strong>使用权</strong>。您不得将账号赠与、借用、租用、转让或出售，亦不得恶意注册多个账号。</p>
+    <ul>
+      <li>您需对注册信息的真实性、合法性负责，并妥善保管账号与密码；因账号保管不善导致的损失由您自行承担。</li>
+      <li>若您长期不登录账号，本平台有权依据规则对账号进行回收或限制。</li>
+      <li>官方账号（标记为"官方"）发布的内容视为本平台的官方信息。</li>
+    </ul>
+
+    <h2>三、用户个人信息保护</h2>
+    <p>本平台高度重视用户个人信息的保护。我们如何收集、使用、存储与共享您的个人信息，以及您所享有的相关权利，均已在《SkyXing 隐私政策》中详细说明。本条款不另行重复，相关事宜以隐私政策为准。</p>
+
+    <h2>四、用户行为规范</h2>
+    <p>您在使用本服务时，承诺不利用本平台从事任何违反法律法规或公序良俗的行为，包括但不限于：</p>
+    <ul>
+      <li>发布或传播危害国家安全、破坏国家统一、煽动民族仇恨等内容；</li>
+      <li>发布色情、暴力、赌博、诈骗或侵犯他人合法权益（含知识产权、名誉权、肖像权）的信息；</li>
+      <li>发布垃圾广告、恶意营销或干扰平台正常运行的内容；</li>
+      <li>冒充他人或官方机构，或进行其他欺诈行为。</li>
+    </ul>
+    <p>对于违规行为，本平台有权视情节采取删除内容、限制功能、封禁账号直至终止服务等处理措施。</p>
+
+    <h2>五、内容发布与知识产权</h2>
+    <p>您在本平台发布的内容（文章、评论、私信等）的知识产权归您或相关权利人所有。您保留相关权利，并<strong>授予本平台为提供、展示及改进服务所必需的使用权</strong>（包括存储、展示、分发等）。</p>
+    <p>本平台的软件、界面、商标、标识等知识产权归运营方所有，未经许可不得复制、改编或用于商业用途。</p>
+    <p><strong>本平台不对平台上非 SkyXing 官方发布的内容的真实性、完整性、合法性或安全性作任何明示或默示的保证，也不因此承担任何责任。</strong>用户之间因内容产生的纠纷，由相关用户自行解决，本平台不因此向任何一方承担责任。</p>
+
+    <h2>六、平台服务与免责声明</h2>
+    <p>本服务按"现状"提供。在适用法律允许的最大范围内，本平台不对因以下情形导致的服务中断、数据丢失或任何损失承担责任：</p>
+    <ul>
+      <li>因网络、设备故障、通信链路中断或不可抗力导致的服务不可用；</li>
+      <li>因您自身操作、账号保管不当或第三方原因导致的损失；</li>
+      <li>非官方用户发布内容所引发的全部争议与损害。</li>
+    </ul>
+
+    <h2>七、违约责任</h2>
+    <p>若您违反本条款，本平台有权采取相应措施；如因此给本平台或第三方造成损害的，您应依法承担相应责任。</p>
+
+    <h2>八、协议变更与终止</h2>
+    <p>本平台保留在合理范围内修改本条款的权利，修改后将以平台公示版本为准，并在本页面标注更新日期。若您不同意修改后的条款，可停止使用本服务；您继续使用本服务即视为接受修改后的条款。</p>
+    <p>如您严重违反本条款，本平台有权随时终止向您提供服务并注销账号。</p>
+
+    <h2>九、法律适用与争议解决</h2>
+    <p>本条款的订立、执行与解释均适用中华人民共和国大陆地区相关法律。因本条款引起的或与本条款有关的任何争议，双方应友好协商解决；协商不成的，任何一方均可向本平台运营方所在地有管辖权的人民法院提起诉讼。</p>
+
+    <h2>十、联系我们</h2>
+    <p>如您对本条款有任何疑问，可通过官方仓库（GitHub）或站内反馈渠道与我们联系。反馈渠道位于：设置 → 反馈 → 提交反馈（系统内）。</p>
+
+    <a class="back" href="javascript:window.close && window.close();">&larr; 返回</a>
+  </div>
+</body>
+</html>

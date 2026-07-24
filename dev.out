@@ -1,0 +1,15 @@
+
+ ⛅️ wrangler 4.112.0
+────────────────────
+Using secrets defined in .dev.vars
+Your Worker has access to the following bindings:
+Binding                                                          Resource                  Mode
+env.SKYXING_KV (73f13dd572bc4ee58dc6946933568b9e)                KV Namespace              local
+env.ASSETS                                                       Assets                    local
+env.JWT_SECRET ("(hidden)")                                      Environment Variable      local
+env.TURNSTILE_SECRET_KEY ("(hidden)")                            Environment Variable      local
+env.TURNSTILE_SITE_KEY ("(hidden)")                              Environment Variable      local
+
+⎔ Starting local server...
+
+[32mIf you think this is a bug then please create an issue at https://github.com/cloudflare/workers-sdk/issues/new/choose[0m

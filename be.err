@@ -1,0 +1,514 @@
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe version of Wrangler you are using is now out-of-date.[0m
+
+  Please update to the latest version to prevent critical errors.
+  Run `npm install --save-dev wrangler@4` to update to the latest version.
+  After installation, run Wrangler with `npx wrangler`.
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m[auth] JWT_SECRET 未配置，使用开发回退密钥，请勿用于生产环境[0m
+
+
