@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [siteKey, setSiteKey] = useState('');
   const [needTurnstile, setNeedTurnstile] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState(null);
+  const [turnstileNonce, setTurnstileNonce] = useState(0);
 
   useEffect(() => {
     api.getConfig().then((d) => {
@@ -59,6 +60,12 @@ export default function LoginPage() {
       else (firstInvalid === 'username' ? usernameRef : passwordRef).current?.focus();
       return;
     }
+    // 如果需要人机验证但 token 缺失/过期，强制 Turnstile 重新渲染
+    if (needTurnstile && !turnstileToken) {
+      setServerError(t('settings.turnstile'));
+      setTurnstileNonce((n) => n + 1);
+      return;
+    }
     setLoading(true);
     try {
       const res = await login(username.trim(), password, needTurnstile ? turnstileToken : undefined);
@@ -68,6 +75,7 @@ export default function LoginPage() {
       if (err.data?.needTurnstile) {
         setNeedTurnstile(true);
         setTurnstileToken(null);
+        setTurnstileNonce((n) => n + 1); // 强制重新渲染 Turnstile
         setServerError(t('settings.turnstile'));
       } else {
         setServerError(err.message);
@@ -144,7 +152,7 @@ export default function LoginPage() {
 
           {needTurnstile && siteKey && (
             <div className="flex justify-center py-1">
-              <TurnstileWidget siteKey={siteKey} onVerify={(tok) => setTurnstileToken(tok)} />
+              <TurnstileWidget key={turnstileNonce} siteKey={siteKey} onVerify={(tok) => setTurnstileToken(tok)} />
             </div>
           )}
 
