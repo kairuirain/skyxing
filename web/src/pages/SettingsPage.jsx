@@ -1,936 +1,283 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../context/I18nContext';
+import { useTheme } from '../context/ThemeContext';
 import { useAnimation } from '../context/AnimationContext';
 import { useSync } from '../context/SyncContext';
-import { detectOSLanguage } from '../lib/i18n';
 import api from '../lib/api';
 import {
-  Palette, Download, MessageSquare, Send, Info, RefreshCw, Sun, Moon, ExternalLink, Check,
-  Bug, Fingerprint, Copy, Trash2, Languages, Sparkles, ShieldCheck, ChevronRight, Github,
-  FileText, AlertTriangle, ArrowLeft, Globe, Smartphone,
+  Palette, Languages, Sparkles, Sun, Moon, Globe, Smartphone,
+  RefreshCw, Fingerprint, Trash2, MessageSquare, Send, Github,
+  Download, Bug, Info, ArrowLeft, ChevronRight, ShieldCheck, ExternalLink, Check, Users,
 } from 'lucide-react';
 
-const APP_VERSION = '2.0.1';
-const ISSUES_URL = 'https://github.com/kairuirain/skyxing-app/issues/new';
+const APP_VERSION = '__APP_VERSION__';
 const REPO_URL = 'https://github.com/kairuirain/skyxing-app';
-const TERMS_URL = 'https://skyxing.dpdns.org/terms.html';
-const PRIVACY_URL = 'https://skyxing.dpdns.org/privacy.html';
+const ISSUES_URL = 'https://github.com/kairuirain/skyxing-app/issues/new';
 
-// ── 通用小组件 ──
-function Seg({ options, value, onChange }) {
-  return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
-      {options.map((o) => {
-        const active = value === o.value;
-        return (
-          <button key={o.value} onClick={() => onChange(o.value)}
-            className={'flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ' +
-              (active ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700')}>
-            {o.icon && <o.icon size={14} />}
-            {o.label}
-            {active && <Check size={13} />}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
+// ── helpers ──
 function Toggle({ checked, onChange, disabled }) {
-  return (
-    <button type="button" role="switch" aria-checked={checked} disabled={disabled}
-      onClick={onChange}
-      className={'relative w-11 h-6 rounded-full transition-colors shrink-0 ' + (checked ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600') + (disabled ? ' opacity-50' : '')}>
-      <span className={'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ' + (checked ? 'translate-x-5' : '')} />
-    </button>
-  );
+  return <label className={`sk-toggle ${disabled ? 'opacity-40 pointer-events-none' : ''}`}><input type="checkbox" checked={checked} onChange={onChange} disabled={disabled} /><span className="sk-toggle-track" /><span className="sk-toggle-thumb" /></label>;
 }
-
-function ConfirmDialog({ open, title, message, confirmText, cancelText, danger, onConfirm, onCancel }) {
+function Seg({ value, onChange, options }) {
+  return <div className="sk-seg">{options.map(o => <button key={o.value} onClick={() => onChange(o.value)} className={`sk-seg-item ${value === o.value ? 'active' : ''}`}>{o.label}</button>)}</div>;
+}
+function Confirm({ open, title, msg, onConfirm, onCancel }) {
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2">
-          <div className={'w-9 h-9 rounded-full flex items-center justify-center ' + (danger ? 'bg-red-500/15' : 'bg-primary-50 dark:bg-primary-900/30')}>
-            <AlertTriangle size={18} className={danger ? 'text-red-500' : 'text-primary-600'} />
-          </div>
-          <h3 className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-        </div>
-        <p className="text-[13px] text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
-        <div className="flex gap-2">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl text-[13px] font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            {cancelText || '取消'}
-          </button>
-          <button onClick={onConfirm} className={'flex-1 py-2.5 rounded-xl text-[13px] font-medium text-white transition-opacity hover:opacity-90 ' + (danger ? 'bg-red-500' : 'bg-primary-600')}>
-            {confirmText || '确认'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="sk-modal-overlay" onClick={onCancel}><div className="sk-modal" onClick={e => e.stopPropagation()}><div className="sk-modal-header"><h3 className="font-semibold text-[var(--text)]">{title}</h3></div><div className="sk-modal-body"><p className="text-sm text-[var(--text-secondary)] mb-4">{msg}</p><div className="flex gap-2"><button onClick={onConfirm} className="sk-btn sk-btn-primary flex-1">确认</button><button onClick={onCancel} className="sk-btn sk-btn-outline flex-1">取消</button></div></div></div></div>;
 }
+function Row({ label, value }) { return <div className="flex justify-between text-xs"><span className="text-[var(--text-tertiary)]">{label}</span><span className="font-medium text-[var(--text)]">{value}</span></div>; }
 
-function ScreenCard({ children, className = '' }) {
-  return (
-    <section className={'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 ' + className}>
-      {children}
-    </section>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className="text-gray-600 dark:text-gray-300">{label}</span>
-      <span className="text-gray-900 font-medium dark:text-gray-100 break-all text-right max-w-[60%]">{value}</span>
-    </div>
-  );
-}
-
-// ── 叶子屏幕 ──
+// ── Leaf screens ──
 function LanguageScreen() {
-  const { t, setLang } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const { pushSettings } = useSync();
-  const [langPref, setLangPref] = useState(() => {
-    try { const v = localStorage.getItem('skyxing_lang'); return v === 'zh' || v === 'en' ? v : 'auto'; } catch { return 'auto'; }
-  });
-  const handleLang = (l) => {
-    setLangPref(l);
-    if (l === 'auto') { try { localStorage.removeItem('skyxing_lang'); } catch { /* ignore */ } setLang(detectOSLanguage()); }
-    else { setLang(l); }
-    pushSettings({ language: l === 'auto' ? null : l }).catch(() => {});
-  };
-  return (
-    <ScreenCard>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 flex items-center gap-1.5"><Languages size={14} /> {t('settings.language')}</p>
-      <Seg value={langPref} onChange={handleLang} options={[
-        { value: 'auto', label: '跟随系统' }, { value: 'zh', label: '简体中文' }, { value: 'en', label: 'English' },
-      ]} />
-    </ScreenCard>
-  );
+  const handle = (v) => { setLang(v); pushSettings({ language: v }).catch(() => {}); };
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">选择界面显示语言</p><Seg value={lang} onChange={handle} options={[{ value: 'zh-CN', label: '简体中文' }, { value: 'en', label: 'English' }]} /></div>;
 }
-
 function AnimationScreen() {
-  const { t } = useI18n();
   const { animationMode, setAnimationMode } = useAnimation();
   const { pushSettings } = useSync();
-  const handle = (m) => { setAnimationMode(m); pushSettings({ animationMode: m }).catch(() => {}); };
-  return (
-    <ScreenCard>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 flex items-center gap-1.5"><Sparkles size={14} /> {t('settings.animation')}</p>
-      <Seg value={animationMode} onChange={handle} options={[
-        { value: 'minimal', label: t('settings.anim.minimal') }, { value: 'normal', label: t('settings.anim.normal') }, { value: 'rich', label: t('settings.anim.rich') },
-      ]} />
-    </ScreenCard>
-  );
+  const handle = (v) => { setAnimationMode(v); pushSettings({ animationMode: v }).catch(() => {}); };
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">控制界面动画强度</p><Seg value={animationMode} onChange={handle} options={[{ value: 'minimal', label: '极简' }, { value: 'normal', label: '标准' }, { value: 'rich', label: '丰富' }]} /></div>;
 }
-
 function ThemeScreen() {
   const { t } = useI18n();
-  const { theme, setTheme } = useTheme();
-  return (
-    <ScreenCard>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{t('settings.theme')}</p>
-      <div className="flex items-center gap-3">
-        {[{ key: 'light', label: t('settings.light'), icon: Sun }, { key: 'dark', label: t('settings.dark'), icon: Moon }].map((opt) => {
-          const Icon = opt.icon;
-          const active = theme === opt.key;
-          return (
-            <button key={opt.key} onClick={() => setTheme(opt.key)}
-              className={'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ' +
-                (active ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700')}>
-              <Icon size={16} /> {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </ScreenCard>
-  );
+  const { theme, toggleTheme } = useTheme();
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">选择界面配色</p><Seg value={theme} onChange={toggleTheme} options={[{ value: 'light', label: '浅色' }, { value: 'dark', label: '深色' }]} /></div>;
 }
-
-// ── 叶子屏幕：翻译（敬请期待）──
 function TranslationScreen() {
   const { t } = useI18n();
-  const [enabled, setEnabled] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('skyxing_translation') || '{}').enabled || false; } catch { return false; }
-  });
-  const [displayMode, setDisplayMode] = useState(() => {
-    try { const v = JSON.parse(localStorage.getItem('skyxing_translation') || '{}').displayMode; return v === 'translated' || v === 'bilingual' ? v : 'bilingual'; } catch { return 'bilingual'; }
-  });
+  const [enabled, setEnabled] = useState(false);
+  const [mode, setMode] = useState('bilingual');
   const [testResult, setTestResult] = useState('');
-  const [testing, setTesting] = useState(false);
-
-  const persist = (e, d) => {
-    const next = { enabled: e, displayMode: d };
-    try { localStorage.setItem('skyxing_translation', JSON.stringify(next)); } catch {}
-  };
-  const toggleEnabled = () => {
-    const next = !enabled;
-    setEnabled(next);
-    persist(next, displayMode);
-  };
-
-  const handleTest = async () => {
-    setTesting(true);
-    setTestResult('');
-    setTimeout(() => { setTestResult(t('settings.translationComingSoon')); setTesting(false); }, 800);
-  };
-
+  const handleTest = () => { setTestResult(''); setTimeout(() => setTestResult(t('settings.translationComingSoon')), 800); };
   return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <label className="flex items-center justify-between cursor-pointer">
-          <div>
-            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.translationToggle')}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{t('settings.translationToggleDesc')}</p>
-          </div>
-          <Toggle checked={enabled} onChange={toggleEnabled} disabled />
-        </label>
-      </ScreenCard>
-      <ScreenCard className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.translationDisplay')}</p>
-        <Seg value={displayMode} onChange={(v) => { setDisplayMode(v); persist(enabled, v); }} options={[
-          { value: 'translated', label: t('settings.translationDisplayTrans') },
-          { value: 'bilingual', label: t('settings.translationDisplayBilingual') },
-        ]} />
-      </ScreenCard>
-      <ScreenCard className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{t('settings.translationTest')}</p>
-        <p className="text-xs text-gray-500 mb-2">{t('settings.translationTestDesc')}</p>
-        <button onClick={handleTest} disabled={testing} className="btn-outline w-full disabled:opacity-50">
-          {testing ? '测试中...' : t('settings.translationTest')}
-        </button>
-        {testResult && <p className="text-xs text-amber-600 mt-2">{testResult}</p>}
-      </ScreenCard>
-      <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs text-center dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
-        {t('settings.translationComingSoon')}
-      </div>
+    <div className="space-y-3">
+      <div className="sk-card p-4"><label className="flex items-center justify-between cursor-pointer"><div><p className="text-sm font-medium text-[var(--text)]">{t('settings.translationToggle')}</p><p className="text-xs text-[var(--text-tertiary)]">{t('settings.translationToggleDesc')}</p></div><Toggle checked={enabled} onChange={() => setEnabled(!enabled)} disabled /></label></div>
+      <div className={`sk-card p-4 ${!enabled ? 'opacity-40 pointer-events-none' : ''}`}><p className="text-xs text-[var(--text-secondary)] mb-2">{t('settings.translationDisplay')}</p><Seg value={mode} onChange={setMode} options={[{ value: 'translated', label: t('settings.translationDisplayTrans') }, { value: 'bilingual', label: t('settings.translationDisplayBilingual') }]} /></div>
+      <div className={`sk-card p-4 ${!enabled ? 'opacity-40 pointer-events-none' : ''}`}><p className="text-xs text-[var(--text-secondary)] mb-1">{t('settings.translationTest')}</p><button onClick={handleTest} className="sk-btn sk-btn-outline sk-btn-sm w-full mt-2">测试</button>{testResult && <p className="text-xs text-amber-600 mt-2">{testResult}</p>}</div>
+      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs text-center dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">{t('settings.translationComingSoon')}</div>
     </div>
   );
 }
-
-// ── 叶子屏幕：状态栏 ──
 function StatusBarScreen() {
   const { t } = useI18n();
-  const [enabled, setEnabled] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('skyxing_statusbar') || '{}').enabled !== false; } catch { return true; }
-  });
-  const [height, setHeight] = useState(() => {
-    try { const v = JSON.parse(localStorage.getItem('skyxing_statusbar') || '{}').height; return (typeof v === 'number' && v >= 0 && v <= 120) ? v : 28; } catch { return 28; }
-  });
-
-  const persist = (e, h) => {
-    try { localStorage.setItem('skyxing_statusbar', JSON.stringify({ enabled: e, height: h })); } catch {}
-  };
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--status-bar-padding', enabled ? height + 'px' : '0px');
-  }, [enabled, height]);
-
-  const toggleEnabled = () => {
-    const next = !enabled;
-    setEnabled(next);
-    persist(next, height);
-  };
-
-  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-
+  const [enabled, setEnabled] = useState(() => { try { return JSON.parse(localStorage.getItem('sk_statusbar') || '{}').enabled !== false; } catch { return true; } });
+  const [height, setHeight] = useState(() => { try { const v = JSON.parse(localStorage.getItem('sk_statusbar') || '{}').height; return (typeof v === 'number' && v >= 0 && v <= 120) ? v : 28; } catch { return 28; } });
+  useEffect(() => { document.documentElement.style.setProperty('--status-bar-padding', enabled ? height + 'px' : '0px'); try { localStorage.setItem('sk_statusbar', JSON.stringify({ enabled, height })); } catch {} }, [enabled, height]);
   return (
-    <div className="space-y-4">
-      {!isAndroid && (
-        <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300">
-          此设置主要影响 Android 设备。
-        </div>
-      )}
-      <ScreenCard>
-        <label className="flex items-center justify-between cursor-pointer">
-          <div>
-            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.statusBarToggle')}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{t('settings.statusBarToggleDesc')}</p>
-          </div>
-          <Toggle checked={enabled} onChange={toggleEnabled} />
-        </label>
-      </ScreenCard>
-      <ScreenCard>
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.statusBarHeight')}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{t('settings.statusBarHeightDesc')}</p>
-          </div>
-          <span className="text-base font-mono font-semibold text-primary-600">{height}px</span>
-        </div>
-        <input type="range" min={0} max={120} value={height}
-          onChange={(e) => { const v = Number(e.target.value); setHeight(v); persist(enabled, v); }}
-          className="w-full accent-primary-600" />
-        <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-          <span>0px</span>
-          <span>28px</span>
-          <span>60px</span>
-          <span>120px</span>
-        </div>
-      </ScreenCard>
+    <div className="space-y-3">
+      <div className="sk-card p-4"><label className="flex items-center justify-between cursor-pointer"><div><p className="text-sm font-medium text-[var(--text)]">{t('settings.statusBarToggle')}</p><p className="text-xs text-[var(--text-tertiary)]">{t('settings.statusBarToggleDesc')}</p></div><Toggle checked={enabled} onChange={() => setEnabled(!enabled)} /></label></div>
+      <div className="sk-card p-4"><div className="flex items-center justify-between mb-2"><p className="text-sm font-medium text-[var(--text)]">{t('settings.statusBarHeight')}</p><span className="font-mono font-semibold text-[var(--accent)]">{height}px</span></div><input type="range" min={0} max={120} value={height} onChange={e => setHeight(Number(e.target.value))} className="w-full accent-[var(--accent)]" /></div>
     </div>
   );
 }
-
-// ── 叶子屏幕：数据同步 ──
 function SyncScreen() {
   const { t } = useI18n();
-  const { syncNow, syncing, conflict } = useSync();
-  const [syncedAt, setSyncedAt] = useState(null);
-  const handle = async () => { try { await syncNow(); setSyncedAt(Date.now()); } catch { /* ignore */ } };
-  return (
-    <ScreenCard>
-      {conflict && <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg text-sm mb-3">设置已在其他设备更新，已自动同步为最新状态。</div>}
-      <div className="flex items-center justify-between gap-3">
-        <button onClick={handle} disabled={syncing} className="btn-primary">{syncing ? t('common.loading') : t('settings.syncNow')}</button>
-        {syncedAt && !syncing && <span className="text-xs text-green-600">{t('settings.syncDone')} · {new Date(syncedAt).toLocaleTimeString()}</span>}
-      </div>
-    </ScreenCard>
-  );
+  const { syncNow, syncing } = useSync();
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">手动触发跨端数据同步</p><button onClick={syncNow} disabled={syncing} className="sk-btn sk-btn-primary sk-btn-sm">{syncing ? '同步中...' : t('settings.syncNow')}</button></div>;
 }
-
 function TwoFactorScreen() {
-  const { t } = useI18n();
-  const { user, refreshUser } = useAuth();
-  const [showModal, setShowModal] = useState(false);
-  useEffect(() => { refreshUser(); }, []);
-  const totpEnabled = !!user?.totpEnabled;
-  return (
-    <ScreenCard>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings.twoFactor')}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{t('settings.twoFactorDesc')}</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="text-sm text-primary-600 hover:underline font-medium shrink-0 ml-2">
-          {totpEnabled ? '管理' : '开启'}
-        </button>
-      </div>
-      {totpEnabled && <div className="flex items-center gap-1.5 pt-2 text-xs text-green-600"><ShieldCheck size={14} /> {t('settings.twoFactorEnabled')}</div>}
-      {showModal && <TwoFactorModal onClose={() => setShowModal(false)} />}
-    </ScreenCard>
-  );
-}
-
-function TwoFactorModal({ onClose }) {
-  const { t } = useI18n();
-  const { user, refreshUser } = useAuth();
-  const [setupData, setSetupData] = useState(null);
-  const [verifyCode, setVerifyCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [confirmDisable, setConfirmDisable] = useState(false);
-  const totpEnabled = !!user?.totpEnabled;
-
-  const startSetup = async () => {
-    setLoading(true); setError('');
-    try { const data = await api.setup2FA(); setSetupData(data); setVerifyCode(''); }
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
-  const submitSetup = async () => {
-    if (verifyCode.length !== 6) { setError('请输入 6 位验证码'); return; }
-    setLoading(true); setError('');
-    try { await api.verifySetup2FA(setupData.secret, verifyCode); await refreshUser(); setSetupData(null); setVerifyCode(''); }
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  };
-  const disable2FA = async () => {
-    setLoading(true);
-    try { await api.disable2FA(); await refreshUser(); setConfirmDisable(false); onClose(); }
-    catch (err) { alert(err.message); }
-    finally { setLoading(false); }
-  };
-  const copySecret = () => { navigator.clipboard?.writeText(setupData.secret); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-
-  return (
-    <div className="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => !loading && onClose()}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Fingerprint size={18} className="text-primary-600" /> {t('settings.twoFactor')}</h3>
-          <button onClick={() => !loading && onClose()} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
-        </div>
-        {!totpEnabled && !setupData && (
-          <button onClick={startSetup} disabled={loading} className="btn-primary w-full">{loading ? '准备中...' : '开启双重验证'}</button>
-        )}
-        {!totpEnabled && setupData && (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400">请使用身份验证器扫描二维码，或手动输入密钥。</p>
-            <div className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-200 dark:border-gray-600">
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.uri)}`} alt="2FA QR Code" className="w-48 h-48" referrerPolicy="no-referrer" />
-              <p className="text-[10px] text-gray-400 text-center leading-tight break-all">{setupData.uri}</p>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
-              <code className="text-sm font-mono flex-1 break-all select-all">{setupData.secret}</code>
-              <button onClick={copySecret} className="shrink-0 text-gray-400 hover:text-gray-600 p-1">{copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}</button>
-            </div>
-            <input type="text" inputMode="numeric" value={verifyCode} onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))} className="input text-center text-xl tracking-[0.4em] font-mono" placeholder="输入 6 位验证码" />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            <div className="flex gap-2">
-              <button onClick={() => setSetupData(null)} className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200">取消</button>
-              <button onClick={submitSetup} disabled={loading || verifyCode.length < 6} className="flex-1 btn-primary">{loading ? '验证中...' : '确认并启用'}</button>
-            </div>
-          </div>
-        )}
-        {totpEnabled && (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400">双重验证已启用，登录时需输入动态验证码。</p>
-            <button onClick={() => setConfirmDisable(true)} disabled={loading} className="btn-danger w-full">关闭双重验证</button>
-            <button onClick={onClose} className="w-full text-sm text-gray-500 hover:text-gray-700">关闭</button>
-          </div>
-        )}
-      </div>
-      <ConfirmDialog open={confirmDisable} title={t('settings.confirmTitle')} message={t('settings.confirmDisable2FA')} confirmText="关闭" danger onConfirm={disable2FA} onCancel={() => setConfirmDisable(false)} />
-    </div>
-  );
-}
-
-function DeleteAccountScreen() {
-  const { t } = useI18n();
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [deleting, setDeleting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const doDelete = async () => {
-    setShowConfirm(false); setDeleting(true);
-    try { await api.deleteAccount(); await logout(); navigate('/'); }
-    catch (err) { alert(err.message || '注销失败'); setDeleting(false); }
-  };
-  if (!user) {
-    return (
-      <ScreenCard>
-        <p className="text-sm text-gray-500">请先 <Link to="/login" className="text-primary-600 hover:underline">登录</Link> 以使用账号管理功能。</p>
-      </ScreenCard>
-    );
-  }
-  return (
-    <ScreenCard>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">注销后您的文章、评论与账号数据将被永久删除，且无法恢复。</p>
-      <button onClick={() => setShowConfirm(true)} disabled={deleting} className="btn-danger w-full">{deleting ? '注销中...' : t('settings.deleteAccount')}</button>
-      <ConfirmDialog open={showConfirm} title={t('settings.confirmTitle')} message={t('settings.confirmDeleteAccount')} confirmText="注销" danger onConfirm={doDelete} onCancel={() => setShowConfirm(false)} />
-    </ScreenCard>
-  );
-}
-
-function GithubFeedbackScreen() {
-  const { t } = useI18n();
-  return (
-    <ScreenCard>
-      <p className="text-xs text-gray-500 mb-3">遇到问题或有建议？欢迎到 GitHub 提交 Issue。</p>
-      <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer"
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-gray-700 dark:text-gray-200 font-medium text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-        <Github size={15} /> 前往 GitHub 提交反馈
-      </a>
-    </ScreenCard>
-  );
-}
-
-function InAppFeedbackScreen() {
-  const { t } = useI18n();
-  const { user } = useAuth();
-  const [type, setType] = useState('bug');
-  const [contact, setContact] = useState('');
-  const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState('');
-  const submit = async () => {
-    if (!message.trim()) { setError(t('settings.feedbackRequired')); return; }
-    setSubmitting(true); setError('');
-    try { await api.submitFeedback({ type, message: message.trim(), contact: contact.trim() }); setDone(true); }
-    catch (err) { setError(err.message || '提交失败'); }
-    finally { setSubmitting(false); }
-  };
-  if (done) {
-    return (
-      <ScreenCard>
-        <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <div className="w-12 h-12 rounded-full bg-green-500/15 flex items-center justify-center"><Check size={24} className="text-green-500" /></div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings.feedbackSubmitted')}</p>
-        </div>
-      </ScreenCard>
-    );
-  }
-  return (
-    <ScreenCard>
-      <div className="mb-4">
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-2 flex items-center gap-1.5"><Send size={14} /> {t('settings.feedbackType')}</p>
-        <Seg value={type} onChange={setType} options={[
-          { value: 'bug', label: t('settings.feedbackBug') }, { value: 'suggestion', label: t('settings.feedbackSuggestion') }, { value: 'other', label: t('settings.feedbackOther') },
-        ]} />
-      </div>
-      <div className="mb-4">
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.feedbackContact')}</p>
-        <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder={user ? user.username : ''} className="input" />
-      </div>
-      <div className="mb-4">
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.feedbackMessage')}</p>
-        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} maxLength={2000} placeholder={t('settings.feedbackPlaceholder')} className="input resize-none" />
-      </div>
-      {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
-      <button onClick={submit} disabled={submitting} className="btn-primary w-full disabled:opacity-50">{submitting ? t('common.loading') : t('settings.feedbackSubmit')}</button>
-    </ScreenCard>
-  );
-}
-
-function UpdateScreen() {
-  const { t } = useI18n();
-  const [channel, setChannel] = useState('stable');
-  const [source, setSource] = useState('github');
-  const [update, setUpdate] = useState({ checking: false, error: null, hasUpdate: false, latest: null, checked: false });
-
-  const checkUpdate = useCallback(async () => {
-    setUpdate((u) => ({ ...u, checking: true, error: null }));
-    try {
-      const data = await api.checkUpdate('windows', APP_VERSION, channel);
-      setUpdate((u) => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release }));
-    } catch (e) { setUpdate((u) => ({ ...u, checking: false, error: e.message || '检查失败' })); }
-  }, [channel]);
-
-  useEffect(() => { checkUpdate(); }, [checkUpdate]);
-
-  const handleDownload = () => {
-    const dl = update.latest?.download;
-    if (!dl) return;
-    const url = source === 'ghfast' ? (dl.proxyUrl || dl.url) : dl.url;
-    window.open(url, '_blank', 'noopener');
-  };
-
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2"><Info size={15} /> <span>当前版本 v{APP_VERSION} · {channel === 'beta' ? t('settings.channelBeta') : t('settings.channelStable')}</span></div>
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.updateChannel')}</p>
-        <Seg value={channel} onChange={setChannel} options={[{ value: 'stable', label: t('settings.channelStable') }, { value: 'beta', label: t('settings.channelBeta') }]} />
-      </ScreenCard>
-      <ScreenCard>
-        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.updateSource')}</p>
-        <Seg value={source} onChange={setSource} options={[{ value: 'github', label: t('settings.sourceGithub') }, { value: 'ghfast', label: t('settings.sourceGhfast') }]} />
-      </ScreenCard>
-      <ScreenCard>
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={checkUpdate} disabled={update.checking} className="btn-outline">{update.checking ? '检查中...' : '检查更新'}</button>
-        </div>
-        {update.hasUpdate && update.latest && (
-          <div className="p-3 rounded-lg bg-primary-50/40 border border-primary-200 dark:border-primary-800 mb-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">新版本 v{update.latest.version} 可用</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-600 text-white font-medium">OTA</span>
-            </div>
-            <button onClick={handleDownload} className="w-full py-1.5 rounded-lg text-white text-xs font-medium bg-primary-600 hover:bg-primary-700 transition-colors">下载安装包</button>
-          </div>
-        )}
-        {update.checked && !update.hasUpdate && !update.error && <p className="text-xs text-green-600">已是最新版本</p>}
-        {update.error && <p className="text-xs text-red-500">{update.error}</p>}
-      </ScreenCard>
-    </div>
-  );
-}
-
-function DebugScreen() {
-  const { t } = useI18n();
-  const { user } = useAuth();
-  const { debugEnabled, setDebugEnabled } = useAnimation();
+  const { t, user } = useAuth();
   const { pushSettings } = useSync();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pending, setPending] = useState(false);
-  const onToggle = () => { setPending(!debugEnabled); setShowConfirm(true); };
-  const confirm = () => { setDebugEnabled(pending); pushSettings({ debugEnabled: pending }).catch(() => {}); setShowConfirm(false); };
-  const roleLabel = { user: '用户', admin: '管理员', official: '官方' };
+  const handle = async () => {
+    try { await api.disable2FA(); pushSettings({ totpEnabled: false }).catch(() => {}); alert('双重验证已关闭'); } catch (e) { alert(e.message); }
+    setShowConfirm(false);
+  };
   return (
-    <ScreenCard>
-      <label className="flex items-center justify-between cursor-pointer">
-        <span className="text-sm text-gray-900 dark:text-gray-100">{t('settings.debugToggle')}</span>
-        <Toggle checked={debugEnabled} onChange={onToggle} />
-      </label>
-      <div className="border-t border-gray-100 dark:border-gray-700 pt-3 text-sm">
-        <Row label={t('settings.userID')} value={user?.id || '—'} />
-        <Row label={t('settings.role')} value={user ? (roleLabel[user.role] || user.role) : '—'} />
-        <Row label={t('settings.loginStatus')} value={user ? t('settings.loggedIn') : t('settings.notLoggedIn')} />
-        {!!user?.totpEnabled && <div className="flex items-center gap-1.5 pt-1 text-xs text-green-600"><ShieldCheck size={14} /> {t('settings.twoFactorEnabled')}</div>}
-      </div>
-      <ConfirmDialog open={showConfirm} title={t('settings.confirmTitle')} message={pending ? t('settings.confirmEnableDebug') : t('settings.confirmDisableDebug')} confirmText="继续" onConfirm={confirm} onCancel={() => setShowConfirm(false)} />
-    </ScreenCard>
-  );
-}
-
-function AboutScreen() {
-  const { t } = useI18n();
-  return (
-    <ScreenCard>
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#fb7299] to-[#00a1d6] flex items-center justify-center text-white font-bold shadow-md">S</div>
-        <div>
-          <div className="text-[15px] font-bold text-gray-900 dark:text-gray-100">SkyXing</div>
-          <div className="text-xs text-gray-500">跨平台博客 · 全端同步</div>
+    <div className="space-y-3">
+      <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-2">双重验证（2FA）状态</p><p className={`text-sm font-semibold ${user?.totpEnabled ? 'text-green-600' : 'text-[var(--text-tertiary)]'}`}>{user?.totpEnabled ? '已启用' : '未启用'}</p></div>
+      {user?.totpEnabled && (
+        <div className="sk-card p-4">
+          <p className="text-sm text-[var(--text-secondary)] mb-3">关闭双重验证后，登录只需密码。</p>
+          <button onClick={() => setShowConfirm(true)} className="sk-btn sk-btn-danger sk-btn-sm">关闭双重验证</button>
         </div>
-      </div>
-      <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-gray-600 dark:text-gray-300 text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-        <ExternalLink size={14} /> {t('settings.openSource')}
-      </a>
-      <div className="flex gap-2">
-        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-gray-600 dark:text-gray-300 text-xs border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"><FileText size={13} /> 服务条款</a>
-        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-gray-600 dark:text-gray-300 text-xs border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"><FileText size={13} /> 隐私政策</a>
-      </div>
-      <p className="text-center text-[11px] text-gray-400 mt-1">版本 v{APP_VERSION} · MIT License</p>
-    </ScreenCard>
+      )}
+      <Confirm open={showConfirm} title={t('settings.confirmTitle')} msg={t('settings.confirmDisable2FA')} onConfirm={handle} onCancel={() => setShowConfirm(false)} />
+    </div>
   );
 }
-
-// ── L4 介绍屏幕 ──
-function UpdateChannelIntro() {
+function DeleteAccountScreen() {
+  const { t, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const handle = async () => {
+    try { await api.deleteAccount(); await logout(); navigate('/'); } catch (e) { alert(e.message); }
+    setShowConfirm(false);
+  };
+  return (
+    <div className="space-y-3">
+      <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">注销账号将永久删除所有数据，此操作不可撤销。</p><button onClick={() => setShowConfirm(true)} className="sk-btn sk-btn-danger sk-btn-sm">注销账号</button></div>
+      <Confirm open={showConfirm} title={t('settings.confirmTitle')} msg={t('settings.confirmDeleteAccount')} onConfirm={handle} onCancel={() => setShowConfirm(false)} />
+    </div>
+  );
+}
+function GithubFeedbackScreen() {
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">在 GitHub Issues 提交反馈或建议。</p><a href={ISSUES_URL} target="_blank" rel="noopener" className="sk-btn sk-btn-outline sk-btn-sm inline-flex"><Github size={15} className="mr-1" /> GitHub Issues</a></div>;
+}
+function InAppFeedbackScreen() {
   const { t } = useI18n();
+  const [type, setType] = useState('other');
+  const [message, setMessage] = useState('');
+  const [contact, setContact] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState('');
+  const submit = async () => {
+    if (!message.trim()) { setResult('请填写反馈内容'); return; }
+    setSending(true); setResult('');
+    try { const d = await api.submitFeedback({ type, message: message.trim(), contact: contact.trim() }); setResult(d.message || '提交成功'); setMessage(''); setContact(''); }
+    catch (e) { setResult(e.message); }
+    finally { setSending(false); }
+  };
+  return (
+    <div className="sk-card p-4 space-y-3">
+      <p className="text-sm text-[var(--text-secondary)]">直接向我们发送反馈。</p>
+      <Seg value={type} onChange={setType} options={[{ value: 'bug', label: '问题' }, { value: 'suggestion', label: '建议' }, { value: 'other', label: '其他' }]} />
+      <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} placeholder="描述你的问题或建议..." className="sk-input resize-none" />
+      <input value={contact} onChange={e => setContact(e.target.value)} placeholder="联系方式（选填）" className="sk-input" />
+      <button onClick={submit} disabled={sending} className="sk-btn sk-btn-primary w-full">{sending ? '提交中...' : '提交反馈'}</button>
+      {result && <p className="text-xs text-center text-[var(--text-secondary)]">{result}</p>}
+    </div>
+  );
+}
+function UpdateChannelScreen() {
   const [channel, setChannel] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').updateChannel || 'stable'; } catch { return 'stable'; } });
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.updateChannel')}</p>
-            <p className="text-xs text-gray-500">选择更新发布的渠道</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          更新渠道决定了你接收软件更新的版本类型。稳定版提供经过充分测试的正式版本，适合追求稳定体验的用户；测试版提供最新的开发中版本，可优先体验新功能，但可能存在未修复的缺陷。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <p className="text-sm text-gray-900 dark:text-gray-100 font-medium mb-3">当前设置</p>
-        <Seg value={channel} onChange={(v) => { setChannel(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateChannel = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} }} options={[
-          { value: 'stable', label: t('settings.channelStable') }, { value: 'beta', label: t('settings.channelBeta') },
-        ]} />
-      </ScreenCard>
-    </div>
-  );
+  const save = (v) => { setChannel(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateChannel = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} };
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">稳定版经过充分测试，测试版包含最新功能但可能存在缺陷。</p><Seg value={channel} onChange={save} options={[{ value: 'stable', label: '稳定版' }, { value: 'beta', label: '测试版' }]} /></div>;
 }
-function UpdateSourceIntro() {
-  const { t } = useI18n();
+function UpdateSourceScreen() {
   const [source, setSource] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').updateSource || 'github'; } catch { return 'github'; } });
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white"><Download size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.updateSource')}</p>
-            <p className="text-xs text-gray-500">选择软件更新包的下载来源</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          官方源直接从 GitHub 下载更新包，适合海外用户或网络不受限制的地区。镜像源（ghfast）使用国内 CDN 加速节点，适合中国大陆地区用户以获得更快的下载速度。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <p className="text-sm text-gray-900 dark:text-gray-100 font-medium mb-3">当前设置</p>
-        <Seg value={source} onChange={(v) => { setSource(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateSource = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} }} options={[
-          { value: 'github', label: t('settings.sourceGithub') }, { value: 'ghfast', label: t('settings.sourceGhfast') },
-        ]} />
-      </ScreenCard>
-    </div>
-  );
+  const save = (v) => { setSource(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateSource = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} };
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">官方源从 GitHub 下载，镜像源（ghfast）使用国内 CDN 加速。</p><Seg value={source} onChange={save} options={[{ value: 'github', label: '官方源 (GitHub)' }, { value: 'ghfast', label: '镜像源 (ghfast)' }]} /></div>;
 }
-function CheckUpdateIntro() {
-  const { t } = useI18n();
+function CheckUpdateScreen() {
   const [update, setUpdate] = useState({ checking: false, error: null, hasUpdate: false, latest: null, checked: false });
-  const checkUpdate = useCallback(async () => {
-    setUpdate((u) => ({ ...u, checking: true, error: null }));
-    try { const data = await api.checkUpdate('windows', APP_VERSION, 'stable'); setUpdate((u) => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release })); }
-    catch (e) { setUpdate((u) => ({ ...u, checking: false, error: e.message || '检查失败' })); }
-  }, []);
-  useEffect(() => { checkUpdate(); }, [checkUpdate]);
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white"><Download size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">检查更新</p>
-            <p className="text-xs text-gray-500">手动检查并安装新版本</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          点击下方按钮手动检查软件是否有新版本可用。如果有新版本，可以一键下载安装包进行升级。你也可以在更新设置中调整更新渠道和下载源。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <button onClick={checkUpdate} disabled={update.checking} className="btn-primary w-full disabled:opacity-50">{update.checking ? '检查中...' : '检查更新'}</button>
-        {update.hasUpdate && update.latest && (
-          <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-[#fb7299]/10 to-[#00a1d6]/10 border border-[#fb7299]/20">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">新版本 v{update.latest.version} 可用</p>
-            <a href={update.latest.download?.url} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-1.5 rounded-lg text-white text-xs font-medium bg-gradient-to-r from-[#fb7299] to-[#00a1d6] hover:opacity-90">下载安装包</a>
-          </div>
-        )}
-        {update.checked && !update.hasUpdate && !update.error && <p className="text-xs text-green-600 mt-3">已是最新版本</p>}
-        {update.error && <p className="text-xs text-red-500 mt-3">{update.error}</p>}
-      </ScreenCard>
-    </div>
-  );
-}
-function DebugLogIntro() {
-  const { t } = useI18n();
-  const [debugEnabled, setDebugEnabled] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').debugMode || false; } catch { return false; } });
-  const toggleDebug = () => {
-    const next = !debugEnabled;
-    setDebugEnabled(next);
-    try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.debugMode = next; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {}
+  const check = async () => {
+    setUpdate(u => ({ ...u, checking: true }));
+    try { const data = await api.checkUpdate('web', APP_VERSION, 'stable'); setUpdate(u => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release })); }
+    catch (e) { setUpdate(u => ({ ...u, checking: false, error: e.message })); }
   };
+  useEffect(() => { check(); }, []);
   return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white"><Bug size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">日志记录</p>
-            <p className="text-xs text-gray-500">查看和导出应用运行日志</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          日志记录功能会收集应用运行过程中的调试信息和技术数据。当遇到问题需要排查时，可以开启调试模式以记录更详细的日志，帮助开发团队快速定位和修复问题。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-900 dark:text-gray-100">调试模式</span>
-          <Toggle checked={debugEnabled} onChange={toggleDebug} />
-        </label>
-      </ScreenCard>
+    <div className="sk-card p-4 space-y-3">
+      <p className="text-sm text-[var(--text-secondary)]">手动检查新版本。</p>
+      <button onClick={check} disabled={update.checking} className="sk-btn sk-btn-primary sk-btn-sm w-full">{update.checking ? '检查中...' : '检查更新'}</button>
+      {update.hasUpdate && <div className="p-3 rounded-xl bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent)]">新版本 v{update.latest.version} 可用</div>}
+      {update.checked && !update.hasUpdate && !update.error && <p className="text-xs text-green-600">已是最新版本</p>}
+      {update.error && <p className="text-xs text-red-500">{update.error}</p>}
     </div>
   );
 }
-function TerminalIntro() {
-  const { t } = useI18n();
-  const [terminalOpen, setTerminalOpen] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').terminalOpen || false; } catch { return false; } });
-  const toggle = () => {
-    const next = !terminalOpen;
-    setTerminalOpen(next);
-    try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.terminalOpen = next; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {}
-  };
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center text-white"><Bug size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">终端</p>
-            <p className="text-xs text-gray-500">在应用内显示日志终端</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          终端面板可以在应用底部显示实时日志输出，方便开发者或高级用户监控应用运行状态。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <label className="flex items-center justify-between cursor-pointer">
-          <span className="text-sm text-gray-900 dark:text-gray-100">显示终端</span>
-          <Toggle checked={terminalOpen} onChange={toggle} />
-        </label>
-      </ScreenCard>
-    </div>
-  );
+function DebugScreen() {
+  const [debugMode, setDebugMode] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').debugMode || false; } catch { return false; } });
+  const toggle = () => { const n = !debugMode; setDebugMode(n); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.debugMode = n; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} };
+  return <div className="sk-card p-4"><label className="flex items-center justify-between cursor-pointer"><span className="text-sm text-[var(--text)]">调试模式</span><Toggle checked={debugMode} onChange={toggle} /></label></div>;
 }
-function DiagIntro() {
-  const { t } = useI18n();
+function DiagScreen() {
   const { user } = useAuth();
-  const roleLabel = { user: '用户', admin: '管理员', official: '官方' };
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center text-white"><Bug size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">调试信息</p>
-            <p className="text-xs text-gray-500">查看当前应用的诊断信息</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          此处显示应用的诊断信息，包括用户 ID、角色、登录状态和双重验证状态等。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">当前诊断信息</p>
-        <div className="text-xs space-y-2">
-          <div className="flex justify-between"><span className="text-gray-500">{t('settings.userID')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user?.id || '—'}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">{t('settings.role')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user ? (roleLabel[user.role] || user.role) : '—'}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">{t('settings.loginStatus')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user ? t('settings.loggedIn') : t('settings.notLoggedIn')}</span></div>
-        </div>
-      </ScreenCard>
-    </div>
-  );
+  return <div className="sk-card p-4"><p className="text-sm font-medium text-[var(--text)] mb-3">诊断信息</p><div className="space-y-2"><Row label="用户ID" value={user?.id || '—'} /><Row label="角色" value={user ? ({ user: '用户', admin: '管理员', official: '官方' }[user.role] || user.role) : '—'} /><Row label="版本" value={APP_VERSION} /></div></div>;
 }
-function ResetIntro() {
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">重置</p>
-            <p className="text-xs text-gray-500">恢复应用的默认设置</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          重置功能可以将所有本地设置恢复到默认状态，包括主题、语言、动画模式、更新设置等。此操作仅影响本地配置，不会影响账号数据或已发布的文章。
-        </p>
-      </ScreenCard>
-      <ScreenCard>
-        <button onClick={() => { localStorage.removeItem('skyxing_settings'); location.reload(); }}
-          className="w-full py-2.5 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
-          恢复默认设置
-        </button>
-      </ScreenCard>
-    </div>
-  );
+function ResetScreen() {
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">恢复所有本地设置到默认状态。</p><button onClick={() => { localStorage.removeItem('skyxing_settings'); window.location.reload(); }} className="sk-btn sk-btn-danger sk-btn-sm">恢复默认</button></div>;
 }
-function BackendIntro() {
-  const { t } = useI18n();
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white"><Info size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于后端 (SkyXing)</p>
-            <p className="text-xs text-gray-500">了解 SkyXing 后端服务</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-          SkyXing 后端基于 Cloudflare Workers 构建，采用 Hono 框架和 KV 存储，部署在全球边缘节点。
-        </p>
-      </ScreenCard>
-    </div>
-  );
+function BackendScreen() {
+  return <div className="sk-card p-4"><p className="text-sm text-[var(--text-secondary)] mb-3">基于 Cloudflare Workers + Hono + KV 构建。</p><div className="space-y-1.5"><Row label="架构" value="Cloudflare Workers" /><Row label="存储" value="Workers KV" /><Row label="版本" value={APP_VERSION} /></div></div>;
 }
-function TeamIntro() {
-  return (
-    <div className="space-y-4">
-      <ScreenCard>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#fb7299] to-[#00a1d6] flex items-center justify-center text-white"><Users size={16} /></div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于团队</p>
-            <p className="text-xs text-gray-500">SkyXing 开发团队</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center py-6">
-          敬请期待 · 独立开发 · 暂无团队
-        </p>
-      </ScreenCard>
-    </div>
-  );
+function AboutScreen() {
+  return <div className="sk-card p-4"><div className="text-center"><p className="font-bold text-lg text-[var(--text)]">SkyXing</p><p className="text-xs text-[var(--text-tertiary)]">跨平台博客系统</p><p className="text-xs text-[var(--text-tertiary)] mt-2">版本 v{APP_VERSION}</p><div className="mt-3 flex justify-center gap-2"><a href={REPO_URL} target="_blank" rel="noopener" className="sk-btn sk-btn-ghost sk-btn-sm"><Github size={14} /></a></div></div></div>;
+}
+function TeamScreen() {
+  return <div className="sk-card p-4 text-center"><p className="text-sm text-[var(--text-secondary)] py-6">敬请期待 · 独立开发 · 暂无团队</p></div>;
 }
 
+// ── Tree ──
 function buildTree(t) {
   return [
     { key: 'personalize', label: t('settings.personalize'), icon: Palette, children: [
       { key: 'appearance', label: t('settings.appearance'), icon: Palette, children: [
         { key: 'animation', label: t('settings.animation'), icon: Sparkles, screen: AnimationScreen },
         { key: 'theme', label: t('settings.theme'), icon: Sun, screen: ThemeScreen },
-      ] },
+      ]},
       { key: 'language', label: t('settings.language'), icon: Languages, children: [
         { key: 'lang', label: t('settings.language'), icon: Languages, screen: LanguageScreen },
         { key: 'translation', label: t('settings.translation'), icon: Globe, screen: TranslationScreen },
-      ] },
+      ]},
       { key: 'statusBar', label: t('settings.statusBar'), icon: Smartphone, screen: StatusBarScreen },
-    ] },
+    ]},
     { key: 'accountData', label: t('settings.accountData'), icon: RefreshCw, children: [
       { key: 'sync', label: t('settings.sync'), icon: RefreshCw, screen: SyncScreen },
       { key: 'manage', label: t('settings.account'), icon: Fingerprint, children: [
         { key: '2fa', label: t('settings.twoFactor'), icon: Fingerprint, screen: TwoFactorScreen },
         { key: 'delete', label: t('settings.deleteAccount'), icon: Trash2, screen: DeleteAccountScreen },
-      ] },
-    ] },
+      ]},
+    ]},
     { key: 'feedback', label: t('settings.feedback'), icon: MessageSquare, children: [
       { key: 'github', label: t('settings.githubFeedback'), icon: Github, screen: GithubFeedbackScreen },
       { key: 'inapp', label: t('settings.inAppFeedback'), icon: Send, screen: InAppFeedbackScreen },
-    ] },
+    ]},
     { key: 'software', label: t('settings.software'), icon: Info, children: [
       { key: 'update', label: t('settings.update'), icon: Download, children: [
-        { key: 'channel', label: t('settings.updateChannel'), icon: RefreshCw, screen: UpdateChannelIntro },
-        { key: 'source', label: t('settings.updateSource'), icon: Download, screen: UpdateSourceIntro },
-        { key: 'check', label: '检查更新', icon: Download, screen: CheckUpdateIntro },
-      ] },
+        { key: 'channel', label: t('settings.updateChannel'), icon: RefreshCw, screen: UpdateChannelScreen },
+        { key: 'source', label: t('settings.updateSource'), icon: Download, screen: UpdateSourceScreen },
+        { key: 'check', label: '检查更新', icon: Download, screen: CheckUpdateScreen },
+      ]},
       { key: 'debug', label: t('settings.debug'), icon: Bug, children: [
-        { key: 'log', label: '日志记录', icon: Bug, screen: DebugLogIntro },
-        { key: 'terminal', label: '终端', icon: Bug, screen: TerminalIntro },
-        { key: 'diag', label: '调试信息', icon: Bug, screen: DiagIntro },
-      ] },
+        { key: 'log', label: '日志记录', icon: Bug, screen: DebugScreen },
+        { key: 'terminal', label: '终端', icon: Bug, screen: DebugScreen },
+        { key: 'diag', label: '调试信息', icon: Bug, screen: DiagScreen },
+      ]},
       { key: 'about', label: t('settings.about'), icon: Info, children: [
-        { key: 'reset', label: '重置', icon: RefreshCw, screen: ResetIntro },
-        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: BackendIntro },
+        { key: 'reset', label: '重置', icon: RefreshCw, screen: ResetScreen },
+        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: BackendScreen },
         { key: 'app', label: '关于软件', icon: Info, screen: AboutScreen },
-        { key: 'team', label: '关于团队', icon: Info, screen: TeamIntro },
-      ] },
-    ] },
+        { key: 'team', label: '关于团队', icon: Info, screen: TeamScreen },
+      ]},
+    ]},
   ];
 }
 
+// ── Navigator ──
 export default function SettingsPage() {
   const { t } = useI18n();
-  const { conflict } = useSync();
-  const tree = buildTree(t);
-  const [stack, setStack] = useState([{ title: t('settings.title'), items: tree, root: true }]);
-
-  useEffect(() => {
-    setStack((s) => {
-      if (!s[0].root) return s;
-      const next = s.slice();
-      next[0] = { title: t('settings.title'), items: tree, root: true };
-      return next;
-    });
-  }, [t, tree]);
-
+  const [stack, setStack] = useState([{ root: true, items: buildTree(t) }]);
   const current = stack[stack.length - 1];
-  const goBack = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+  const goBack = () => setStack(s => (s.length > 1 ? s.slice(0, -1) : s));
   const onTap = (child) => {
-    if (child.children) setStack((s) => [...s, { title: child.label, items: child.children }]);
-    else if (child.screen) setStack((s) => [...s, { title: child.label, screen: child.screen }]);
+    if (child.children) setStack(s => [...s, { title: child.label, items: child.children }]);
+    else if (child.screen) setStack(s => [...s, { title: child.label, screen: child.screen }]);
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        {!current.root && (
-          <button onClick={goBack} className="p-2 -ml-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label="返回">
-            <ArrowLeft size={20} />
-          </button>
-        )}
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{current.title}</h1>
-          {current.root && <p className="text-sm text-gray-500 mt-0.5">{t('settings.subtitle')}</p>}
-        </div>
+    <div className="sk-page">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        {!current.root && <button onClick={goBack} className="sk-btn sk-btn-ghost sk-btn-sm"><ArrowLeft size={18} /></button>}
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white"><Settings size={20} /></div>
+        <div><h1 className="text-xl font-bold text-[var(--text)]">{current.root ? t('nav.settings') : current.title}</h1></div>
       </div>
 
-      {current.root && conflict && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg text-sm">设置已在其他设备更新，已自动同步为最新状态。</div>
-      )}
-
+      {/* List */}
       {current.items && (
-        <div className="space-y-2 animate-fadeIn">
-          {current.items.map((child) => {
+        <div className="space-y-2 animate-fadeInUp">
+          {current.items.map(child => {
             const Icon = child.icon;
             return (
-              <button key={child.key} onClick={() => onTap(child)}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-all animate-fadeIn">
-                {Icon && <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 shrink-0"><Icon size={16} /></span>}
-                <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{child.label}</span>
-                <ChevronRight size={16} className="text-gray-400 shrink-0" />
+              <button key={child.key} onClick={() => onTap(child)} className="w-full flex items-center gap-3 px-4 py-3 sk-card sk-card-hover text-left">
+                {Icon && <span className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] shrink-0"><Icon size={16} /></span>}
+                <span className="flex-1 text-sm font-medium text-[var(--text)] truncate">{child.label}</span>
+                <ChevronRight size={16} className="text-[var(--text-tertiary)] shrink-0" />
               </button>
             );
           })}
         </div>
       )}
 
+      {/* Leaf */}
       {current.screen && (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeInUp">
           <current.screen />
         </div>
       )}
