@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { Save, X, Wand2 } from 'lucide-react';
-import { standardizeContent } from '../lib/formatter.js';
+import { Save, ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export default function WritePage() {
   const { user } = useAuth();
@@ -16,145 +15,47 @@ export default function WritePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  if (!user) { navigate('/login'); return null; }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      setError('标题和内容不能为空');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
+    if (!title.trim() || !content.trim()) { setError('标题和内容不能为空'); return; }
+    setLoading(true); setError('');
     try {
       const data = await api.createArticle({
-        title: title.trim(),
-        content: content.trim(),
+        title: title.trim(), content: content.trim(),
         excerpt: excerpt.trim() || undefined,
         tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         coverImage: coverImage.trim() || undefined,
       });
-      navigate(`/article/${data.article.id}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStandardize = () => {
-    if (!content.trim()) {
-      setError('请先填写内容');
-      return;
-    }
-    try {
-      const standardized = standardizeContent(content);
-      setContent(standardized);
-      setError('');
-    } catch (e) {
-      setError('标准化处理失败: ' + e.message);
-    }
+      navigate('/article/' + data.article.id);
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">写文章</h1>
+    <div className="max-w-3xl mx-auto sk-page">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate(-1)} className="sk-btn sk-btn-ghost sk-btn-sm"><ArrowLeft size={18} /></button>
+        <h1 className="text-xl font-bold text-[var(--text)]">写文章</h1>
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          {error}
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm mb-4 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+          <AlertTriangle size={15} /> {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="input text-xl font-semibold"
-            placeholder="文章标题"
-            required
-          />
-        </div>
-
-        <div>
-          <input
-            type="text"
-            value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            className="input"
-            placeholder="封面图片URL（可选）"
-          />
-        </div>
-
-        <div>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="input"
-            placeholder="标签，用逗号分隔（可选）"
-          />
-        </div>
-
-        <div>
-          <textarea
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            className="input resize-none"
-            rows={2}
-            placeholder="文章摘要（可选，不填则自动从内容截取）"
-          />
-        </div>
-
-        <div className="relative">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="input resize-none font-mono"
-            rows={20}
-            placeholder="支持 Markdown 语法 + 内嵌 HTML..."
-            required
-          />
-          <button
-            type="button"
-            onClick={handleStandardize}
-            className="absolute bottom-3 right-3 z-10 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 transition-colors shadow-sm"
-            title="自动格式化文章为 SkyXing 标准格式"
-          >
-            <Wand2 size={14} />
-            文章标准化
-          </button>
-        </div>
-
-        <div className="text-sm text-gray-500 space-y-1">
-          <p>支持 <strong>Markdown</strong> 语法：# 标题、**加粗**、*斜体*、`代码`、[链接](url)、![]()图片</p>
-          <p>也支持直接写入 HTML 标签如 &lt;h2&gt;、&lt;p&gt;、&lt;img&gt; 等（经过安全过滤）。</p>
-          <p>文章中的外部链接会通过安全跳转页访问，提醒用户注意风险。</p>
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary"
-          >
-            <Save size={16} className="mr-1.5" />
-            {loading ? '发布中...' : '发布文章'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="btn-outline"
-          >
-            <X size={16} className="mr-1.5" />
-            取消
-          </button>
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="文章标题" className="sk-input text-lg font-semibold" />
+        <input value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="封面图片 URL（选填）" className="sk-input" />
+        <input value={tags} onChange={e => setTags(e.target.value)} placeholder="标签（逗号分隔，如：技术, 生活）" className="sk-input" />
+        <input value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="摘要（选填）" className="sk-input" />
+        <textarea value={content} onChange={e => setContent(e.target.value)} rows={16} placeholder="支持 Markdown 格式..."
+          className="sk-input resize-none font-mono text-sm" />
+        <div className="flex gap-2">
+          <button type="submit" disabled={loading} className="sk-btn sk-btn-primary flex-1"><Save size={16} className="mr-1" />{loading ? '发布中...' : '发布文章'}</button>
+          <button type="button" onClick={() => navigate(-1)} className="sk-btn sk-btn-outline">取消</button>
         </div>
       </form>
     </div>
