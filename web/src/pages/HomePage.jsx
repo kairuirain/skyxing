@@ -1,116 +1,68 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../lib/api';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import { useTransition } from '../context/TransitionContext';
-import {
-  Search, PenSquare, MessageSquare, Bell, User, Settings, ArrowRight,
-  BookOpen, Sparkles, TrendingUp, Users, Globe, Download,
-} from 'lucide-react';
+import api from '../lib/api';
+import { Search, PenSquare, MessageSquare, Bell, User, Settings, ArrowRight, BookOpen, Sparkles, Globe, Users, TrendingUp } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { launch } = useTransition();
+  const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
-  const [notifModal, setNotifModal] = useState(null);
+  const [search, setSearch] = useState('');
 
-  // 未读消息数
-  useEffect(() => {
-    if (user) {
-      api.getUnreadCount().then((d) => setUnread(d.unreadCount || 0)).catch(() => {});
-    }
-  }, [user]);
+  useEffect(() => { if (user) api.getUnreadCount().then(d => setUnread(d.unreadCount || 0)).catch(() => {}); }, [user]);
 
-  // 加载系统通知并弹窗
-  useEffect(() => {
-    const shownKey = 'skyxing_notif_shown';
-    const lastShown = localStorage.getItem(shownKey);
-    api.request('/notifications?systemOnly=true')
-      .then((d) => {
-        const list = d.notifications || [];
-        const unshown = list.filter((n) => n.category === 'system' && (!n.readAt) && n.id !== lastShown);
-        if (unshown.length > 0) {
-          setNotifModal(unshown[0]);
-          localStorage.setItem(shownKey, unshown[0].id);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const dismissNotif = () => setNotifModal(null);
+  const handleSearch = (e) => { e.preventDefault(); if (search.trim()) navigate('/blog?search=' + encodeURIComponent(search.trim())); };
 
   const quickLinks = [
-    { icon: BookOpen, label: '博客', to: '/blog', color: 'from-blue-500 to-cyan-500' },
-    { icon: MessageSquare, label: '消息', to: '/messages', color: 'from-purple-500 to-pink-500', badge: unread > 0 ? unread : null },
-    { icon: User, label: '我的', to: '/me', color: 'from-orange-500 to-amber-500' },
-    { icon: Settings, label: '设置', to: '/settings', color: 'from-gray-500 to-slate-500' },
+    { icon: BookOpen, label: '博客', to: '/blog', desc: '浏览文章' },
+    { icon: MessageSquare, label: '私信', to: '/messages', desc: '实时沟通', badge: unread },
+    { icon: User, label: '我的', to: '/me', desc: '个人主页' },
+    { icon: Settings, label: '设置', to: '/settings', desc: '偏好配置' },
   ];
 
   return (
-    <div>
-      {/* 系统通知弹窗 */}
-      {notifModal && (
-        <div className="fixed inset-0 z-[999] flex items-start justify-center pt-16 px-4 bg-black/40 backdrop-blur-sm"
-          onClick={dismissNotif}>
-          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-[#fb7299] to-[#00a1d6] px-5 py-4">
-              <p className="text-white font-semibold text-[15px]">{notifModal.title || '系统通知'}</p>
-            </div>
-            <div className="p-5">
-              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                {notifModal.body || notifModal.text || ''}
-              </p>
-              {notifModal.actionUrl && (
-                <a href={notifModal.actionUrl} target="_blank" rel="noopener noreferrer"
-                  className="mt-3 block w-full text-center py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-[#fb7299] to-[#00a1d6] text-white hover:opacity-90 transition-opacity">
-                  {notifModal.actionLabel || '前往查看'}
-                </a>
-              )}
-              <button onClick={dismissNotif}
-                className="mt-2 w-full py-2.5 rounded-xl text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-8">
       {/* Hero */}
-      <section className="text-center mb-8 py-10 bg-gradient-to-br from-primary-50 via-white to-white rounded-2xl border border-primary-100 dark:from-primary-900/30 dark:via-gray-800 dark:to-gray-800 dark:border-gray-700">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100 text-primary-700 text-xs font-semibold mb-4 dark:bg-primary-900/40 dark:text-primary-300">
-          <Sparkles size={12} /> 跨平台博客平台
+      <section className="text-center py-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full sk-badge sk-badge-accent text-xs mb-5">
+          <Sparkles size={13} /> 跨平台博客平台
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">SkyXing</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
-          自由创作，分享你的想法。与志同道合的人一起探索知识的边界。
+        <h1 className="text-4xl font-extrabold text-[var(--text)] mb-3 tracking-tight">SkyXing</h1>
+        <p className="text-[var(--text-secondary)] max-w-xl mx-auto mb-6 leading-relaxed">
+          自由创作，分享想法。与志同道合的人一起探索知识的边界。
         </p>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
+        <form onSubmit={handleSearch} className="max-w-md mx-auto relative mb-6">
+          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索文章..."
+            className="sk-input pl-10 pr-4 h-11" />
+        </form>
+        <div className="flex items-center justify-center gap-2.5 flex-wrap">
           {user ? (
-            <button onClick={(e) => launch(e, '/write')} className="btn-primary">
-              <PenSquare size={16} className="mr-1.5" /> 写文章
+            <button onClick={e => launch(e, '/write')} className="sk-btn sk-btn-primary">
+              <PenSquare size={16} /> 写文章
             </button>
           ) : (
-            <button onClick={(e) => launch(e, '/register')} className="btn-primary">
-              立即加入 <ArrowRight size={16} className="ml-1" />
-            </button>
+            <Link to="/register" className="sk-btn sk-btn-primary">立即加入 <ArrowRight size={16} /></Link>
           )}
-          <Link to="/download" className="btn-outline">
-            <Download size={16} className="mr-1.5" /> 下载客户端
-          </Link>
+          <Link to="/download" className="sk-btn sk-btn-outline">下载客户端</Link>
         </div>
       </section>
 
-      {/* 快捷入口卡片 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {quickLinks.map((link) => (
-          <Link key={link.to} to={link.to}
-            className="group relative card p-4 hover:shadow-md transition-all">
-            <div className={'w-10 h-10 rounded-xl bg-gradient-to-br ' + link.color + ' flex items-center justify-center mb-2.5'}>
-              <link.icon size={18} className="text-white" />
+      {/* 快捷入口 */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {quickLinks.map(link => (
+          <Link key={link.to} to={link.to} className="sk-card sk-card-hover p-4 relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white mb-2.5">
+              <link.icon size={18} />
             </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{link.label}</p>
-            {link.badge && (
+            <p className="font-semibold text-sm text-[var(--text)]">{link.label}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">{link.desc}</p>
+            {link.badge > 0 && (
               <span className="absolute top-2 right-2 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
                 {link.badge > 99 ? '99+' : link.badge}
               </span>
@@ -121,46 +73,45 @@ export default function HomePage() {
 
       {/* 用户信息卡片 */}
       {user && (
-        <Link to="/me"
-          className="card p-4 flex items-center gap-3 hover:shadow-md transition-all mb-6">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#fb7299] to-[#00a1d6] flex items-center justify-center text-white font-bold text-sm shrink-0">
-            {user.displayName?.[0] || user.username?.[0] || '?'}
+        <Link to="/me" className="sk-card sk-card-hover p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {(user.displayName || user.username)[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{user.displayName || user.username}</p>
-            <p className="text-xs text-gray-500">查看个人主页 →</p>
+            <p className="font-semibold text-sm text-[var(--text)] truncate">{user.displayName || user.username}</p>
+            <p className="text-xs text-[var(--text-tertiary)]">查看个人主页 →</p>
           </div>
-          <Bell size={18} className="text-gray-400" />
+          <Bell size={18} className="text-[var(--text-tertiary)]" />
         </Link>
       )}
 
-      {/* 浏览博客 */}
-      <Link to="/blog"
-        className="card p-4 flex items-center gap-3 hover:shadow-md transition-all group mb-6">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-          <BookOpen size={18} className="text-white" />
+      {/* 浏览博客入口 */}
+      <Link to="/blog" className="sk-card sk-card-hover p-4 flex items-center gap-3 group">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white">
+          <BookOpen size={18} />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">浏览博客文章</p>
-          <p className="text-xs text-gray-500">阅读最新发布的文章和内容</p>
+        <div className="flex-1">
+          <p className="font-semibold text-sm text-[var(--text)]">浏览博客文章</p>
+          <p className="text-xs text-[var(--text-tertiary)]">阅读最新发布的文章和内容</p>
         </div>
-        <ArrowRight size={16} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+        <ArrowRight size={16} className="text-[var(--text-tertiary)] group-hover:translate-x-0.5 transition-transform" />
       </Link>
 
       {/* 底部统计 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { icon: BookOpen, label: '文章', value: '探索', color: 'text-blue-500' },
-          { icon: Users, label: '社区', value: '交流', color: 'text-purple-500' },
-          { icon: TrendingUp, label: '动态', value: '同步', color: 'text-green-500' },
-          { icon: Globe, label: '跨平台', value: '全端', color: 'text-orange-500' },
-        ].map((item) => (
-          <div key={item.label}
-            className="card px-3.5 py-3 flex items-center gap-2.5">
-            <item.icon size={16} className={item.color} />
+          { icon: BookOpen, label: '文章', value: '探索', color: '#6366f1' },
+          { icon: Users, label: '社区', value: '交流', color: '#8b5cf6' },
+          { icon: TrendingUp, label: '动态', value: '同步', color: '#22c55e' },
+          { icon: Globe, label: '跨平台', value: '全端', color: '#f59e0b' },
+        ].map(item => (
+          <div key={item.label} className="sk-card p-3.5 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: item.color + '20' }}>
+              <item.icon size={15} style={{ color: item.color }} />
+            </div>
             <div>
-              <p className="text-[11px] text-gray-500">{item.label}</p>
-              <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">{item.value}</p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">{item.label}</p>
+              <p className="text-[13px] font-semibold text-[var(--text)]">{item.value}</p>
             </div>
           </div>
         ))}
