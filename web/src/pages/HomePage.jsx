@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useTransition } from '../context/TransitionContext';
 import api from '../lib/api';
 import { Search, PenSquare, MessageSquare, Bell, User, Settings, ArrowRight, BookOpen, Sparkles, Globe, Users, TrendingUp } from 'lucide-react';
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const { t } = useI18n();
-  const { launch } = useTransition();
+  let user = null;
+  let t = (s) => s;
+  try { user = useAuth().user; } catch (e) { console.error('useAuth error:', e); }
+  try { t = useI18n().t; } catch (e) { console.error('useI18n error:', e); }
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [search, setSearch] = useState('');
@@ -27,7 +27,6 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
       <section className="text-center py-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full sk-badge sk-badge-accent text-xs mb-5">
           <Sparkles size={13} /> 跨平台博客平台
@@ -43,9 +42,7 @@ export default function HomePage() {
         </form>
         <div className="flex items-center justify-center gap-2.5 flex-wrap">
           {user ? (
-            <button onClick={e => launch(e, '/write')} className="sk-btn sk-btn-primary">
-              <PenSquare size={16} /> 写文章
-            </button>
+            <Link to="/write" className="sk-btn sk-btn-primary"><PenSquare size={16} /> 写文章</Link>
           ) : (
             <Link to="/register" className="sk-btn sk-btn-primary">立即加入 <ArrowRight size={16} /></Link>
           )}
@@ -53,7 +50,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 快捷入口 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {quickLinks.map(link => (
           <Link key={link.to} to={link.to} className="sk-card sk-card-hover p-4 relative">
@@ -71,7 +67,6 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* 用户信息卡片 */}
       {user && (
         <Link to="/me" className="sk-card sk-card-hover p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white font-bold text-sm shrink-0">
@@ -85,7 +80,6 @@ export default function HomePage() {
         </Link>
       )}
 
-      {/* 浏览博客入口 */}
       <Link to="/blog" className="sk-card sk-card-hover p-4 flex items-center gap-3 group">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white">
           <BookOpen size={18} />
@@ -97,7 +91,6 @@ export default function HomePage() {
         <ArrowRight size={16} className="text-[var(--text-tertiary)] group-hover:translate-x-0.5 transition-transform" />
       </Link>
 
-      {/* 底部统计 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { icon: BookOpen, label: '文章', value: '探索', color: '#6366f1' },

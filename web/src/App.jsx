@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import SlideOutlet from './components/SlideOutlet';
 import HomePage from './pages/HomePage';
@@ -21,7 +22,8 @@ import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   return (
-    <Routes>
+    <ErrorBoundary>
+      <Routes>
       {/* 主内容框架（含顶部导航栏 + 底栏） */}
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
@@ -47,5 +49,6 @@ export default function App() {
         <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>
+    </ErrorBoundary>
   );
 }

@@ -7,7 +7,7 @@ import { useAnimation } from '../context/AnimationContext';
 import { useSync } from '../context/SyncContext';
 import api from '../lib/api';
 import {
-  Palette, Languages, Sparkles, Sun, Moon, Globe, Smartphone,
+  Palette, Languages, Sparkles, Sun, Moon, Globe, Smartphone, Settings,
   RefreshCw, Fingerprint, Trash2, MessageSquare, Send, Github,
   Download, Bug, Info, ArrowLeft, ChevronRight, ShieldCheck, ExternalLink, Check, Users,
 } from 'lucide-react';
