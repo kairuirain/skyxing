@@ -1,54 +1,49 @@
-import { Routes, Route } from 'react-router-dom';
-import ErrorBoundary from './components/ErrorBoundary';
+import { Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
-import SlideOutlet from './components/SlideOutlet';
 import HomePage from './pages/HomePage';
 import BlogPage from './pages/BlogPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ArticlePage from './pages/ArticlePage';
 import WritePage from './pages/WritePage';
-import EditPage from './pages/EditPage';
+import ArticlePage from './pages/ArticlePage';
 import UserPage from './pages/UserPage';
-import AdminPage from './pages/AdminPage';
 import MessagesPage from './pages/MessagesPage';
 import ConversationPage from './pages/ConversationPage';
 import NotificationsPage from './pages/NotificationsPage';
+import AdminPage from './pages/AdminPage';
 import SettingsPage from './pages/SettingsPage';
-import DownloadPage from './pages/DownloadPage';
-import MyPage from './pages/MyPage';
-import LinkRedirect from './pages/LinkRedirect';
-import NotFoundPage from './pages/NotFoundPage';
+import SlideOutlet from './components/SlideOutlet';
 
-export default function App() {
+function MainLayout() {
   return (
-    <ErrorBoundary>
+    <Layout>
       <Routes>
-      {/* 主内容框架（含顶部导航栏 + 底栏） */}
-      <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/download" element={<DownloadPage />} />
-        <Route path="/me" element={<MyPage />} />
-        <Route path="/article/:id" element={<ArticlePage />} />
         <Route path="/write" element={<WritePage />} />
-        <Route path="/edit/:id" element={<EditPage />} />
+        <Route path="/article/:id" element={<ArticlePage />} />
         <Route path="/user/:id" element={<UserPage />} />
+        <Route path="/me" element={<UserPage />} />
         <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/messages/:convId" element={<ConversationPage />} />
-        <Route path="/link" element={<LinkRedirect />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
+        <Route path="/messages/:id" element={<ConversationPage />} />
+        <Route path="/edit/:id" element={<WritePage />} />
+        <Route path="/download" element={<div className="sk-card p-8 text-center"><h1 className="text-2xl font-bold mb-4">下载客户端</h1><p className="text-[var(--text-secondary)]">敬请期待</p></div>} />
+      </Routes>
+    </Layout>
+  );
+}
 
-      {/* 二级菜单（全屏滑入，覆盖导航栏） */}
+export default function App() {
+  return (
+    <Routes>
+      <Route path="*" element={<MainLayout />} />
       <Route element={<SlideOutlet />}>
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>
-    </ErrorBoundary>
   );
 }

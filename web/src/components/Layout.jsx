@@ -28,8 +28,9 @@ export default function Layout({ children }) {
     if (user) api.getUnreadCount().then(d => setUnread(d.unreadCount || 0)).catch(() => {});
   }, [user]);
 
-  // 系统通知弹窗
+  // 系统通知弹窗（仅登录用户）
   useEffect(() => {
+    if (!user) return;
     const key = 'sk_notif_shown';
     const last = localStorage.getItem(key);
     api.request('/notifications?systemOnly=true').then(d => {
@@ -37,7 +38,7 @@ export default function Layout({ children }) {
       const unshown = list.filter(n => n.category === 'system' && !n.readAt && n.id !== last);
       if (unshown.length > 0) { setNotifModal(unshown[0]); localStorage.setItem(key, unshown[0].id); }
     }).catch(() => {});
-  }, []);
+  }, [user]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
