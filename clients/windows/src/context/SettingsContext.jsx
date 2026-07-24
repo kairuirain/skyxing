@@ -5,6 +5,10 @@ const DEFAULTS = {
   autoUpdate: true,
   updateChannel: 'stable',
   updateSource: 'github', // 'github' | 'ghfast'
+  translationEnabled: false,
+  translationDisplayMode: 'bilingual',
+  statusBarEnabled: true,
+  statusBarHeight: 28,
   cacheSize: 0,
   lastCleanTime: null,
 };

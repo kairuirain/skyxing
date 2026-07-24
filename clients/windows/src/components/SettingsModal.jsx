@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import {
   Palette, Download, MessageSquare, Send, Info, RefreshCw, Sun, Moon, ExternalLink, Check,
   Bug, Fingerprint, Trash2, Languages, Sparkles, ShieldCheck, ChevronRight, Github,
-  FileText, AlertTriangle, ArrowLeft,
+  FileText, AlertTriangle, ArrowLeft, Globe, Smartphone,
 } from 'lucide-react';
 
 const APP_VERSION = '2.0.1';
@@ -104,6 +104,105 @@ function ThemeScreen() {
         })}
       </div>
     </Card>
+  );
+}
+
+// ── 叶子屏幕：翻译（敬请期待）──
+function TranslationScreen() {
+  const { settings, updateSetting } = useSettings();
+  const enabled = !!settings.translationEnabled;
+  const displayMode = settings.translationDisplayMode || 'bilingual';
+  const [testResult, setTestResult] = useState('');
+  const [testing, setTesting] = useState(false);
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult('');
+    setTimeout(() => { setTestResult('翻译功能敬请期待'); setTesting(false); }, 800);
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">启用翻译</p>
+            <p className="text-xs text-gray-500 mt-0.5">在文章等内容区域显示翻译按钮</p>
+          </div>
+          <Toggle active={enabled} onClick={() => updateSetting('translationEnabled', !enabled)} />
+        </label>
+      </Card>
+      <Card className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
+        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">显示模式</p>
+        <Seg value={displayMode} onChange={(v) => updateSetting('translationDisplayMode', v)} options={[
+          { value: 'translated', label: '纯译文' },
+          { value: 'bilingual', label: '双语对照' },
+        ]} />
+      </Card>
+      <Card className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
+        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">服务测试</p>
+        <p className="text-xs text-gray-500 mb-2">点击测试微软翻译服务是否可用</p>
+        <button onClick={handleTest} disabled={testing}
+          className="w-full py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">
+          {testing ? '测试中...' : '测试翻译服务'}
+        </button>
+        {testResult && <p className="text-xs text-amber-600 mt-2">{testResult}</p>}
+      </Card>
+      <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs text-center">
+        翻译功能正在开发中，敬请期待！
+      </div>
+    </div>
+  );
+}
+
+// ── 叶子屏幕：状态栏 ──
+function StatusBarScreen() {
+  const { settings, updateSetting } = useSettings();
+  const enabled = settings.statusBarEnabled !== false;
+  const height = (typeof settings.statusBarHeight === 'number' && settings.statusBarHeight >= 0 && settings.statusBarHeight <= 120) ? settings.statusBarHeight : 28;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--status-bar-padding', enabled ? height + 'px' : '0px');
+  }, [enabled, height]);
+
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
+  return (
+    <div className="space-y-3">
+      {!isAndroid && (
+        <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs">
+          此设置主要影响 Android 设备。
+        </div>
+      )}
+      <Card>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">状态栏适配</p>
+            <p className="text-xs text-gray-500 mt-0.5">页面顶部留出状态栏安全区域</p>
+          </div>
+          <Toggle active={enabled} onClick={() => updateSetting('statusBarEnabled', !enabled)} />
+        </label>
+      </Card>
+      <Card>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">状态栏高度</p>
+            <p className="text-xs text-gray-500 mt-0.5">自定义状态栏占用高度</p>
+          </div>
+          <span className="text-base font-mono font-semibold text-primary-600">{height}px</span>
+        </div>
+        <input type="range" min={0} max={120} value={height}
+          onChange={(e) => updateSetting('statusBarHeight', Number(e.target.value))}
+          className="w-full accent-primary-600" />
+        <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+          <span>0px</span>
+          <span>28px</span>
+          <span>60px</span>
+          <span>120px</span>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -357,6 +456,11 @@ function buildTree(onClose) {
       { key: 'appearance', label: '外观', icon: Palette, children: [
         { key: 'theme', label: '主题', icon: Sun, screen: ThemeScreen },
       ] },
+      { key: 'language', label: '语言', icon: Languages, children: [
+        { key: 'lang', label: '语言', icon: Languages, screen: () => <div>语言设置</div> },
+        { key: 'translation', label: '翻译', icon: Globe, screen: TranslationScreen },
+      ] },
+      { key: 'statusBar', label: '状态栏', icon: Smartphone, screen: StatusBarScreen },
     ] },
     { key: 'accountData', label: '账号数据', icon: RefreshCw, children: [
       { key: 'manage', label: '账号管理', icon: Fingerprint, children: [
@@ -368,9 +472,22 @@ function buildTree(onClose) {
       { key: 'inapp', label: '提交反馈', icon: Send, screen: InAppFeedbackScreen },
     ] },
     { key: 'software', label: '软件', icon: Info, children: [
-      { key: 'update', label: '更新', icon: Download, screen: UpdateScreen },
-      { key: 'debug', label: '调试', icon: Bug, screen: DebugScreen },
-      { key: 'about', label: '关于软件', icon: Info, screen: AboutScreen },
+      { key: 'update', label: '更新', icon: Download, children: [
+        { key: 'channel', label: '更新渠道', icon: RefreshCw, screen: UpdateScreen },
+        { key: 'source', label: '下载源', icon: Download, screen: UpdateScreen },
+        { key: 'check', label: '检查更新', icon: Download, screen: UpdateScreen },
+      ] },
+      { key: 'debug', label: '调试', icon: Bug, children: [
+        { key: 'log', label: '日志记录', icon: Bug, screen: DebugScreen },
+        { key: 'terminal', label: '终端', icon: Bug, screen: DebugScreen },
+        { key: 'diag', label: '调试信息', icon: Bug, screen: DebugScreen },
+      ] },
+      { key: 'about', label: '关于软件', icon: Info, children: [
+        { key: 'reset', label: '重置', icon: RefreshCw, screen: AboutScreen },
+        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: AboutScreen },
+        { key: 'app', label: '关于软件', icon: Info, screen: AboutScreen },
+        { key: 'team', label: '关于团队', icon: Info, screen: AboutScreen },
+      ] },
     ] },
   ];
 }

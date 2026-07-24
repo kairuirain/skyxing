@@ -10,7 +10,7 @@ import api from '../lib/api';
 import {
   Palette, Download, MessageSquare, Send, Info, RefreshCw, Sun, Moon, ExternalLink, Check,
   Bug, Fingerprint, Copy, Trash2, Languages, Sparkles, ShieldCheck, ChevronRight, Github,
-  FileText, AlertTriangle, ArrowLeft,
+  FileText, AlertTriangle, ArrowLeft, Globe, Smartphone,
 } from 'lucide-react';
 
 const APP_VERSION = '2.0.1';
@@ -153,7 +153,133 @@ function ThemeScreen() {
   );
 }
 
-function SyncScreen() {
+// ── 叶子屏幕：翻译（敬请期待）──
+function TranslationScreen() {
+  const { t } = useI18n();
+  const [enabled, setEnabled] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('skyxing_translation') || '{}').enabled || false; } catch { return false; }
+  });
+  const [displayMode, setDisplayMode] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem('skyxing_translation') || '{}').displayMode; return v === 'translated' || v === 'bilingual' ? v : 'bilingual'; } catch { return 'bilingual'; }
+  });
+  const [testResult, setTestResult] = useState('');
+  const [testing, setTesting] = useState(false);
+
+  const persist = (e, d) => {
+    const next = { enabled: e, displayMode: d };
+    try { localStorage.setItem('skyxing_translation', JSON.stringify(next)); } catch {}
+  };
+  const toggleEnabled = () => {
+    const next = !enabled;
+    setEnabled(next);
+    persist(next, displayMode);
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult('');
+    setTimeout(() => { setTestResult(t('settings.translationComingSoon')); setTesting(false); }, 800);
+  };
+
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.translationToggle')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t('settings.translationToggleDesc')}</p>
+          </div>
+          <Toggle checked={enabled} onChange={toggleEnabled} disabled />
+        </label>
+      </ScreenCard>
+      <ScreenCard className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
+        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">{t('settings.translationDisplay')}</p>
+        <Seg value={displayMode} onChange={(v) => { setDisplayMode(v); persist(enabled, v); }} options={[
+          { value: 'translated', label: t('settings.translationDisplayTrans') },
+          { value: 'bilingual', label: t('settings.translationDisplayBilingual') },
+        ]} />
+      </ScreenCard>
+      <ScreenCard className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
+        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">{t('settings.translationTest')}</p>
+        <p className="text-xs text-gray-500 mb-2">{t('settings.translationTestDesc')}</p>
+        <button onClick={handleTest} disabled={testing} className="btn-outline w-full disabled:opacity-50">
+          {testing ? '测试中...' : t('settings.translationTest')}
+        </button>
+        {testResult && <p className="text-xs text-amber-600 mt-2">{testResult}</p>}
+      </ScreenCard>
+      <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs text-center dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
+        {t('settings.translationComingSoon')}
+      </div>
+    </div>
+  );
+}
+
+// ── 叶子屏幕：状态栏 ──
+function StatusBarScreen() {
+  const { t } = useI18n();
+  const [enabled, setEnabled] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('skyxing_statusbar') || '{}').enabled !== false; } catch { return true; }
+  });
+  const [height, setHeight] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem('skyxing_statusbar') || '{}').height; return (typeof v === 'number' && v >= 0 && v <= 120) ? v : 28; } catch { return 28; }
+  });
+
+  const persist = (e, h) => {
+    try { localStorage.setItem('skyxing_statusbar', JSON.stringify({ enabled: e, height: h })); } catch {}
+  };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--status-bar-padding', enabled ? height + 'px' : '0px');
+  }, [enabled, height]);
+
+  const toggleEnabled = () => {
+    const next = !enabled;
+    setEnabled(next);
+    persist(next, height);
+  };
+
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
+  return (
+    <div className="space-y-4">
+      {!isAndroid && (
+        <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300">
+          此设置主要影响 Android 设备。
+        </div>
+      )}
+      <ScreenCard>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.statusBarToggle')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t('settings.statusBarToggleDesc')}</p>
+          </div>
+          <Toggle checked={enabled} onChange={toggleEnabled} />
+        </label>
+      </ScreenCard>
+      <ScreenCard>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-sm text-gray-900 dark:text-gray-100">{t('settings.statusBarHeight')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t('settings.statusBarHeightDesc')}</p>
+          </div>
+          <span className="text-base font-mono font-semibold text-primary-600">{height}px</span>
+        </div>
+        <input type="range" min={0} max={120} value={height}
+          onChange={(e) => { const v = Number(e.target.value); setHeight(v); persist(enabled, v); }}
+          className="w-full accent-primary-600" />
+        <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+          <span>0px</span>
+          <span>28px</span>
+          <span>60px</span>
+          <span>120px</span>
+        </div>
+      </ScreenCard>
+    </div>
+  );
+}
+
+// ── 叶子屏幕：数据同步 ──
   const { t } = useI18n();
   const { syncNow, syncing, conflict } = useSync();
   const [syncedAt, setSyncedAt] = useState(null);
@@ -462,10 +588,14 @@ function buildTree(t) {
   return [
     { key: 'personalize', label: t('settings.personalize'), icon: Palette, children: [
       { key: 'appearance', label: t('settings.appearance'), icon: Palette, children: [
-        { key: 'language', label: t('settings.language'), icon: Languages, screen: LanguageScreen },
         { key: 'animation', label: t('settings.animation'), icon: Sparkles, screen: AnimationScreen },
         { key: 'theme', label: t('settings.theme'), icon: Sun, screen: ThemeScreen },
       ] },
+      { key: 'language', label: t('settings.language'), icon: Languages, children: [
+        { key: 'lang', label: t('settings.language'), icon: Languages, screen: LanguageScreen },
+        { key: 'translation', label: t('settings.translation'), icon: Globe, screen: TranslationScreen },
+      ] },
+      { key: 'statusBar', label: t('settings.statusBar'), icon: Smartphone, screen: StatusBarScreen },
     ] },
     { key: 'accountData', label: t('settings.accountData'), icon: RefreshCw, children: [
       { key: 'sync', label: t('settings.sync'), icon: RefreshCw, screen: SyncScreen },
@@ -479,9 +609,22 @@ function buildTree(t) {
       { key: 'inapp', label: t('settings.inAppFeedback'), icon: Send, screen: InAppFeedbackScreen },
     ] },
     { key: 'software', label: t('settings.software'), icon: Info, children: [
-      { key: 'update', label: t('settings.update'), icon: Download, screen: UpdateScreen },
-      { key: 'debug', label: t('settings.debug'), icon: Bug, screen: DebugScreen },
-      { key: 'about', label: t('settings.about'), icon: Info, screen: AboutScreen },
+      { key: 'update', label: t('settings.update'), icon: Download, children: [
+        { key: 'channel', label: t('settings.updateChannel'), icon: RefreshCw, screen: () => <UpdateScreen /> },
+        { key: 'source', label: t('settings.updateSource'), icon: Download, screen: () => <UpdateScreen /> },
+        { key: 'check', label: '检查更新', icon: Download, screen: () => <UpdateScreen /> },
+      ] },
+      { key: 'debug', label: t('settings.debug'), icon: Bug, children: [
+        { key: 'log', label: '日志记录', icon: Bug, screen: () => <DebugScreen /> },
+        { key: 'terminal', label: '终端', icon: Bug, screen: () => <DebugScreen /> },
+        { key: 'diag', label: '调试信息', icon: Bug, screen: () => <DebugScreen /> },
+      ] },
+      { key: 'about', label: t('settings.about'), icon: Info, children: [
+        { key: 'reset', label: '重置', icon: RefreshCw, screen: () => <AboutScreen /> },
+        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: () => <AboutScreen /> },
+        { key: 'app', label: '关于软件', icon: Info, screen: () => <AboutScreen /> },
+        { key: 'team', label: '关于团队', icon: Info, screen: () => <AboutScreen /> },
+      ] },
     ] },
   ];
 }

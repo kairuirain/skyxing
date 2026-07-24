@@ -13,13 +13,18 @@ const notifications = new Hono();
 notifications.get('/', authRequired, async (c) => {
   const user = c.get('user');
   const env = c.env;
+  const systemOnly = c.req.query('systemOnly') === 'true';
 
   const idx = (await kvGet(env, PREFIX.NOTIFICATION_INDEX + user.userId)) || [];
   const raw = (await kvGetMany(env, idx.map((id) => PREFIX.NOTIFICATIONS + id))).filter(Boolean);
   raw.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   // 统一规整（兼容旧格式）：回填 title/body/category/icon
-  const list = raw.map(normalizeNotification);
+  let list = raw.map(normalizeNotification);
+
+  if (systemOnly) {
+    list = list.filter((n) => n.category === 'system');
+  }
 
   const unread = list.filter((n) => !n.read).length;
   return c.json({ notifications: list, unread });
