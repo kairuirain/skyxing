@@ -224,4 +224,55 @@ admin.post('/users/cleanup', officialRequired, async (c) => {
   }
 });
 
+// ─── 重置所有用户（仅 official） ────────────────────────────────
+admin.post('/users/reset-all', officialRequired, async (c) => {
+  try {
+    const env = c.env;
+    const result = await env.SKYXING_KV.list({ prefix: PREFIX.USERS, limit: 1000 });
+    const userKeys = result.keys || [];
+    let deleted = 0;
+    for (const k of userKeys) {
+      try { await env.SKYXING_KV.delete(k.name); deleted++; } catch {}
+    }
+    // 删除所有用户名索引
+    const idxResult = await env.SKYXING_KV.list({ prefix: PREFIX.USERNAME_INDEX, limit: 1000 });
+    for (const k of (idxResult.keys || [])) {
+      try { await env.SKYXING_KV.delete(k.name); } catch {}
+    }
+    // 删除所有邮箱索引
+    const emailResult = await env.SKYXING_KV.list({ prefix: PREFIX.EMAIL_INDEX, limit: 1000 });
+    for (const k of (emailResult.keys || [])) {
+      try { await env.SKYXING_KV.delete(k.name); } catch {}
+    }
+    // 重建 SkyXing 官方账号
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const passwordHash = await hashPassword('WUkaiRUI@(SkyXing2026)');
+    const user = {
+      id,
+      username: 'SkyXing',
+      displayName: 'SkyXing',
+      email: 'skyxing@skyxing.cn',
+      passwordHash,
+      role: 'official',
+      totpEnabled: false,
+      totpSecret: null,
+      agreedToTerms: true,
+      language: 'zh-CN',
+      animationMode: 'normal',
+      debugEnabled: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await env.SKYXING_KV.put(PREFIX.USERS + id, JSON.stringify(user));
+    await env.SKYXING_KV.put(PREFIX.USERNAME_INDEX + 'skyxing', id);
+    await env.SKYXING_KV.put(PREFIX.EMAIL_INDEX + 'skyxing@skyxing.cn', id);
+    invalidateListCache(PREFIX.USERS);
+
+    return c.json({ message: `已删除 ${deleted} 个用户，SkyXing 官方账号已重建`, deleted });
+  } catch (e) {
+    return c.json({ error: e.message || '未知错误' }, 500);
+  }
+});
+
 export default admin;

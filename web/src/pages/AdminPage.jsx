@@ -102,6 +102,16 @@ export default function AdminPage() {
       loadData();
     } catch (e) { setCleanupResult('错误: ' + e.message); }
   };
+  const handleResetAll = async () => {
+    if (!confirm('⚠️ 确定删除所有用户并仅保留 SkyXing 官方账号？此操作不可撤销！')) return;
+    if (!confirm('再次确认：所有用户数据将被永久删除。')) return;
+    setCleanupResult('');
+    try {
+      const d = await api.request('/admin/users/reset-all', { method: 'POST' });
+      setCleanupResult(d.message);
+      loadData();
+    } catch (e) { setCleanupResult('错误: ' + e.message); }
+  };
 
   if (loading) return <Loading />;
 
@@ -173,12 +183,21 @@ export default function AdminPage() {
             </StatCard>
             {user.role === 'official' && (
               <StatCard icon={<RefreshCw size={18} />} label="KV 维护" color="orange" value="工具">
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">清理重复/无效的用户数据</p>
-                  <button onClick={handleCleanup}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors">
-                    清理用户数据
-                  </button>
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">清理重复/无效的用户数据</p>
+                    <button onClick={handleCleanup}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+                      清理用户数据
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">⚠ 删除所有用户并重建 SkyXing 官方账号</p>
+                    <button onClick={handleResetAll}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
+                      重置所有用户
+                    </button>
+                  </div>
                   {cleanupResult && <p className="text-xs mt-2 text-gray-600 dark:text-gray-300">{cleanupResult}</p>}
                 </div>
               </StatCard>
