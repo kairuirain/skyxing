@@ -449,6 +449,218 @@ function AboutScreen() {
   );
 }
 
+// ── L4 介绍屏幕 ──
+function UpdateChannelIntro() {
+  const { settings, updateSetting } = useSettings();
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">更新渠道</p>
+            <p className="text-xs text-gray-500">选择更新发布的渠道</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          更新渠道决定了你接收软件更新的版本类型。稳定版提供经过充分测试的正式版本；测试版提供最新的开发中版本，可优先体验新功能。
+        </p>
+      </Card>
+      <Card>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">当前设置</p>
+        <Seg value={settings.updateChannel || 'stable'} onChange={(v) => updateSetting('updateChannel', v)} options={[
+          { value: 'stable', label: '稳定版' }, { value: 'beta', label: '测试版' },
+        ]} />
+      </Card>
+    </div>
+  );
+}
+function UpdateSourceIntro() {
+  const { settings, updateSetting } = useSettings();
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white"><Download size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">下载源</p>
+            <p className="text-xs text-gray-500">选择下载来源</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          官方源直接从 GitHub 下载，适合海外用户。镜像源（ghfast）使用国内 CDN 加速，适合中国大陆地区用户。
+        </p>
+      </Card>
+      <Card>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">当前设置</p>
+        <Seg value={settings.updateSource || 'github'} onChange={(v) => updateSetting('updateSource', v)} options={[
+          { value: 'github', label: '官方源 (GitHub)' }, { value: 'ghfast', label: '镜像源 (ghfast)' },
+        ]} />
+      </Card>
+    </div>
+  );
+}
+function CheckUpdateIntro() {
+  const { settings, updateSetting } = useSettings();
+  const [update, setUpdate] = useState({ checking: false, error: null, hasUpdate: false, latest: null, checked: false });
+  const checkUpdate = useCallback(async () => {
+    setUpdate((u) => ({ ...u, checking: true, error: null }));
+    try { const data = await api.checkUpdate('windows', APP_VERSION, settings.updateChannel || 'stable'); setUpdate((u) => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release })); }
+    catch (e) { setUpdate((u) => ({ ...u, checking: false, error: e.message || '检查失败' })); }
+  }, []);
+  useEffect(() => { checkUpdate(); }, [checkUpdate]);
+  const handleDownload = () => {
+    const dl = update.latest?.download;
+    if (!dl) return;
+    const url = (settings.updateSource || 'github') === 'ghfast' ? (dl.proxyUrl || dl.url) : dl.url;
+    if (url) window.open(url, '_blank', 'noopener');
+  };
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white"><Download size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">检查更新</p>
+            <p className="text-xs text-gray-500">手动检查并安装新版本</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          点击下方按钮手动检查软件是否有新版本可用。如果有新版本，可以一键下载安装包进行升级。
+        </p>
+      </Card>
+      <Card>
+        <button onClick={() => checkUpdate()} disabled={update.checking}
+          className="w-full py-2.5 px-4 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50">
+          {update.checking ? '检查中...' : '检查更新'}
+        </button>
+        {update.hasUpdate && update.latest && (
+          <div className="mt-3 border border-primary-200 rounded-lg p-4 bg-primary-50/40">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">新版本 v{update.latest.version} 可用</p>
+            <button onClick={handleDownload} className="w-full py-1.5 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700">下载安装包</button>
+          </div>
+        )}
+        {update.checked && !update.hasUpdate && !update.error && <p className="text-xs text-green-600 mt-3">已是最新版本</p>}
+        {update.error && <p className="text-xs text-red-500 mt-3">{update.error}</p>}
+      </Card>
+    </div>
+  );
+}
+function DebugLogIntro() {
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">日志记录</p>
+            <p className="text-xs text-gray-500">查看和导出应用运行日志</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">开启调试模式以记录更详细的日志，帮助开发团队快速定位和修复问题。</p>
+      </Card>
+    </div>
+  );
+}
+function TerminalIntro() {
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">终端</p>
+            <p className="text-xs text-gray-500">在应用内显示日志终端</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">终端面板可以在应用底部显示实时日志输出，方便监控应用运行状态。</p>
+      </Card>
+    </div>
+  );
+}
+function DiagIntro() {
+  const { user } = useAuth();
+  const roleLabel = { user: '用户', admin: '管理员', official: '官方' };
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">调试信息</p>
+            <p className="text-xs text-gray-500">查看当前应用的诊断信息</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">显示诊断信息，包括用户 ID、角色、登录状态等。</p>
+      </Card>
+      <Card>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">当前诊断信息</p>
+        <div className="text-sm space-y-2">
+          <Row label="用户 ID" value={user?.id || '—'} />
+          <Row label="角色" value={user ? (roleLabel[user.role] || user.role) : '—'} />
+          <Row label="登录状态" value={user ? '已登录' : '未登录'} />
+        </div>
+      </Card>
+    </div>
+  );
+}
+function ResetIntro() {
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">重置</p>
+            <p className="text-xs text-gray-500">恢复应用的默认设置</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">将所有本地设置恢复到默认状态，不会影响账号数据或已发布的文章。</p>
+      </Card>
+      <Card>
+        <button onClick={() => { localStorage.removeItem('skyxing_settings'); location.reload(); }}
+          className="w-full py-2.5 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
+          恢复默认设置
+        </button>
+      </Card>
+    </div>
+  );
+}
+function BackendIntro() {
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white"><Info size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于后端 (SkyXing)</p>
+            <p className="text-xs text-gray-500">了解 SkyXing 后端服务</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">基于 Cloudflare Workers 构建，采用 Hono 框架和 KV 存储，部署在全球边缘节点。</p>
+      </Card>
+    </div>
+  );
+}
+function TeamIntro() {
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#fb7299] to-[#00a1d6] flex items-center justify-center text-white"><Users size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于团队</p>
+            <p className="text-xs text-gray-500">SkyXing 开发团队</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center py-6">
+          敬请期待 · 独立开发 · 暂无团队
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 // ── 设置树（Windows）──
 function buildTree(onClose) {
   return [
@@ -473,20 +685,20 @@ function buildTree(onClose) {
     ] },
     { key: 'software', label: '软件', icon: Info, children: [
       { key: 'update', label: '更新', icon: Download, children: [
-        { key: 'channel', label: '更新渠道', icon: RefreshCw, screen: UpdateScreen },
-        { key: 'source', label: '下载源', icon: Download, screen: UpdateScreen },
-        { key: 'check', label: '检查更新', icon: Download, screen: UpdateScreen },
+        { key: 'channel', label: '更新渠道', icon: RefreshCw, screen: UpdateChannelIntro },
+        { key: 'source', label: '下载源', icon: Download, screen: UpdateSourceIntro },
+        { key: 'check', label: '检查更新', icon: Download, screen: CheckUpdateIntro },
       ] },
       { key: 'debug', label: '调试', icon: Bug, children: [
-        { key: 'log', label: '日志记录', icon: Bug, screen: DebugScreen },
-        { key: 'terminal', label: '终端', icon: Bug, screen: DebugScreen },
-        { key: 'diag', label: '调试信息', icon: Bug, screen: DebugScreen },
+        { key: 'log', label: '日志记录', icon: Bug, screen: DebugLogIntro },
+        { key: 'terminal', label: '终端', icon: Bug, screen: TerminalIntro },
+        { key: 'diag', label: '调试信息', icon: Bug, screen: DiagIntro },
       ] },
       { key: 'about', label: '关于软件', icon: Info, children: [
-        { key: 'reset', label: '重置', icon: RefreshCw, screen: AboutScreen },
-        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: AboutScreen },
+        { key: 'reset', label: '重置', icon: RefreshCw, screen: ResetIntro },
+        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: BackendIntro },
         { key: 'app', label: '关于软件', icon: Info, screen: AboutScreen },
-        { key: 'team', label: '关于团队', icon: Info, screen: AboutScreen },
+        { key: 'team', label: '关于团队', icon: Info, screen: TeamIntro },
       ] },
     ] },
   ];

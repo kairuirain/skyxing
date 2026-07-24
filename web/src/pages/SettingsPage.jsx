@@ -280,6 +280,7 @@ function StatusBarScreen() {
 }
 
 // ── 叶子屏幕：数据同步 ──
+function SyncScreen() {
   const { t } = useI18n();
   const { syncNow, syncing, conflict } = useSync();
   const [syncedAt, setSyncedAt] = useState(null);
@@ -584,6 +585,249 @@ function AboutScreen() {
   );
 }
 
+// ── L4 介绍屏幕 ──
+function UpdateChannelIntro() {
+  const { t } = useI18n();
+  const [channel, setChannel] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').updateChannel || 'stable'; } catch { return 'stable'; } });
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.updateChannel')}</p>
+            <p className="text-xs text-gray-500">选择更新发布的渠道</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          更新渠道决定了你接收软件更新的版本类型。稳定版提供经过充分测试的正式版本，适合追求稳定体验的用户；测试版提供最新的开发中版本，可优先体验新功能，但可能存在未修复的缺陷。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <p className="text-sm text-gray-900 dark:text-gray-100 font-medium mb-3">当前设置</p>
+        <Seg value={channel} onChange={(v) => { setChannel(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateChannel = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} }} options={[
+          { value: 'stable', label: t('settings.channelStable') }, { value: 'beta', label: t('settings.channelBeta') },
+        ]} />
+      </ScreenCard>
+    </div>
+  );
+}
+function UpdateSourceIntro() {
+  const { t } = useI18n();
+  const [source, setSource] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').updateSource || 'github'; } catch { return 'github'; } });
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white"><Download size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.updateSource')}</p>
+            <p className="text-xs text-gray-500">选择软件更新包的下载来源</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          官方源直接从 GitHub 下载更新包，适合海外用户或网络不受限制的地区。镜像源（ghfast）使用国内 CDN 加速节点，适合中国大陆地区用户以获得更快的下载速度。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <p className="text-sm text-gray-900 dark:text-gray-100 font-medium mb-3">当前设置</p>
+        <Seg value={source} onChange={(v) => { setSource(v); try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.updateSource = v; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {} }} options={[
+          { value: 'github', label: t('settings.sourceGithub') }, { value: 'ghfast', label: t('settings.sourceGhfast') },
+        ]} />
+      </ScreenCard>
+    </div>
+  );
+}
+function CheckUpdateIntro() {
+  const { t } = useI18n();
+  const [update, setUpdate] = useState({ checking: false, error: null, hasUpdate: false, latest: null, checked: false });
+  const checkUpdate = useCallback(async () => {
+    setUpdate((u) => ({ ...u, checking: true, error: null }));
+    try { const data = await api.checkUpdate('windows', APP_VERSION, 'stable'); setUpdate((u) => ({ ...u, checking: false, checked: true, hasUpdate: data.hasUpdate, latest: data.release })); }
+    catch (e) { setUpdate((u) => ({ ...u, checking: false, error: e.message || '检查失败' })); }
+  }, []);
+  useEffect(() => { checkUpdate(); }, [checkUpdate]);
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white"><Download size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">检查更新</p>
+            <p className="text-xs text-gray-500">手动检查并安装新版本</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          点击下方按钮手动检查软件是否有新版本可用。如果有新版本，可以一键下载安装包进行升级。你也可以在更新设置中调整更新渠道和下载源。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <button onClick={checkUpdate} disabled={update.checking} className="btn-primary w-full disabled:opacity-50">{update.checking ? '检查中...' : '检查更新'}</button>
+        {update.hasUpdate && update.latest && (
+          <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-[#fb7299]/10 to-[#00a1d6]/10 border border-[#fb7299]/20">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">新版本 v{update.latest.version} 可用</p>
+            <a href={update.latest.download?.url} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-1.5 rounded-lg text-white text-xs font-medium bg-gradient-to-r from-[#fb7299] to-[#00a1d6] hover:opacity-90">下载安装包</a>
+          </div>
+        )}
+        {update.checked && !update.hasUpdate && !update.error && <p className="text-xs text-green-600 mt-3">已是最新版本</p>}
+        {update.error && <p className="text-xs text-red-500 mt-3">{update.error}</p>}
+      </ScreenCard>
+    </div>
+  );
+}
+function DebugLogIntro() {
+  const { t } = useI18n();
+  const [debugEnabled, setDebugEnabled] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').debugMode || false; } catch { return false; } });
+  const toggleDebug = () => {
+    const next = !debugEnabled;
+    setDebugEnabled(next);
+    try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.debugMode = next; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {}
+  };
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">日志记录</p>
+            <p className="text-xs text-gray-500">查看和导出应用运行日志</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          日志记录功能会收集应用运行过程中的调试信息和技术数据。当遇到问题需要排查时，可以开启调试模式以记录更详细的日志，帮助开发团队快速定位和修复问题。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-sm text-gray-900 dark:text-gray-100">调试模式</span>
+          <Toggle checked={debugEnabled} onChange={toggleDebug} />
+        </label>
+      </ScreenCard>
+    </div>
+  );
+}
+function TerminalIntro() {
+  const { t } = useI18n();
+  const [terminalOpen, setTerminalOpen] = useState(() => { try { return JSON.parse(localStorage.getItem('skyxing_settings') || '{}').terminalOpen || false; } catch { return false; } });
+  const toggle = () => {
+    const next = !terminalOpen;
+    setTerminalOpen(next);
+    try { const s = JSON.parse(localStorage.getItem('skyxing_settings') || '{}'); s.terminalOpen = next; localStorage.setItem('skyxing_settings', JSON.stringify(s)); } catch {}
+  };
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">终端</p>
+            <p className="text-xs text-gray-500">在应用内显示日志终端</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          终端面板可以在应用底部显示实时日志输出，方便开发者或高级用户监控应用运行状态。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-sm text-gray-900 dark:text-gray-100">显示终端</span>
+          <Toggle checked={terminalOpen} onChange={toggle} />
+        </label>
+      </ScreenCard>
+    </div>
+  );
+}
+function DiagIntro() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const roleLabel = { user: '用户', admin: '管理员', official: '官方' };
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center text-white"><Bug size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">调试信息</p>
+            <p className="text-xs text-gray-500">查看当前应用的诊断信息</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          此处显示应用的诊断信息，包括用户 ID、角色、登录状态和双重验证状态等。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">当前诊断信息</p>
+        <div className="text-xs space-y-2">
+          <div className="flex justify-between"><span className="text-gray-500">{t('settings.userID')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user?.id || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">{t('settings.role')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user ? (roleLabel[user.role] || user.role) : '—'}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">{t('settings.loginStatus')}</span><span className="text-gray-900 dark:text-gray-100 font-medium">{user ? t('settings.loggedIn') : t('settings.notLoggedIn')}</span></div>
+        </div>
+      </ScreenCard>
+    </div>
+  );
+}
+function ResetIntro() {
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white"><RefreshCw size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">重置</p>
+            <p className="text-xs text-gray-500">恢复应用的默认设置</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          重置功能可以将所有本地设置恢复到默认状态，包括主题、语言、动画模式、更新设置等。此操作仅影响本地配置，不会影响账号数据或已发布的文章。
+        </p>
+      </ScreenCard>
+      <ScreenCard>
+        <button onClick={() => { localStorage.removeItem('skyxing_settings'); location.reload(); }}
+          className="w-full py-2.5 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
+          恢复默认设置
+        </button>
+      </ScreenCard>
+    </div>
+  );
+}
+function BackendIntro() {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white"><Info size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于后端 (SkyXing)</p>
+            <p className="text-xs text-gray-500">了解 SkyXing 后端服务</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+          SkyXing 后端基于 Cloudflare Workers 构建，采用 Hono 框架和 KV 存储，部署在全球边缘节点。
+        </p>
+      </ScreenCard>
+    </div>
+  );
+}
+function TeamIntro() {
+  return (
+    <div className="space-y-4">
+      <ScreenCard>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#fb7299] to-[#00a1d6] flex items-center justify-center text-white"><Users size={16} /></div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">关于团队</p>
+            <p className="text-xs text-gray-500">SkyXing 开发团队</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center py-6">
+          敬请期待 · 独立开发 · 暂无团队
+        </p>
+      </ScreenCard>
+    </div>
+  );
+}
+
 function buildTree(t) {
   return [
     { key: 'personalize', label: t('settings.personalize'), icon: Palette, children: [
@@ -610,20 +854,20 @@ function buildTree(t) {
     ] },
     { key: 'software', label: t('settings.software'), icon: Info, children: [
       { key: 'update', label: t('settings.update'), icon: Download, children: [
-        { key: 'channel', label: t('settings.updateChannel'), icon: RefreshCw, screen: () => <UpdateScreen /> },
-        { key: 'source', label: t('settings.updateSource'), icon: Download, screen: () => <UpdateScreen /> },
-        { key: 'check', label: '检查更新', icon: Download, screen: () => <UpdateScreen /> },
+        { key: 'channel', label: t('settings.updateChannel'), icon: RefreshCw, screen: UpdateChannelIntro },
+        { key: 'source', label: t('settings.updateSource'), icon: Download, screen: UpdateSourceIntro },
+        { key: 'check', label: '检查更新', icon: Download, screen: CheckUpdateIntro },
       ] },
       { key: 'debug', label: t('settings.debug'), icon: Bug, children: [
-        { key: 'log', label: '日志记录', icon: Bug, screen: () => <DebugScreen /> },
-        { key: 'terminal', label: '终端', icon: Bug, screen: () => <DebugScreen /> },
-        { key: 'diag', label: '调试信息', icon: Bug, screen: () => <DebugScreen /> },
+        { key: 'log', label: '日志记录', icon: Bug, screen: DebugLogIntro },
+        { key: 'terminal', label: '终端', icon: Bug, screen: TerminalIntro },
+        { key: 'diag', label: '调试信息', icon: Bug, screen: DiagIntro },
       ] },
       { key: 'about', label: t('settings.about'), icon: Info, children: [
-        { key: 'reset', label: '重置', icon: RefreshCw, screen: () => <AboutScreen /> },
-        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: () => <AboutScreen /> },
-        { key: 'app', label: '关于软件', icon: Info, screen: () => <AboutScreen /> },
-        { key: 'team', label: '关于团队', icon: Info, screen: () => <AboutScreen /> },
+        { key: 'reset', label: '重置', icon: RefreshCw, screen: ResetIntro },
+        { key: 'backend', label: '关于后端 (SkyXing)', icon: Info, screen: BackendIntro },
+        { key: 'app', label: '关于软件', icon: Info, screen: AboutScreen },
+        { key: 'team', label: '关于团队', icon: Info, screen: TeamIntro },
       ] },
     ] },
   ];
@@ -670,12 +914,12 @@ export default function SettingsPage() {
       )}
 
       {current.items && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-fadeIn">
           {current.items.map((child) => {
             const Icon = child.icon;
             return (
               <button key={child.key} onClick={() => onTap(child)}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-all animate-fadeIn">
                 {Icon && <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 shrink-0"><Icon size={16} /></span>}
                 <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{child.label}</span>
                 <ChevronRight size={16} className="text-gray-400 shrink-0" />
@@ -686,7 +930,7 @@ export default function SettingsPage() {
       )}
 
       {current.screen && (
-        <div>
+        <div className="animate-fadeIn">
           <current.screen />
         </div>
       )}

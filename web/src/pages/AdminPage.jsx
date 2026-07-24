@@ -150,6 +150,14 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+            <div className="card p-6">
+              <h3 className="font-semibold text-gray-900 mb-2">KV 维护</h3>
+              <p className="text-sm text-gray-500 mb-3">清理重复/无效的用户数据</p>
+              <button onClick={async () => { if (!confirm('确定要清理重复用户？')) return; try { const d = await api.request('/admin/users/cleanup', { method: 'POST' }); alert(d.message); loadData(); } catch (e) { alert(e.message); } }}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+                清理用户
+              </button>
+            </div>
           </div>
         </div>
       )}

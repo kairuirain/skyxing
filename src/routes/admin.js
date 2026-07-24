@@ -182,4 +182,40 @@ admin.post('/notify', adminRequired, async (c) => {
   }
 });
 
+// ─── 清理重复/无效用户（仅 official） ────────────────────────────────
+admin.post('/users/cleanup', officialRequired, async (c) => {
+  const env = c.env;
+  const userKeys = await kvList(env, PREFIX.USERS, 1000);
+  const seen = new Map(); // username_lower → { key, user }
+  const duplicates = [];
+  const invalid = [];
+
+  for (const key of userKeys) {
+    const u = await kvGet(env, key.name);
+    if (!u) { invalid.push(key.name); continue; }
+    if (!u.id || !u.username) { invalid.push(key.name); continue; }
+    const idx = (u.username || '').toLowerCase();
+    if (seen.has(idx)) {
+      duplicates.push({ keep: seen.get(idx), remove: { key: key.name, user: u } });
+    } else {
+      seen.set(idx, { key: key.name, user: u });
+    }
+  }
+
+  // 删除重复（保留第一个）
+  let removed = 0;
+  for (const dup of duplicates) {
+    await kvDelete(env, dup.remove.key);
+    await kvDelete(env, PREFIX.USERNAME_INDEX + (dup.remove.user.username || '').toLowerCase());
+    removed++;
+  }
+  // 删除无效
+  for (const k of invalid) {
+    await kvDelete(env, k);
+    removed++;
+  }
+
+  return c.json({ message: `清理完成`, removed, duplicateCount: duplicates.length, invalidCount: invalid.length });
+});
+
 export default admin;
