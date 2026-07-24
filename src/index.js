@@ -24,6 +24,17 @@ app.onError((err, c) => {
 
 app.use('*', cors);
 
+// 全局禁用 HTML 缓存（Cloudflare CDN 会缓存自定义域名下的静态资源）
+app.use('*', async (c, next) => {
+  await next();
+  const ct = c.res.headers.get('content-type') || '';
+  if (ct.includes('text/html')) {
+    c.res.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    c.res.headers.set('Pragma', 'no-cache');
+    c.res.headers.set('Expires', '0');
+  }
+});
+
 let bootstrapped = false;
 app.use('*', async (c, next) => {
   if (!bootstrapped) {
